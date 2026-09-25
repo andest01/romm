@@ -100,10 +100,11 @@ export default [
   },
   {
     name: "e2e/exceptions/setup",
-    files: ["e2e/**/*.setup.ts"],
+    files: ["e2e/**/*.setup.ts", "e2e/seed.spec.ts"],
     rules: {
-      // Setup is plumbing, not a test: it branches on CI and on whether a saved
-      // session is still valid, and asserts through helpers such as login().
+      // Setup and the agents' seed are plumbing, not tests: setup branches on CI
+      // and on whether a saved session is still valid, and asserts through
+      // helpers such as login(); the seed only opens the app.
       "playwright/no-conditional-in-test": "off",
       "playwright/expect-expect": "off",
     },

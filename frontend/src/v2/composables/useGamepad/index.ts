@@ -37,6 +37,7 @@ import {
   closeTopEscapable,
   hasOpenEscapable,
 } from "@/v2/lib/overlays/RDialog/escapeStack.js";
+import { PAD_BUTTON } from "./padButtons";
 
 // AppNav tab order — must match the `tabs` list in
 // `src/v2/components/AppShell/AppNav.vue`. LB/RB cycle through these.
@@ -52,28 +53,7 @@ const INITIAL_DELAY_MS = 350;
 const REPEAT_MS = 120;
 export const AXIS_THRESHOLD = 0.5;
 
-// Short symbolic name → W3C standard-mapping button index, so a view can
-// read raw pad state without memorising indices. Exhaustive over the standard
-// 0..16 range; anything past that has no name.
-export const PAD_BUTTON = {
-  a: 0,
-  b: 1,
-  x: 2,
-  y: 3,
-  lb: 4,
-  rb: 5,
-  lt: 6,
-  rt: 7,
-  back: 8,
-  start: 9,
-  l3: 10,
-  r3: 11,
-  "dpad-up": 12,
-  "dpad-down": 13,
-  "dpad-left": 14,
-  "dpad-right": 15,
-  home: 16,
-} as const;
+export { PAD_BUTTON };
 
 // The `name` field on the `gamepad:buttondown` event; `undefined` past 16.
 const BUTTON_NAMES: Record<number, string> = Object.fromEntries(

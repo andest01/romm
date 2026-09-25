@@ -8,20 +8,22 @@ For the basics (tag a test, run one device), see the README's "Test on a phone, 
 
 They're defined once, in [`src/v2/devices.ts`](../src/v2/devices.ts). Storybook's viewport toolbar and the Playwright device projects are both built from that file, so the two can't drift apart.
 
-| Project name    | Size      | Breakpoint tier | Touch | Built-in controls |
-| --------------- | --------- | --------------- | ----- | ----------------- |
-| `rommPhoneXs`   | 390×844   | xs              | yes   | no                |
-| `rommTabletSm`  | 768×1024  | sm              | yes   | no                |
-| `rommDesktopMd` | 1024×768  | md              | no    | no                |
-| `steamDeck`     | 1280×800  | lg              | yes   | yes               |
-| `aynThorTop`    | 1920×1080 | xl              | yes   | yes               |
-| `aynThorBottom` | 1240×1080 | md              | yes   | yes               |
+| Playwright project                        | Storybook key   | Size      | Breakpoint tier |
+| ----------------------------------------- | --------------- | --------- | --------------- |
+| `Phone XS (touch)`                        | `rommPhoneXs`   | 390×844   | xs              |
+| `Tablet SM (touch)`                       | `rommTabletSm`  | 768×1024  | sm              |
+| `Desktop MD`                              | `rommDesktopMd` | 1024×768  | md              |
+| `Steam Deck (touch, gamepad)`             | `steamDeck`     | 1280×800  | lg              |
+| `AYN Thor top screen (touch, gamepad)`    | `aynThorTop`    | 1920×1080 | xl              |
+| `AYN Thor bottom screen (touch, gamepad)` | `aynThorBottom` | 1240×1080 | md              |
+
+The brackets list the device's inputs and nothing else. They're generated from its `hasTouchHci` and `hasGamepadHci` flags by `deviceProjectName()`, so a name can't contradict what the project actually emulates. The project name is what VS Code's test panel shows and what `--project` takes. The Storybook key is what a story's `globals: { viewport: { value: … } }` uses.
 
 The breakpoint tiers are `useBreakpoint`'s: `xs <600`, `sm 600–959`, `md 960–1279`, `lg 1280–1919`, `xl ≥1920`.
 
 ## How a device becomes a Playwright project
 
-`playwright.config.ts` turns each device into a project named after its key. Each one:
+`playwright.config.ts` turns each device into a project, named by its `name`. Each one:
 
 - **Size:** takes the device's width and height as the browser viewport.
 - **Touch:** turns on touch support when the device has a touchscreen, so `locator.tap()` works. Only the phone also gets a phone-style browser (`isMobile`).
@@ -61,12 +63,28 @@ test.use({ gamepad: true });
 ## Running
 
 ```bash
-npm run test:e2e -- --project=steamDeck                       # one device
-npm run test:e2e -- --project=steamDeck --project=aynThorTop    # several
-npm run test:e2e -- --grep @devices                             # every tagged test, every project
+npm run test:e2e -- --project="steam*"       # one device
+npm run test:e2e -- --project="*thor*"       # both AYN Thor screens
+npm run test:e2e -- --project="*gamepad*"    # every device with built-in controls
+npm run test:e2e -- --project="*touch*"      # every touchscreen device
+npm run test:e2e -- --grep @devices          # every tagged test, every project
 ```
 
-In VS Code, tick device projects in the Playwright panel of the Testing sidebar; with **Show browser** on, the browser opens at that device's size.
+`--project` ignores case and accepts `*` wildcards, so you rarely type a full name. A name that matches nothing fails and lists the real ones.
+
+In VS Code, tick device projects in the Playwright panel of the Testing sidebar; with **Show browser** on, the browser opens at that device's size. Projects you haven't ticked are listed at the bottom of the test tree as `playwright.config.ts [name] — disabled`; that label is the extension's own wording.
+
+## Why a list of devices, not a full matrix
+
+Any screen could have a controller plugged in, so a full matrix (every size × every input) looks tempting. It grows fast: six sizes × three inputs is eighteen runs of every tagged test, most of them combinations nobody owns. The list instead holds the real combinations, the hardware v2 targets.
+
+For "what if this one had a controller", override a single test or describe block on whatever project it runs in:
+
+```ts
+test.use({ gamepad: true });
+```
+
+If a hypothetical combination proves worth running everywhere, add it to the list as a device of its own.
 
 ## Adding a device
 

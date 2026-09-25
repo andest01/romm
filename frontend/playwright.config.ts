@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 import { url as inspectorUrl } from "node:inspector";
 import { readE2EEnv, webServerEnv } from "./e2e/e2e-environment";
 import type { E2EOptions } from "./e2e/fixtures/test";
-import { ROMM_DEVICES } from "./src/v2/devices";
+import { deviceProjectName, ROMM_DEVICES } from "./src/v2/devices";
 
 // End-to-end suite. Accounts and the backend under test come from e2e/.env
 // (see e2e/.env.example); CI sets the same variables in the workflow instead.
@@ -64,7 +64,7 @@ export default defineConfig<E2EOptions>({
       use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: "chromium",
+      name: "Desktop Chrome",
       testIgnore: /.*\.setup\.ts/,
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["setup"],
@@ -72,17 +72,17 @@ export default defineConfig<E2EOptions>({
     // One project per target device (src/v2/devices.ts), for tests tagged
     // `@devices` only, so opting a test into the device sweep is a tag rather
     // than multiplying the whole suite. Handhelds get a virtual gamepad.
-    ...Object.entries(ROMM_DEVICES).map(([name, device]) => ({
-      name,
+    ...Object.values(ROMM_DEVICES).map((device) => ({
+      name: deviceProjectName(device),
       testIgnore: /.*\.setup\.ts/,
       grep: /@devices/,
       dependencies: ["setup"],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: device.width, height: device.height },
-        hasTouch: device.touch,
+        hasTouch: device.hasTouchHci,
         isMobile: device.type === "mobile",
-        gamepad: device.gamepad,
+        gamepad: device.hasGamepadHci,
       },
     })),
   ],

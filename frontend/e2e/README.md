@@ -123,11 +123,11 @@ It now runs seven times: once on desktop Chrome as usual, and once per device.
 **2. Run one device.**
 
 ```bash
-npm run test:e2e -- --project=steamDeck
-npm run test:e2e -- --project=rommPhoneXs e2e/devices.spec.ts
+npm run test:e2e -- --project="steam*"
+npm run test:e2e -- --project="*gamepad*" e2e/devices.spec.ts
 ```
 
-**3. Watch a device in VS Code.** In the Playwright panel, tick the device's project (for example `aynThorTop`), tick **Show browser**, and run the test. The browser opens at that device's size.
+**3. Watch a device in VS Code.** In the Playwright panel, tick the device's project (for example "AYN Thor top screen (touch, gamepad)"), tick **Show browser**, and run the test. The browser opens at that device's size.
 
 **4. Test something only handhelds do.** Take `gamepad` from the test arguments and skip elsewhere:
 
@@ -170,6 +170,43 @@ Sessions are saved in `e2e/.auth/` after the first run and reused, so tests star
 ```bash
 rm -r e2e/.auth    # PowerShell: Remove-Item -Recurse e2e/.auth
 ```
+
+### Let an agent write a test
+
+Playwright's test agents run in Claude Code through this suite: its server, its `e2e/.env`, its saved sessions. Describe what you want, one step at a time:
+
+> Use the playwright-test-planner to plan tests for favoriting a game as the viewer. Save the plan to e2e/specs/favorites.md.
+
+Read the plan in `e2e/specs/` and fix it if needed, then:
+
+> Use the playwright-test-generator to write the tests in e2e/specs/favorites.md.
+
+Run what it wrote. If something fails:
+
+> Use the playwright-test-healer on e2e/favorites.spec.ts.
+
+The first time, Claude Code asks you to enable the project's `playwright-test` MCP server. It runs headless; delete `--headless` from `.mcp.json` locally to watch.
+
+### Let an agent look at the app, cheaply
+
+For "go check this page" rather than "write a test", Claude uses the `playwright-cli` skill. It drives a browser with shell commands and costs a fraction of the tokens the MCP agents do. It runs against your own dev server, not the suite's:
+
+```bash
+npm run dev    # in another terminal
+```
+
+> Use playwright-cli to open http://127.0.0.1:3000, sign in with the saved admin session in e2e/.auth/admin.json, and check that the ⋯ menu on a game offers Delete.
+
+By hand, the same thing looks like:
+
+```bash
+npx playwright-cli open http://127.0.0.1:3000
+npx playwright-cli state-load e2e/.auth/admin.json
+npx playwright-cli reload
+npx playwright-cli snapshot
+```
+
+The saved session comes from the suite's last run. Its cookie signs you in to the same backend. Its UI settings (v2, dark theme) belong to the suite's own port, so on your dev server you get your usual ones. Output goes to `.playwright-cli/`, which is gitignored.
 
 ## How it's wired
 

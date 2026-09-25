@@ -1,5 +1,5 @@
-import { fileURLToPath } from "node:url";
 import type { Browser, Page } from "@playwright/test";
+import { fileURLToPath } from "node:url";
 import type { E2EEnv } from "../e2e-environment";
 import { expect } from "./test";
 
@@ -52,7 +52,12 @@ class LoginRejected extends Error {}
  *  (expired, or saved against another backend) or someone else's name. */
 export async function isSessionValid(
   browser: Browser,
-  { path, username, baseURL }: { path: string; username: string; baseURL?: string },
+  {
+    path,
+    username,
+    baseURL,
+    timeout,
+  }: { path: string; username: string; baseURL?: string; timeout: number },
 ): Promise<boolean> {
   const context = await browser
     .newContext({ baseURL, storageState: path, serviceWorkers: "block" })
@@ -63,7 +68,10 @@ export async function isSessionValid(
     const page = await context.newPage();
     await page.goto("/");
     const userName = page.locator(".r-v2-user__name");
-    await userName.or(page.locator("form.r-v2-login-form")).first().waitFor();
+    await userName
+      .or(page.locator("form.r-v2-login-form"))
+      .first()
+      .waitFor({ timeout });
     return (
       (await userName.isVisible()) &&
       (await userName.innerText()).trim() === username
@@ -87,7 +95,8 @@ export async function login(
     try {
       await page.goto("/login");
       const answered = page.waitForResponse(
-        (r) => r.url().includes("/api/login") && r.request().method() === "POST",
+        (r) =>
+          r.url().includes("/api/login") && r.request().method() === "POST",
       );
       await fillLoginForm(page, username, password);
       // The backend's answer settles it in a second: a dead backend (the dev

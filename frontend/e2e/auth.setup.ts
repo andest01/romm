@@ -29,6 +29,8 @@ for (const role of ROLES) {
     if (setup.info().timeout > 0) setup.setTimeout(e2eEnv.CI ? 15_000 : 60_000);
     const account = accountFor(e2eEnv, role);
     const saved = STORAGE_STATE[role];
+    // The first load on a cold dev server can outlast the 5s action timeout.
+    const firstLoad = e2eEnv.CI ? 5_000 : 15_000;
     const note = (description: string) =>
       setup.info().annotations.push({ type: "session", description });
 
@@ -37,20 +39,23 @@ for (const role of ROLES) {
         path: saved,
         username: account.username,
         baseURL: setup.info().project.use.baseURL,
+        timeout: firstLoad,
       });
       if (valid) {
         note("Reused the saved session.");
         return;
       }
       rmSync(saved);
-      note("The saved session no longer signed this account in; signed in again.");
+      note(
+        "The saved session no longer signed this account in; signed in again.",
+      );
     }
 
     // Bake the v2 flag into the saved state so every spec inherits it.
     await seedUiState(page, "dark");
     // CI serves a static build, so the dev server's reload retry isn't needed.
     await login(page, account, {
-      timeout: e2eEnv.CI ? 5_000 : 15_000,
+      timeout: firstLoad,
       attempts: e2eEnv.CI ? 1 : 3,
     });
     await page.context().storageState({ path: saved });

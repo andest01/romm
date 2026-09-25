@@ -24,9 +24,9 @@ export const test = base.extend<E2EOptions & AutoFixtures, { e2eEnv: E2EEnv }>({
   failOnAppErrors: [true, { option: true }],
   gamepad: [false, { option: true }],
 
-  // One connected, idle, standard-mapping pad. useGamepad finds it when it
-  // installs and switches the UI to gamepad modality (html[data-input="pad"]),
-  // as on a handheld with built-in controls.
+  // One connected, standard-mapping pad. useGamepad finds it when it installs
+  // and switches the UI to gamepad modality (html[data-input="pad"]), as on a
+  // handheld with built-in controls. `pressPad()` drives its buttons.
   virtualGamepad: [
     async ({ page, gamepad }, use) => {
       if (gamepad) {
@@ -44,9 +44,29 @@ export const test = base.extend<E2EOptions & AutoFixtures, { e2eEnv: E2EEnv }>({
               value: 0,
             })),
           };
+          const nextFrame = () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => resolve()),
+            );
+          const setButton = (index: number, pressed: boolean) => {
+            pad.buttons[index] = { pressed, touched: pressed, value: +pressed };
+            pad.timestamp += 1;
+          };
           Object.defineProperty(navigator, "getGamepads", {
             value: () => [pad, null, null, null],
           });
+          window.__e2eGamepad = {
+            // useGamepad polls once per animation frame and re-queues itself
+            // before this callback, so holding for one frame means it sees
+            // exactly one press edge at any frame rate (a visible window
+            // behind other windows renders slowly) and never a held repeat.
+            async press(index) {
+              setButton(index, true);
+              await nextFrame();
+              setButton(index, false);
+              await nextFrame();
+            },
+          };
         });
       }
       await use();
