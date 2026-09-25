@@ -1,35 +1,91 @@
-import { expect, type Page } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
+import { fileURLToPath } from "node:url";
+import type { E2EEnv } from "../e2e-environment";
+import { expect } from "./test";
 
-// Fixture accounts seeded by `.github/scripts/seed_e2e_users.py`.
-export const USERS = {
-  admin: process.env.E2E_ADMIN_USERNAME ?? "e2e_admin",
-  viewer: process.env.E2E_VIEWER_USERNAME ?? "e2e_viewer",
-} as const;
+export type Role = "admin" | "viewer";
 
-export const PASSWORD = process.env.E2E_PASSWORD ?? "e2e-Passw0rd!";
+export const ROLES = ["admin", "viewer"] as const satisfies readonly Role[];
 
-export type Role = keyof typeof USERS;
+export interface Account {
+  username: string;
+  password: string;
+}
 
-/** Where auth.setup.ts parks each role's authenticated session. Gitignored --
- *  they hold live session cookies and are regenerated on every run. */
+/** The account every permission assertion for `role` is made against. */
+export function accountFor(env: E2EEnv, role: Role): Account {
+  return role === "admin"
+    ? { username: env.E2E_ADMIN_USERNAME, password: env.E2E_ADMIN_PASSWORD }
+    : { username: env.E2E_VIEWER_USERNAME, password: env.E2E_VIEWER_PASSWORD };
+}
+
+/** Where auth.setup.ts parks each role's authenticated session: e2e/.auth/,
+ *  whatever directory the run started from. Gitignored -- they hold live
+ *  session cookies and are regenerated on every run. */
 export const STORAGE_STATE: Record<Role, string> = {
-  admin: "playwright/.auth/admin.json",
-  viewer: "playwright/.auth/viewer.json",
+  admin: fileURLToPath(new URL("../.auth/admin.json", import.meta.url)),
+  viewer: fileURLToPath(new URL("../.auth/viewer.json", import.meta.url)),
 };
 
-/** Log in through the real form and wait for the app shell to take over.
+/** Fill and submit the login form.
  *
  *  Everything is scoped to `form.r-v2-login-form`. The reset-password form is
  *  rendered alongside it (collapsed, not unmounted) and has its own submit
  *  button and fields, so unscoped `button[type="submit"]` / `input[name=...]`
  *  selectors match two elements and blow up on strict mode. */
+export async function fillLoginForm(
+  page: Page,
+  username: string,
+  password: string,
+) {
+  const form = page.locator("form.r-v2-login-form");
+  await form.locator('input[name="username"]').fill(username);
+  await form.locator('input[name="password"]').fill(password);
+  await form.locator('button[type="submit"]').click();
+}
+
+/** A login failure that retrying can't fix, so `login()` stops at once. */
+class LoginRejected extends Error {}
+
+/** Whether a saved session still signs `username` in. Opens the app with it
+ *  and sees what renders: that user's name in the app bar, or the login form
+ *  (expired, or saved against another backend) or someone else's name. */
+export async function isSessionValid(
+  browser: Browser,
+  {
+    path,
+    username,
+    baseURL,
+    timeout,
+  }: { path: string; username: string; baseURL?: string; timeout: number },
+): Promise<boolean> {
+  const context = await browser
+    .newContext({ baseURL, storageState: path, serviceWorkers: "block" })
+    // An unreadable file is as good as no session.
+    .catch(() => null);
+  if (!context) return false;
+  try {
+    const page = await context.newPage();
+    await page.goto("/");
+    const userName = page.locator(".r-v2-user__name");
+    await userName
+      .or(page.locator("form.r-v2-login-form"))
+      .first()
+      .waitFor({ timeout });
+    return (
+      (await userName.isVisible()) &&
+      (await userName.innerText()).trim() === username
+    );
+  } finally {
+    await context.close();
+  }
+}
+
+/** Log in through the real form and wait for the app shell to take over. */
 export async function login(
   page: Page,
-  role: Role,
-  {
-    timeout = 25_000,
-    attempts = 3,
-  }: { timeout?: number; attempts?: number } = {},
+  { username, password }: Account,
+  { timeout, attempts }: { timeout: number; attempts: number },
 ) {
   // Retried because the Vite dev server force-reloads the page when it
   // discovers a new dependency to pre-bundle ("optimized dependencies changed.
@@ -38,77 +94,87 @@ export async function login(
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
       await page.goto("/login");
-      const form = page.locator("form.r-v2-login-form");
-      await form.locator('input[name="username"]').fill(USERS[role]);
-      await form.locator('input[name="password"]').fill(PASSWORD);
-      await form.locator('button[type="submit"]').click();
+      const answered = page.waitForResponse(
+        (r) =>
+          r.url().includes("/api/login") && r.request().method() === "POST",
+      );
+      await fillLoginForm(page, username, password);
+      // The backend's answer settles it in a second: a dead backend (the dev
+      // proxy answers 5xx) or bad credentials won't be fixed by waiting.
+      const response = await answered;
+      if (response.status() >= 500) {
+        throw new LoginRejected(
+          `The backend isn't answering (POST /api/login returned ${response.status()}). Is it running where e2e/.env points (E2E_DEV_PORT or E2E_DEV_PROXY_TARGET)?`,
+        );
+      }
+      if (!response.ok()) {
+        throw new LoginRejected(
+          `The backend rejected the ${username} account (POST /api/login returned ${response.status()}). Check its credentials in e2e/.env, and that it exists on that backend.`,
+        );
+      }
       // Assert a marker that only exists once authenticated (the app bar's user
       // name) rather than just "the URL is no longer /login" -- the latter goes
       // true mid-transition and says nothing about the session.
-      await expect(page.locator(".r-v2-user__name")).toHaveText(USERS[role], {
+      await expect(page.locator(".r-v2-user__name")).toHaveText(username, {
         timeout,
       });
       await expect(page).not.toHaveURL(/\/login/);
       return;
     } catch (error) {
+      if (error instanceof LoginRejected) throw error;
       lastError = error;
     }
   }
   throw lastError;
 }
 
-/** Navigate to the logged-in user's own profile page (route `/user/:user`). */
+/** Open the account menu and follow its Profile link (route `/user/:user`). */
 export async function gotoOwnProfile(page: Page) {
-  const res = await page.request.get("/api/users/me");
-  expect(res.ok(), "could not resolve the current user").toBe(true);
-  const me = await res.json();
-  await gotoHydrated(page, `/user/${me.id}`);
-  return me;
+  await gotoHydrated(page, "/");
+  await page.locator("[data-user-menu-trigger]").click();
+  await page.getByRole("menuitem", { name: "Profile" }).click();
+  await expect(page).toHaveURL(/\/user\/\d+/);
 }
 
-/** Navigate to the first ROM of the first non-empty platform.
- *
- *  Waits for the permission grants to land before returning. `useCan` reads a
- *  store hydrated from `/permissions/me` AFTER the app mounts, so until that
- *  response arrives even an admin has no grants and every gated control is
- *  hidden. Asserting before then reads the pre-hydration menu -- which looks
- *  exactly like a permissions bug and is not one. */
+/** Open the first platform on the platforms index, then its first game. */
 export async function gotoFirstRom(page: Page) {
-  const res = await page.request.get("/api/roms?limit=1&order_by=name");
-  expect(res.ok(), "could not list ROMs -- is the dev library populated?").toBe(
-    true,
-  );
-  const body = await res.json();
-  const rom = body.items?.[0];
-  expect(rom, "the dev library has no ROMs to test against").toBeTruthy();
-  await gotoHydrated(page, `/rom/${rom.id}`);
-  return rom;
+  await gotoHydrated(page, "/platforms");
+  await page.locator('a[href^="/platform/"]').first().click();
+  await page.locator('a.r-gc[href^="/rom/"]').first().click();
+  await expect(page).toHaveURL(/\/rom\/\d+/);
 }
 
-/** `page.goto` that also waits for the permissions store to hydrate. The
- *  listener is armed BEFORE navigating, or the response can land first and the
- *  wait hangs until it times out. */
+/** `page.goto` that also waits for the permissions store to hydrate.
+ *
+ *  `useCan` reads a store hydrated from `/permissions/me` AFTER the app mounts,
+ *  so until that response arrives even an admin has no grants and every gated
+ *  control is hidden. Asserting before then reads the pre-hydration UI, which
+ *  looks exactly like a permissions bug and is not one. Client-side navigation
+ *  afterwards keeps the hydrated store.
+ *
+ *  The listener is armed BEFORE navigating, or the response can land first and
+ *  the wait hangs until it times out. A full page load always starts with an
+ *  empty store, so a missing response is a real failure, not something to wait
+ *  out. Any status is accepted and then checked, so a 401/403 fails here with
+ *  its cause instead of as a timeout. */
 export async function gotoHydrated(page: Page, path: string) {
-  const hydrated = page
-    .waitForResponse(
-      (r) => r.url().includes("/api/permissions/me") && r.status() === 200,
-      // Short: hydration normally lands well under a second. A long timeout
-      // here is actively harmful -- when the request doesn't fire, the catch
-      // below still waits it out first, eating the test's own budget.
-      { timeout: 10_000 },
-    )
-    // A cached/absent refetch shouldn't fail the navigation; the assertions
-    // that follow are auto-waiting anyway.
-    .catch(() => null);
+  // Hydration normally lands well under a second, so the config's short action
+  // timeout is plenty; a long one would only eat the test's own budget.
+  const hydrated = page.waitForResponse((r) =>
+    r.url().includes("/api/permissions/me"),
+  );
   await page.goto(path);
-  await hydrated;
+  const response = await hydrated;
+  if (!response.ok()) {
+    throw new Error(
+      `Permissions didn't load (GET /api/permissions/me returned ${response.status()}), so every gated control would be hidden. The session most likely expired during the run: run again, and setup will sign in afresh (or delete e2e/.auth/ to force it).`,
+    );
+  }
   // The app bar's user name renders only once the auth store holds a user, so
   // it doubles as an "app shell is ready" signal. Without it, assertions can
   // run against a view still showing its loading skeleton -- which fails as a
   // missing element and reads like the element was removed on purpose.
-  await expect(page.locator(".r-v2-user__name")).toBeVisible({
-    timeout: 30_000,
-  });
+  await expect(page.locator(".r-v2-user__name")).toBeVisible();
 }
 
 /** Open the ⋯ more-actions menu and return the teleported panel locator. */

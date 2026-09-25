@@ -6,6 +6,7 @@ import vue from "eslint-plugin-vue";
 import vuea11y from "eslint-plugin-vuejs-accessibility";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import e2eConfig from "./eslint.e2e.config.js";
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -119,6 +120,8 @@ export default tseslint.config(
     files: ["src/console/**"],
     rules: { "import-x/no-cycle": "off" },
   },
+  // Playwright suite: its own rules and exceptions, see that file.
+  ...e2eConfig,
   // Keep last: Prettier owns formatting, so this switches off every
   // stylistic rule the two tools would otherwise fight over.
   prettierConfig,

@@ -6,7 +6,9 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "erasableSyntaxOnly": true,
+    "lib": ["esnext", "dom"],
     "types": ["node"]
   },
-  "include": ["scripts/**/*.ts", "playwright.config.ts"]
+  "include": ["./**/*.ts"]
 }
