@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import { url as inspectorUrl } from "node:inspector";
 import { readE2EEnv, webServerEnv } from "./e2e/e2e-environment";
+import type { E2EOptions } from "./e2e/fixtures/test";
+import { ROMM_DEVICES } from "./src/v2/devices";
 
 // End-to-end suite. Accounts and the backend under test come from e2e/.env
 // (see e2e/.env.example); CI sets the same variables in the workflow instead.
@@ -16,7 +18,7 @@ const debugging = !!process.env.PWDEBUG || inspectorUrl() !== undefined;
 const PORT = 3100;
 const ORIGIN = `http://127.0.0.1:${PORT}`;
 
-export default defineConfig({
+export default defineConfig<E2EOptions>({
   testDir: "./e2e",
   // Permission gating is global state on the server (the fixture users' grants),
   // so the specs read it rather than mutate it and are safe to parallelise.
@@ -67,6 +69,22 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["setup"],
     },
+    // One project per target device (src/v2/devices.ts), for tests tagged
+    // `@devices` only, so opting a test into the device sweep is a tag rather
+    // than multiplying the whole suite. Handhelds get a virtual gamepad.
+    ...Object.entries(ROMM_DEVICES).map(([name, device]) => ({
+      name,
+      testIgnore: /.*\.setup\.ts/,
+      grep: /@devices/,
+      dependencies: ["setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: device.width, height: device.height },
+        hasTouch: device.touch,
+        isMobile: device.type === "mobile",
+        gamepad: device.gamepad,
+      },
+    })),
   ],
   // The suite always serves the app itself, configured only by `webServerEnv()`.
   //

@@ -103,6 +103,48 @@ test("rejects a wrong password", async ({ page, e2eEnv }) => {
 });
 ```
 
+### Test on a phone, tablet or handheld
+
+The suite knows six target devices: RomM phone, tablet and desktop sizes, the Steam Deck, and both AYN Thor screens. The handhelds start in gamepad mode, as they would with their built-in controls.
+
+**1. Run a test on every device.** Add the tag:
+
+```ts
+test("opens the game page", { tag: "@devices" }, async ({ page }) => {
+  await gotoFirstRom(page);
+  await expect(
+    page.getByRole("button", { name: "More actions" }).first(),
+  ).toBeVisible();
+});
+```
+
+It now runs seven times: once on desktop Chrome as usual, and once per device.
+
+**2. Run one device.**
+
+```bash
+npm run test:e2e -- --project=steamDeck
+npm run test:e2e -- --project=rommPhoneXs e2e/devices.spec.ts
+```
+
+**3. Watch a device in VS Code.** In the Playwright panel, tick the device's project (for example `aynThorTop`), tick **Show browser**, and run the test. The browser opens at that device's size.
+
+**4. Test something only handhelds do.** Take `gamepad` from the test arguments and skip elsewhere:
+
+```ts
+test(
+  "shows focus rings on a handheld",
+  { tag: "@devices" },
+  async ({ page, gamepad }) => {
+    test.skip(!gamepad, "Only devices with built-in game controls.");
+    await gotoHydrated(page, "/");
+    await expect(page.locator("html")).toHaveAttribute("data-input", "pad");
+  },
+);
+```
+
+How the devices are defined, what the virtual gamepad can and can't do, and how to add a device: [DEVICES.md](DEVICES.md).
+
 ### Run one file, or one test
 
 ```bash

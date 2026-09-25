@@ -4,16 +4,55 @@ import { type E2EEnv, readE2EEnv } from "../e2e-environment";
 // Browser noise that isn't an app failure.
 const BENIGN_PAGE_ERRORS = [/ResizeObserver loop/];
 
-interface TestFixtures {
+/** Options a project or `test.use()` can set. */
+export interface E2EOptions {
   /** Opt-out for a test that causes app errors on purpose. */
   failOnAppErrors: boolean;
+  /** Emulate a device with built-in game controls (Steam Deck, AYN Thor). */
+  gamepad: boolean;
+}
+
+interface AutoFixtures {
   appErrorGuard: void;
+  virtualGamepad: void;
 }
 
 /** `test` with the validated environment as a worker-scoped `e2eEnv` fixture,
- *  and a guard that fails any test the moment the app itself fails. */
-export const test = base.extend<TestFixtures, { e2eEnv: E2EEnv }>({
+ *  a guard that fails any test the moment the app itself fails, and an
+ *  optional virtual gamepad. */
+export const test = base.extend<E2EOptions & AutoFixtures, { e2eEnv: E2EEnv }>({
   failOnAppErrors: [true, { option: true }],
+  gamepad: [false, { option: true }],
+
+  // One connected, idle, standard-mapping pad. useGamepad finds it when it
+  // installs and switches the UI to gamepad modality (html[data-input="pad"]),
+  // as on a handheld with built-in controls.
+  virtualGamepad: [
+    async ({ page, gamepad }, use) => {
+      if (gamepad) {
+        await page.addInitScript(() => {
+          const pad = {
+            id: "e2e virtual gamepad (STANDARD GAMEPAD)",
+            index: 0,
+            connected: true,
+            mapping: "standard",
+            timestamp: 0,
+            axes: [0, 0, 0, 0],
+            buttons: Array.from({ length: 17 }, () => ({
+              pressed: false,
+              touched: false,
+              value: 0,
+            })),
+          };
+          Object.defineProperty(navigator, "getGamepads", {
+            value: () => [pad, null, null, null],
+          });
+        });
+      }
+      await use();
+    },
+    { auto: true },
+  ],
 
   // An /api 5xx or an uncaught exception otherwise surfaces as a locator
   // timeout seconds later, blaming an element. Closing the page makes whatever

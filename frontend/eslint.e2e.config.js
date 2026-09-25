@@ -36,6 +36,15 @@ export default [
     files: TEST_FILES,
   },
   {
+    name: "e2e/playwright-options",
+    files: TEST_FILES,
+    rules: {
+      // `test.skip(!gamepad, ...)` is how a test fits some device projects and
+      // not others; an unconditional skip is still flagged.
+      "playwright/no-skipped-test": ["warn", { allowConditional: true }],
+    },
+  },
+  {
     name: "e2e/rules",
     files: E2E_FILES,
     rules: {
