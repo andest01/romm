@@ -38,7 +38,7 @@ const EXPECTED: Record<E2EKey, string> = {
   E2E_DEV_PORT:
     "a local backend's port (1-65535); set this or E2E_DEV_PROXY_TARGET, not both",
   E2E_DEV_PROXY_TARGET:
-    "a remote backend's http(s) URL; set this or E2E_DEV_PORT, not both",
+    "a backend's http(s) URL with its port, e.g. http://127.0.0.1:3000; set this or E2E_DEV_PORT, not both",
   E2E_WORKERS: "optional, a whole number of parallel workers (1 or more)",
 };
 
@@ -204,7 +204,16 @@ export function readE2EEnv(): E2EEnv {
   const proxyTarget = httpUrl("E2E_DEV_PROXY_TARGET");
   if (!vars.E2E_DEV_PORT === !vars.E2E_DEV_PROXY_TARGET) {
     problems.push(
-      `Set exactly one backend: E2E_DEV_PORT for a local one, or E2E_DEV_PROXY_TARGET for a remote one. ${vars.E2E_DEV_PORT ? "Both are" : "Neither is"} set.`,
+      [
+        `${
+          vars.E2E_DEV_PORT
+            ? "Both E2E_DEV_PORT and E2E_DEV_PROXY_TARGET are set."
+            : "Neither E2E_DEV_PORT nor E2E_DEV_PROXY_TARGET is set."
+        } Pick one of these:`,
+        "      E2E_DEV_PORT=5000                             a local backend, by port",
+        "      E2E_DEV_PROXY_TARGET=http://127.0.0.1:3000    any backend, by URL (port included)",
+        "    They're alternatives: E2E_DEV_PORT is not the proxy target's port.",
+      ].join("\n"),
     );
   }
   const workers = integer("E2E_WORKERS", false, 1, Number.MAX_SAFE_INTEGER);

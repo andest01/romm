@@ -45,15 +45,27 @@ export default [
     },
   },
   {
-    // Tests take the environment from the `e2eEnv` fixture, so the dependency
-    // shows in their signature. Only the files that build it may import it.
-    name: "e2e/environment",
+    name: "e2e/imports",
     files: TEST_FILES,
     ignores: ENV_BUILDERS,
     rules: {
       "@typescript-eslint/no-restricted-imports": [
         "error",
         {
+          // The suite's `test` carries the app-error guard and `e2eEnv`; the
+          // stock one silently has neither.
+          paths: [
+            {
+              name: "@playwright/test",
+              importNames: ["test", "expect"],
+              allowTypeImports: true,
+              message:
+                'Import `test` and `expect` from "./fixtures/test" (or "./test" inside fixtures/), so the app-error guard and `e2eEnv` apply.',
+            },
+          ],
+          // Tests take the environment from the `e2eEnv` fixture, so the
+          // dependency shows in their signature. Only the files that build it
+          // may import it.
           patterns: [
             {
               regex: "(^|/)e2e-environment(\\.ts)?$",
@@ -81,8 +93,8 @@ export default [
     name: "e2e/exceptions/setup",
     files: ["e2e/**/*.setup.ts"],
     rules: {
-      // Setup is plumbing, not a test: it branches on CI for timeouts and
-      // asserts through helpers such as login().
+      // Setup is plumbing, not a test: it branches on CI and on whether a saved
+      // session is still valid, and asserts through helpers such as login().
       "playwright/no-conditional-in-test": "off",
       "playwright/expect-expect": "off",
     },

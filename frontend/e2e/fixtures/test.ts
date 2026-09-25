@@ -1,8 +1,53 @@
-import { test as base } from "@playwright/test";
+import { test as base, expect } from "@playwright/test";
 import { type E2EEnv, readE2EEnv } from "../e2e-environment";
 
-/** `test` with the validated environment as a worker-scoped `e2eEnv` fixture. */
-export const test = base.extend<object, { e2eEnv: E2EEnv }>({
+// Browser noise that isn't an app failure.
+const BENIGN_PAGE_ERRORS = [/ResizeObserver loop/];
+
+interface TestFixtures {
+  /** Opt-out for a test that causes app errors on purpose. */
+  failOnAppErrors: boolean;
+  appErrorGuard: void;
+}
+
+/** `test` with the validated environment as a worker-scoped `e2eEnv` fixture,
+ *  and a guard that fails any test the moment the app itself fails. */
+export const test = base.extend<TestFixtures, { e2eEnv: E2EEnv }>({
+  failOnAppErrors: [true, { option: true }],
+
+  // An /api 5xx or an uncaught exception otherwise surfaces as a locator
+  // timeout seconds later, blaming an element. Closing the page makes whatever
+  // the test is waiting on fail at once; teardown then names the real cause.
+  appErrorGuard: [
+    async ({ page, failOnAppErrors }, use) => {
+      if (!failOnAppErrors) {
+        await use();
+        return;
+      }
+      const errors: string[] = [];
+      const fail = (message: string) => {
+        errors.push(message);
+        void page.close();
+      };
+      page.on("response", (response) => {
+        const url = new URL(response.url());
+        if (url.pathname.startsWith("/api/") && response.status() >= 500) {
+          const method = response.request().method();
+          fail(`${method} ${url.pathname} returned ${response.status()}`);
+        }
+      });
+      page.on("pageerror", (error) => {
+        if (BENIGN_PAGE_ERRORS.some((re) => re.test(error.message))) return;
+        fail(`Uncaught error in the app: ${error.message}`);
+      });
+
+      await use();
+
+      expect(errors, "The app failed while this test ran").toEqual([]);
+    },
+    { auto: true },
+  ],
+
   e2eEnv: [
     // Playwright requires a destructured first argument, even when empty.
     async ({}, use) => {
@@ -12,4 +57,4 @@ export const test = base.extend<object, { e2eEnv: E2EEnv }>({
   ],
 });
 
-export { expect } from "@playwright/test";
+export { expect };

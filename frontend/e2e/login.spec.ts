@@ -5,8 +5,10 @@ import { expect, test } from "./fixtures/test";
 // session saved by auth.setup.ts, so this is the single place the form, the
 // session cookie and the post-login redirect are actually exercised.
 //
-// It uses the default (unauthenticated) `page` fixture -- no
-// `test.use({ storageState })` here, which is the whole point.
+// It starts explicitly signed out, whatever sessions are saved in e2e/.auth/ or
+// set elsewhere in the config: exercising the form is the whole point.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe("Login", () => {
   test("signs in and lands on the app", async ({ page, e2eEnv }) => {
     const { username, password } = accountFor(e2eEnv, "viewer");
