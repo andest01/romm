@@ -18,8 +18,9 @@ import { test as setup } from "./fixtures/test";
 for (const role of ROLES) {
   setup(`authenticate as ${role}`, async ({ page, e2eEnv }) => {
     // The first load is where the dev server compiles the app on demand, so
-    // this is the one test allowed past the suite's 10s default.
-    setup.setTimeout(e2eEnv.CI ? 15_000 : 60_000);
+    // this is the one test allowed past the suite's 10s default. A debug
+    // session's 0 (no timeout) is left alone.
+    if (setup.info().timeout > 0) setup.setTimeout(e2eEnv.CI ? 15_000 : 60_000);
     // Bake the v2 flag into the saved state so every spec inherits it.
     await seedUiState(page, "dark");
     // CI serves a static build, so the dev server's reload retry isn't needed.

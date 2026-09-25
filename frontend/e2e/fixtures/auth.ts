@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { fileURLToPath } from "node:url";
 import type { E2EEnv } from "../e2e-environment";
 
 export type Role = "admin" | "viewer";
@@ -17,11 +18,12 @@ export function accountFor(env: E2EEnv, role: Role): Account {
     : { username: env.E2E_VIEWER_USERNAME, password: env.E2E_VIEWER_PASSWORD };
 }
 
-/** Where auth.setup.ts parks each role's authenticated session. Gitignored --
- *  they hold live session cookies and are regenerated on every run. */
+/** Where auth.setup.ts parks each role's authenticated session: e2e/.auth/,
+ *  whatever directory the run started from. Gitignored -- they hold live
+ *  session cookies and are regenerated on every run. */
 export const STORAGE_STATE: Record<Role, string> = {
-  admin: "playwright/.auth/admin.json",
-  viewer: "playwright/.auth/viewer.json",
+  admin: fileURLToPath(new URL("../.auth/admin.json", import.meta.url)),
+  viewer: fileURLToPath(new URL("../.auth/viewer.json", import.meta.url)),
 };
 
 /** Fill and submit the login form.

@@ -6,6 +6,7 @@ import vue from "eslint-plugin-vue";
 import vuea11y from "eslint-plugin-vuejs-accessibility";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import e2eConfig from "./eslint.e2e.config.js";
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -119,43 +120,8 @@ export default tseslint.config(
     files: ["src/console/**"],
     rules: { "import-x/no-cycle": "off" },
   },
-  {
-    // Playwright specs and config run in Node, not the browser.
-    files: ["e2e/**/*.ts", "playwright.config.ts"],
-    languageOptions: {
-      globals: { ...globals.node },
-      // playwright.config.ts belongs to e2e/tsconfig.json, which the project
-      // service can't find from the frontend root.
-      parserOptions: {
-        projectService: { allowDefaultProject: ["playwright.config.ts"] },
-      },
-    },
-  },
-  {
-    // Tests take the environment from the `e2eEnv` fixture, so the dependency
-    // shows in their signature. Only the files that build it may import it.
-    files: ["e2e/**/*.ts"],
-    ignores: [
-      "e2e/e2e-environment.ts",
-      "e2e/fixtures/test.ts",
-      "e2e/global-setup.ts",
-    ],
-    rules: {
-      "@typescript-eslint/no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              regex: "(^|/)e2e-environment(\\.ts)?$",
-              allowTypeImports: true,
-              message:
-                "Take `e2eEnv` from the test arguments (`async ({ page, e2eEnv }) => ...`). Type-only imports are fine.",
-            },
-          ],
-        },
-      ],
-    },
-  },
+  // Playwright suite: its own rules and exceptions, see that file.
+  ...e2eConfig,
   // Keep last: Prettier owns formatting, so this switches off every
   // stylistic rule the two tools would otherwise fight over.
   prettierConfig,

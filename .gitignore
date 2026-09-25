@@ -97,3 +97,4 @@ frontend/test-results/
 frontend/playwright-report/
 frontend/blob-report/
 frontend/.last-run.json
+frontend/e2e/.auth/

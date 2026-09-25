@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { url as inspectorUrl } from "node:inspector";
 import { readE2EEnv, webServerEnv } from "./e2e/e2e-environment";
 
 // End-to-end suite. Accounts and the backend under test come from e2e/.env
@@ -7,9 +8,13 @@ import { readE2EEnv, webServerEnv } from "./e2e/e2e-environment";
 const env = readE2EEnv();
 
 const isCI = env.CI;
+// A human is stepping through (VS Code debugger, `--debug`, PWDEBUG): a test
+// paused on a breakpoint must not be killed by the fail-fast timeouts below.
+const debugging = !!process.env.PWDEBUG || inspectorUrl() !== undefined;
 // Off the default dev port, so the suite never attaches to (or collides with)
 // a `npm run dev` started with some other environment.
 const PORT = 3100;
+const ORIGIN = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -27,17 +32,19 @@ export default defineConfig({
   // timeouts, so keep the pool small locally. CI serves a static build, which
   // has no such bottleneck.
   workers: env.E2E_WORKERS ?? (isCI ? 4 : 2),
-  reporter: isCI ? [["github"], ["html", { open: "never" }]] : "list",
+  // The HTML report holds each failure's trace: `npm run test:e2e:report`.
+  reporter: [[isCI ? "github" : "list"], ["html", { open: "never" }]],
   // Tuned for a tight LAN: anything slower is a bug, not a reason to wait.
   // A test that genuinely needs longer overrides it with `test.setTimeout`.
-  timeout: 10_000,
-  expect: { timeout: 3_000 },
+  // 0 means no timeout.
+  timeout: debugging ? 0 : 10_000,
+  expect: { timeout: debugging ? 0 : 3_000 },
   use: {
-    baseURL: `http://127.0.0.1:${PORT}`,
+    baseURL: ORIGIN,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    actionTimeout: 5_000,
-    navigationTimeout: 5_000,
+    actionTimeout: debugging ? 0 : 5_000,
+    navigationTimeout: debugging ? 0 : 5_000,
     // The production build ships a PWA service worker that precaches ~9MB on
     // first load. Every test gets a fresh context, so that install would run
     // over and over, competing with the app for the first navigation, and its
@@ -78,7 +85,7 @@ export default defineConfig({
     command: isCI
       ? `npm run preview -- --port ${PORT} --strictPort --host 127.0.0.1`
       : `npm run dev -- --port ${PORT} --strictPort`,
-    url: `http://127.0.0.1:${PORT}`,
+    url: ORIGIN,
     env: webServerEnv(env),
     reuseExistingServer: false,
     timeout: isCI ? 30_000 : 180_000,
