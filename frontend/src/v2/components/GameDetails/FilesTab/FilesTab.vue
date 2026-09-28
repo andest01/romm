@@ -544,7 +544,11 @@ function refreshRom() {
 
   <div class="r-v2-files">
     <aside v-if="!smAndDown" class="r-v2-files__sidebar">
-      <SubtabNav v-model="subTab" :items="subtabDefs" />
+      <SubtabNav
+        v-model="subTab"
+        :items="subtabDefs"
+        :label="t('rom.tab-files')"
+      />
     </aside>
 
     <div class="r-v2-files__content">

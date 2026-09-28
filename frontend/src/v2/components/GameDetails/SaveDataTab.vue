@@ -587,7 +587,11 @@ const labelSuggestions = computed(() =>
       </template>
     </SubtabNav>
     <aside v-else class="r-v2-saves__sidebar">
-      <SubtabNav v-model="subTab" :items="subtabDefs" />
+      <SubtabNav
+        v-model="subTab"
+        :items="subtabDefs"
+        :label="t('rom.save-data')"
+      />
     </aside>
 
     <div class="r-v2-saves__content">
