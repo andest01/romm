@@ -1,5 +1,6 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { type E2EEnv, readE2EEnv } from "../e2e-environment";
+import { useLocale } from "./i18n";
 
 // Browser noise that isn't an app failure.
 const BENIGN_PAGE_ERRORS = [/ResizeObserver loop/];
@@ -32,9 +33,20 @@ interface AutoFixtures {
   virtualGamepad: void;
 }
 
+/** Worker options a project or the config can set. */
+export interface E2EWorkerOptions {
+  /** The app's language for this run; locators read its text via t(). */
+  appLocale: string;
+}
+
+interface WorkerFixtures extends E2EWorkerOptions {
+  e2eEnv: E2EEnv;
+  localeLoaded: void;
+}
+
 /** `test` with the validated environment as `e2eEnv`, a guard that fails any
  *  test the moment the app itself fails, and an optional virtual gamepad. */
-export const test = base.extend<E2EOptions & AutoFixtures, { e2eEnv: E2EEnv }>({
+export const test = base.extend<E2EOptions & AutoFixtures, WorkerFixtures>({
   failOnAppErrors: [true, { option: true }],
   gamepad: [false, { option: true }],
 
@@ -86,6 +98,15 @@ export const test = base.extend<E2EOptions & AutoFixtures, { e2eEnv: E2EEnv }>({
       expect(errors, "The app failed while this test ran").toEqual([]);
     },
     { auto: true },
+  ],
+
+  appLocale: ["en_US", { option: true, scope: "worker" }],
+  localeLoaded: [
+    async ({ appLocale }, use) => {
+      useLocale(appLocale);
+      await use();
+    },
+    { scope: "worker", auto: true },
   ],
 
   e2eEnv: [

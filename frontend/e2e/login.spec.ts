@@ -1,4 +1,10 @@
-import { accountFor, fillLoginForm, seedUiState } from "./fixtures/auth";
+import {
+  accountFor,
+  accountMenu,
+  fillLoginForm,
+  loginForm,
+  seedUiState,
+} from "./fixtures/auth";
 import { expect, test } from "./fixtures/test";
 
 // The only spec that drives the login form. Every other spec starts from a
@@ -19,7 +25,7 @@ test.describe("Login", () => {
 
     // The app bar's user name only renders once the session is established and
     // the auth store holds a user -- a stronger signal than "the URL changed".
-    await expect(page.locator(".r-v2-user__name")).toHaveText(username);
+    await expect(accountMenu(page, username)).toBeVisible();
     await expect(page).not.toHaveURL(/\/login/);
   });
 
@@ -32,7 +38,7 @@ test.describe("Login", () => {
 
     // Stays on /login with no session. Asserted via the app bar's absence
     // rather than a snackbar, so the test doesn't depend on toast copy.
-    await expect(page.locator(".r-v2-user__name")).toHaveCount(0);
+    await expect(accountMenu(page)).toHaveCount(0);
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -45,7 +51,7 @@ test.describe("Login", () => {
       await page.goto("/");
 
       await expect(page).toHaveURL(/\/login/);
-      await expect(page.locator("form.r-v2-login-form")).toBeVisible();
+      await expect(loginForm(page)).toBeVisible();
     },
   );
 });

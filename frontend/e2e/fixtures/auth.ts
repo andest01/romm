@@ -1,6 +1,7 @@
-import type { Browser, Page } from "@playwright/test";
+import type { Browser, Locator, Page } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 import type { E2EEnv } from "../e2e-environment";
+import { t, testLocale, tPattern } from "./i18n";
 import { expect, watchAppErrors } from "./test";
 
 export type Role = "admin" | "viewer";
@@ -25,26 +26,44 @@ export const STORAGE_STATE: Record<Role, string> = {
   viewer: fileURLToPath(new URL("../.auth/viewer.json", import.meta.url)),
 };
 
-/** Fill and submit the login form.
- *
- *  Scoped to `form.r-v2-login-form`: the collapsed reset-password form has its
- *  own submit button and fields, so unscoped selectors hit strict mode. */
+/** The login form, found by its accessible name. */
+export function loginForm(page: Page): Locator {
+  return page.getByRole("form", { name: t("login.login") });
+}
+
+/** The app bar's account menu button: `username`'s, or anyone's. It only
+ *  renders once signed in, so it also marks the app shell as ready. */
+export function accountMenu(page: Page, username?: string): Locator {
+  return page.getByRole("button", {
+    name: username
+      ? t("common.account-menu-for", { name: username })
+      : tPattern("common.account-menu-for"),
+    exact: !!username,
+  });
+}
+
+/** Fill and submit the login form. */
 export async function fillLoginForm(
   page: Page,
   username: string,
   password: string,
 ) {
-  const form = page.locator("form.r-v2-login-form");
-  await form.locator('input[name="username"]').fill(username);
-  await form.locator('input[name="password"]').fill(password);
-  await form.locator('button[type="submit"]').click();
+  const form = loginForm(page);
+  await form
+    .getByRole("textbox", { name: t("login.username"), exact: true })
+    .fill(username);
+  // The show-password toggle's name contains this label, so match it exactly.
+  await form.getByLabel(t("login.password"), { exact: true }).fill(password);
+  await form
+    .getByRole("button", { name: t("login.login"), exact: true })
+    .click();
 }
 
 /** A login failure that retrying can't fix, so `login()` stops at once. */
 class LoginRejected extends Error {}
 
 /** Whether a saved session still signs `username` in, judged by what the app
- *  renders: that user's name in the app bar, or the login form. */
+ *  renders: that user's account menu, or the login form. */
 export async function isSessionValid(
   browser: Browser,
   {
@@ -61,19 +80,18 @@ export async function isSessionValid(
   if (!context) return false;
   try {
     const page = await context.newPage();
+    // The saved state may hold another locale; names are read in the test's.
+    await seedUiState(page, "dark");
     // A separate context, so the test's app-error guard doesn't see this page.
     const errors: string[] = [];
     watchAppErrors(page, (message) => {
       errors.push(message);
       void page.close();
     });
-    const userName = page.locator(".r-v2-user__name");
+    const anyAccount = accountMenu(page);
     try {
       await page.goto("/");
-      await userName
-        .or(page.locator("form.r-v2-login-form"))
-        .first()
-        .waitFor({ timeout });
+      await anyAccount.or(loginForm(page)).first().waitFor({ timeout });
     } catch (error) {
       if (!errors.length) throw error;
     }
@@ -82,10 +100,7 @@ export async function isSessionValid(
         `The app failed while checking the saved session for ${username}: ${errors.join("; ")}`,
       );
     }
-    return (
-      (await userName.isVisible()) &&
-      (await userName.innerText()).trim() === username
-    );
+    return accountMenu(page, username).isVisible();
   } finally {
     await context.close();
   }
@@ -120,11 +135,9 @@ export async function login(
           `The backend rejected the ${username} account (POST /api/login returned ${response.status()}). Check its credentials in e2e/.env, and that it exists on that backend.`,
         );
       }
-      // The app bar's user name only exists once authenticated; "the URL is no
-      // longer /login" goes true mid-transition.
-      await expect(page.locator(".r-v2-user__name")).toHaveText(username, {
-        timeout,
-      });
+      // The account menu only exists once authenticated; "the URL is no longer
+      // /login" goes true mid-transition.
+      await expect(accountMenu(page, username)).toBeVisible({ timeout });
       await expect(page).not.toHaveURL(/\/login/);
       return;
     } catch (error) {
@@ -138,8 +151,8 @@ export async function login(
 /** Open the account menu and follow its Profile link (route `/user/:user`). */
 export async function gotoOwnProfile(page: Page) {
   await gotoHydrated(page, "/");
-  await page.locator("[data-user-menu-trigger]").click();
-  await page.getByRole("menuitem", { name: "Profile" }).click();
+  await accountMenu(page).click();
+  await page.getByRole("menuitem", { name: t("common.profile") }).click();
   await expect(page).toHaveURL(/\/user\/\d+/);
 }
 
@@ -163,7 +176,7 @@ export async function gotoHydrated(page: Page, path: string) {
     r.url().includes("/api/permissions/me"),
   );
   await page.goto(path);
-  const loginShown = page.locator("form.r-v2-login-form").waitFor();
+  const loginShown = loginForm(page).waitFor();
   const response = await Promise.race([hydrated, loginShown.then(() => null)]);
   if (!response) {
     throw new Error(
@@ -175,30 +188,33 @@ export async function gotoHydrated(page: Page, path: string) {
       `Permissions didn't load (GET /api/permissions/me returned ${response.status()}). The session most likely expired: run again, or delete e2e/.auth/ to force a fresh sign-in.`,
     );
   }
-  // Renders once the auth store holds a user: the app shell is ready.
-  await expect(page.locator(".r-v2-user__name")).toBeVisible();
+  await expect(accountMenu(page)).toBeVisible();
 }
 
-/** Open the ⋯ more-actions menu and return the teleported panel locator. */
+/** Open the game page's ⋯ more-actions menu and return its panel. */
 export async function openMoreMenu(page: Page) {
-  await page.getByRole("button", { name: "More actions" }).first().click();
-  const panel = page.locator('[role="menu"]');
+  await page
+    .getByRole("group", { name: t("rom.game-actions") })
+    .getByRole("button", { name: t("rom.more-actions") })
+    .click();
+  const panel = page.getByRole("menu");
   await expect(panel).toBeVisible();
   return panel;
 }
 
 /** Visible labels of every item in an open menu panel, in DOM order. */
 export async function menuLabels(page: Page): Promise<string[]> {
-  return page.locator('[role="menu"] .r-menu-item__label').allInnerTexts();
+  return page.getByRole("menu").getByRole("menuitem").allInnerTexts();
 }
 
-/** Force the v2 UI and a known theme before the app boots. */
+/** Force the v2 UI, a known theme and the test locale before the app boots. */
 export async function seedUiState(page: Page, theme: "dark" | "light") {
   await page.addInitScript(
-    ([t]) => {
+    ([uiTheme, locale]) => {
       localStorage.setItem("settings.uiVersion", "v2");
-      localStorage.setItem("settings.theme", t);
+      localStorage.setItem("settings.theme", uiTheme);
+      localStorage.setItem("settings.locale", locale);
     },
-    [theme],
+    [theme, testLocale()],
   );
 }

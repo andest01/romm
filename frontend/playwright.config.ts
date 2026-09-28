@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import { url as inspectorUrl } from "node:inspector";
 import { readE2EEnv, webServerEnv } from "./e2e/e2e-environment";
-import type { E2EOptions } from "./e2e/fixtures/test";
+import type { E2EOptions, E2EWorkerOptions } from "./e2e/fixtures/test";
 import { deviceProjectName, ROMM_DEVICES } from "./src/v2/devices";
 
 // End-to-end suite: `npm run test:e2e`. Accounts and the backend under test
@@ -22,7 +22,7 @@ const TIMEOUTS = debugging
     ? { test: 45_000, expect: 10_000, action: 15_000, navigation: 30_000 }
     : { test: 10_000, expect: 3_000, action: 5_000, navigation: 5_000 };
 
-export default defineConfig<E2EOptions>({
+export default defineConfig<E2EOptions, E2EWorkerOptions>({
   testDir: "./e2e",
   // Permission gating is global state on the server (the fixture users' grants),
   // so the specs read it rather than mutate it and are safe to parallelise.
@@ -39,6 +39,7 @@ export default defineConfig<E2EOptions>({
   expect: { timeout: TIMEOUTS.expect },
   use: {
     baseURL: ORIGIN,
+    ...(env.E2E_LOCALE ? { appLocale: env.E2E_LOCALE } : {}),
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     actionTimeout: TIMEOUTS.action,

@@ -1,4 +1,5 @@
 import { gotoOwnProfile, seedUiState, STORAGE_STATE } from "./fixtures/auth";
+import { t } from "./fixtures/i18n";
 import { expect, test } from "./fixtures/test";
 
 // Regression cover for #3954: the profile page shipped an editable role picker,
@@ -16,13 +17,17 @@ for (const role of ["viewer", "admin"] as const) {
       await gotoOwnProfile(page);
 
       // The editable rows that SHOULD be there, so a blank page can't pass.
-      await expect(page.locator('input[type="email"]')).toBeVisible();
+      await expect(
+        page.getByRole("textbox", { name: t("settings.email") }),
+      ).toBeVisible();
 
       // No role row in the Account Details form.
-      const form = page.locator(".r-v2-section-stack");
-      await expect(form.getByText("Role", { exact: true })).toHaveCount(0);
+      const form = page.getByRole("main");
+      await expect(
+        form.getByText(t("settings.role"), { exact: true }),
+      ).toHaveCount(0);
       // And no select rendered anywhere on the page.
-      await expect(page.locator(".r-select")).toHaveCount(0);
+      await expect(page.locator('[aria-haspopup="listbox"]')).toHaveCount(0);
     });
   });
 }
@@ -36,7 +41,7 @@ test.describe("Profile page role chip", () => {
 
     // Identity row keeps the role visible -- removing the picker must not
     // remove the information.
-    const chip = page.locator(".r-v2-profile__role-tag");
+    const chip = page.getByTestId("profile-role");
     await expect(chip).toBeVisible();
     await expect(chip).toHaveText(/user/i);
   });

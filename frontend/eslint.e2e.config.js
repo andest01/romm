@@ -50,6 +50,50 @@ export default [
     rules: {
       // An un-awaited expect() or action lets a test pass without checking.
       "@typescript-eslint/no-floating-promises": "error",
+      // CSS selectors break on styling changes; find elements the way users
+      // do. Each allowed selector has no role to find it by (yet).
+      "playwright/no-raw-locators": [
+        "error",
+        {
+          allowed: [
+            // The input-modality attribute on <html>, a state, not an element.
+            "html",
+            // Any select's trigger: the ARIA contract, not a class.
+            '[aria-haspopup="listbox"]',
+            // No named list of platforms or games yet.
+            'a[href^="/platform/"]',
+            'a.r-gc[href^="/rom/"]',
+          ],
+        },
+      ],
+      // Locator text in one language fails in every other one.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name=/^getBy(Text|Label|Placeholder|AltText|Title)$/][arguments.0.type=/^(Literal|TemplateLiteral)$/]",
+          message:
+            'Locator text must come from the app\'s locale files: getByText(t("ns.key")), from "./fixtures/i18n".',
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='getByRole'] > ObjectExpression > Property[key.name='name'][value.type=/^(Literal|TemplateLiteral)$/]",
+          message:
+            'An accessible name must come from the app\'s locale files: { name: t("ns.key") }, or tPattern() when it embeds data.',
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name=/^(locator|filter)$/] > ObjectExpression > Property[key.name=/^has(Not)?Text$/][value.type=/^(Literal|TemplateLiteral)$/]",
+          message:
+            'hasText must come from the app\'s locale files: { hasText: t("ns.key") }.',
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name=/^(toHaveText|toContainText|toHaveAccessibleName|toHaveAccessibleDescription)$/][arguments.0.type='TemplateLiteral'], CallExpression[callee.property.name=/^(toHaveText|toContainText|toHaveAccessibleName|toHaveAccessibleDescription)$/][arguments.0.type='Literal']:not([arguments.0.regex])",
+          message:
+            'Expected text must come from the app\'s locale files: toHaveText(t("ns.key")). A regex is allowed for data, not UI text.',
+        },
+      ],
     },
   },
   {

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
+import { LOCALES } from "./fixtures/i18n";
 
 // The only place the e2e suite reads its environment. A new variable goes in
 // E2EEnv, EXPECTED, readE2EEnv(), .env.example, and e2e.yml if CI needs it.
@@ -19,6 +20,7 @@ export interface E2EEnv {
   E2E_VIEWER_PASSWORD: string;
   E2E_DEV_PROXY_TARGET: string;
   E2E_WORKERS?: number;
+  E2E_LOCALE?: string;
 }
 
 type E2EKey = Exclude<keyof E2EEnv, "CI">;
@@ -33,6 +35,7 @@ const EXPECTED: Record<E2EKey, string> = {
   E2E_DEV_PROXY_TARGET:
     "required, the RomM backend's http(s) URL, e.g. http://127.0.0.1:5000",
   E2E_WORKERS: "optional, a whole number of parallel workers (1 or more)",
+  E2E_LOCALE: `optional, the app language to test in: one of ${LOCALES.join(", ")}`,
 };
 
 /** Variables older versions of the suite read, and what replaces each. `shell`
@@ -197,6 +200,11 @@ export function readE2EEnv(): E2EEnv {
     fail("E2E_WORKERS", "is not a whole number of 1 or more");
   }
 
+  const locale = text("E2E_LOCALE", false);
+  if (locale !== undefined && !LOCALES.includes(locale)) {
+    fail("E2E_LOCALE", "is not a locale the app ships");
+  }
+
   if (adminUsername && adminUsername === viewerUsername) {
     problems.push(
       "E2E_ADMIN_USERNAME and E2E_VIEWER_USERNAME are the same account. The permission tests compare the two, so they must differ.",
@@ -214,6 +222,7 @@ export function readE2EEnv(): E2EEnv {
     E2E_VIEWER_PASSWORD: viewerPassword!,
     E2E_DEV_PROXY_TARGET: proxyTarget!,
     E2E_WORKERS: workers,
+    E2E_LOCALE: locale,
   });
 }
 
