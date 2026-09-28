@@ -31,7 +31,7 @@ onMounted(installInputModality);
       <div class="r-v2-auth__lang">
         <LanguageSelector />
       </div>
-      <VersionTag class="r-v2-auth__version" />
+      <VersionTag role="contentinfo" class="r-v2-auth__version" />
     </div>
     <NotificationHost />
   </div>

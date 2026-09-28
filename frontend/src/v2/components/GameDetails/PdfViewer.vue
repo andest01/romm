@@ -118,6 +118,7 @@ async function onPagesRendered(pdfApp: PdfApp) {
         <template #activator="{ props: activator }">
           <button
             :id="ids.sidebarToggle"
+            :aria-label="t('rom.pdf-toggle-sidebar')"
             v-bind="activator"
             type="button"
             class="r-v2-pdfv__btn"
@@ -133,6 +134,7 @@ async function onPagesRendered(pdfApp: PdfApp) {
         <template #activator="{ props: activator }">
           <button
             :id="ids.firstPage"
+            :aria-label="t('common.first-page')"
             v-bind="activator"
             type="button"
             class="r-v2-pdfv__btn"
@@ -146,6 +148,7 @@ async function onPagesRendered(pdfApp: PdfApp) {
         <template #activator="{ props: activator }">
           <button
             :id="ids.previousPage"
+            :aria-label="t('common.previous-page')"
             v-bind="activator"
             type="button"
             class="r-v2-pdfv__btn r-v2-pdfv__btn--step"
@@ -167,6 +170,7 @@ async function onPagesRendered(pdfApp: PdfApp) {
         <template #activator="{ props: activator }">
           <button
             :id="ids.nextPage"
+            :aria-label="t('common.next-page')"
             v-bind="activator"
             type="button"
             class="r-v2-pdfv__btn r-v2-pdfv__btn--step"
@@ -180,6 +184,7 @@ async function onPagesRendered(pdfApp: PdfApp) {
         <template #activator="{ props: activator }">
           <button
             :id="ids.lastPage"
+            :aria-label="t('common.last-page')"
             v-bind="activator"
             type="button"
             class="r-v2-pdfv__btn"
@@ -195,6 +200,7 @@ async function onPagesRendered(pdfApp: PdfApp) {
         <template #activator="{ props: activator }">
           <button
             :id="ids.zoomOut"
+            :aria-label="t('common.zoom-out')"
             v-bind="activator"
             type="button"
             class="r-v2-pdfv__btn"
@@ -208,6 +214,7 @@ async function onPagesRendered(pdfApp: PdfApp) {
         <template #activator="{ props: activator }">
           <button
             :id="ids.zoomIn"
+            :aria-label="t('common.zoom-in')"
             v-bind="activator"
             type="button"
             class="r-v2-pdfv__btn"
@@ -223,6 +230,7 @@ async function onPagesRendered(pdfApp: PdfApp) {
         <template #activator="{ props: activator }">
           <button
             :id="ids.download"
+            :aria-label="t('common.download')"
             v-bind="activator"
             type="button"
             class="r-v2-pdfv__btn"
