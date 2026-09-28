@@ -125,6 +125,14 @@ npx playwright test --list
 
 Fix what it reports, then click **Refresh Tests** in the Testing sidebar.
 
+### Test in another language
+
+Locators read their text from the app's locale files, so the suite runs in any language. Set it in `e2e/.env`:
+
+```ini
+E2E_LOCALE=de_DE
+```
+
 ### Run one file, or one test
 
 ```bash

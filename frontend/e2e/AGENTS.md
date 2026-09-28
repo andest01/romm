@@ -5,7 +5,9 @@
 - **New variable?** In the same change: add it to `E2EEnv` and `EXPECTED`, validate it in `readE2EEnv()` (push to `problems`, name the variable, never its value), document it in `.env.example`, and add it to `.github/workflows/e2e.yml` if CI needs it. No defaults in the parser: a missing value is an error.
 - **Tests get the environment from their arguments:** `async ({ page, e2eEnv }) => ...`, with `test` and `expect` from `./fixtures/test`. ESLint enforces both. `import type { E2EEnv }` is fine. Helpers in `fixtures/` take values as parameters.
 - **Prefer Playwright's own tools over custom scripts.** Recording, debugging, reports and traces come from the Playwright CLI and the VS Code extension; document the native way in the README.
-- **Recorded code is a draft.** Before committing, give it real assertions, replace CSS-path and `nth()` selectors with roles and labels, and run it.
+- **Recorded code is a draft.** Before committing, give it real assertions and run it. ESLint flags its CSS selectors and hard-coded text.
+- **Can't find an element by role and translated name?** Fix the component (a role, an accessible name from i18n), not the test. The `no-raw-locators` allow list in `eslint.e2e.config.js` only shrinks.
+- **`a11y-known.ts` only shrinks.** Fix a violation, then delete its entry. A report-only rule there is a pending decision, not a place for new exemptions.
 - **Timeouts:** don't add hard-coded ones that would outlive a debug session; the config sets every timeout to 0 when a debugger is attached. A test that genuinely needs longer leaves a debug session's 0 alone, as `auth.setup.ts` does.
 - **Fail on the cause, not on a timeout.**
   - The automatic guard in `fixtures/test` fails a test the moment an `/api` call returns 5xx or the app throws. Opt out only in a test that triggers one on purpose, with `test.use({ failOnAppErrors: false })` and a comment saying why.
