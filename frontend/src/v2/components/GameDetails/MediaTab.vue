@@ -193,7 +193,7 @@ async function deleteSoundtrack(fileId: number) {
       </template>
     </SubtabNav>
     <aside v-else class="r-v2-media__sidebar">
-      <SubtabNav v-model="subTab" :items="subtabDefs" />
+      <SubtabNav v-model="subTab" :items="subtabDefs" :label="t('rom.media')" />
     </aside>
 
     <div class="r-v2-media__content">
@@ -205,7 +205,12 @@ async function deleteSoundtrack(fileId: number) {
            CSS toggle (bar the PDF viewer, see `pdfSubtab`). -->
       <!-- Manual subtab: its own component (PDF / Markdown viewer with an
            entry selector; scrolls independently). -->
-      <section v-show="subTab === 'manual'" class="r-v2-media__panel">
+      <section
+        v-show="subTab === 'manual'"
+        role="tabpanel"
+        :aria-label="t('rom.manual')"
+        class="r-v2-media__panel"
+      >
         <ManualSubtab
           ref="manualPanel"
           :rom="rom"
@@ -216,7 +221,12 @@ async function deleteSoundtrack(fileId: number) {
 
       <!-- Walkthrough subtab: uploaded or GameFAQs-fetched documents, with
            per-user reading progress. -->
-      <section v-show="subTab === 'walkthrough'" class="r-v2-media__panel">
+      <section
+        v-show="subTab === 'walkthrough'"
+        role="tabpanel"
+        :aria-label="t('rom.walkthrough')"
+        class="r-v2-media__panel"
+      >
         <WalkthroughSubtab
           ref="walkthroughPanel"
           :rom="rom"
@@ -227,18 +237,33 @@ async function deleteSoundtrack(fileId: number) {
 
       <!-- Screenshots subtab: its own component (ROM / Mine / Community
            sections, per-user public/private). -->
-      <section v-show="subTab === 'screenshots'" class="r-v2-media__panel">
+      <section
+        v-show="subTab === 'screenshots'"
+        role="tabpanel"
+        :aria-label="t('rom.screenshots')"
+        class="r-v2-media__panel"
+      >
         <ScreenshotsSubtab :rom="rom" />
       </section>
 
       <!-- Artwork subtab: read-only gallery of scraped art assets
            (bezel / logo / marquee / box art / fan art / videos). -->
-      <section v-show="subTab === 'artwork'" class="r-v2-media__panel">
+      <section
+        v-show="subTab === 'artwork'"
+        role="tabpanel"
+        :aria-label="t('rom.artwork')"
+        class="r-v2-media__panel"
+      >
         <ArtworkSubtab :rom="rom" />
       </section>
 
       <!-- Soundtrack subtab -->
-      <section v-show="subTab === 'soundtrack'" class="r-v2-media__panel">
+      <section
+        v-show="subTab === 'soundtrack'"
+        role="tabpanel"
+        :aria-label="t('rom.soundtrack')"
+        class="r-v2-media__panel"
+      >
         <header
           v-if="canUploadSoundtrack && !smAndDown"
           class="r-v2-media__section-head"

@@ -56,7 +56,12 @@ useGridNav(rootEl, {
 </script>
 
 <template>
-  <div ref="rootEl" class="game-actions">
+  <div
+    ref="rootEl"
+    class="game-actions"
+    role="group"
+    :aria-label="t('rom.game-actions')"
+  >
     <GameActionBtn
       v-if="actions.canPlayLocally.value"
       :rom="rom"

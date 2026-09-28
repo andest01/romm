@@ -198,6 +198,7 @@ onUnmounted(() => {
               :tone="roleToneFor(user.role)"
               size="small"
               class="r-v2-profile__role-tag"
+              data-testid="profile-role"
             >
               {{ user.role }}
             </RTag>

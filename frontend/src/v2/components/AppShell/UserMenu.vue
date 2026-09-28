@@ -134,7 +134,11 @@ async function onLogout() {
         variant="text"
         class="r-v2-user"
         data-user-menu-trigger
-        :aria-label="`Account menu for ${user?.username ?? 'Guest'}`"
+        :aria-label="
+          user
+            ? t('common.account-menu-for', { name: user.username })
+            : t('common.account-menu')
+        "
       >
         <RBadge
           :model-value="unreadCount > 0"

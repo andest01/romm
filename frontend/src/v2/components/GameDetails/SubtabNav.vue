@@ -24,8 +24,10 @@ const props = withDefaults(
     items: I[];
     /** "list" is a side rail; "menu" a one-row trigger opening a sheet. */
     variant?: "list" | "menu";
+    /** The list variant's accessible name, e.g. its parent tab's label. */
+    label?: string;
   }>(),
-  { variant: "list" },
+  { variant: "list", label: undefined },
 );
 
 const emit = defineEmits<{
@@ -74,6 +76,7 @@ function select(id: I["id"]) {
     class="r-v2-subtab-nav"
     role="tablist"
     aria-orientation="vertical"
+    :aria-label="label"
   >
     <li
       v-for="item in items"

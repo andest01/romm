@@ -14,7 +14,7 @@
 // Emits `files` on drop or pick. Primitive: no stores/i18n — all copy comes
 // from props so consumers pass translated strings.
 import { useDropZone } from "@vueuse/core";
-import { ref } from "vue";
+import { ref, useId } from "vue";
 import RIcon from "../../primitives/RIcon/RIcon.vue";
 
 // Attrs land on the root (see `v-bind="$attrs"` below) rather than on the
@@ -73,6 +73,8 @@ defineSlots<{
 
 const rootRef = ref<HTMLElement | null>(null);
 const inputRef = ref<HTMLInputElement | null>(null);
+// With inputLabel as the CTA's name, the hint still reaches screen readers.
+const hintId = useId();
 
 const { isOverDropZone } = useDropZone(rootRef, {
   onDrop(files) {
@@ -148,6 +150,8 @@ defineExpose({ open, isOver: isOverDropZone });
       role="button"
       :tabindex="disabled ? -1 : 0"
       :aria-disabled="disabled"
+      :aria-label="inputLabel"
+      :aria-describedby="inputLabel && hint ? hintId : undefined"
       @click="open"
       @keydown.enter.prevent="open"
       @keydown.space.prevent="open"
@@ -161,7 +165,9 @@ defineExpose({ open, isOver: isOverDropZone });
       <span v-if="activeTitle || title" class="r-dropzone__cta-title">
         {{ isOverDropZone && activeTitle ? activeTitle : title }}
       </span>
-      <span v-if="hint" class="r-dropzone__cta-hint">{{ hint }}</span>
+      <span v-if="hint" :id="hintId" class="r-dropzone__cta-hint">{{
+        hint
+      }}</span>
       <slot name="actions" />
     </div>
   </div>

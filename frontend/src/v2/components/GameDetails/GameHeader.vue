@@ -60,7 +60,8 @@ const actions = useGameActions(() => props.rom);
         <PlatformIcon
           :slug="rom.platform_slug"
           :fs-slug="rom.platform_fs_slug"
-          :alt="platformLabel"
+          alt=""
+          :show-tooltip="false"
           :size="16"
         />
         {{ platformLabel }}

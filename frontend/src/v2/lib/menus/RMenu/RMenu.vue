@@ -40,6 +40,7 @@ import {
   provide,
   ref,
   useAttrs,
+  useId,
   useSlots,
   watch,
 } from "vue";
@@ -180,6 +181,11 @@ provide(RMenuCloseKey, close);
 const activatorWrapper = ref<HTMLElement | null>(null);
 const reference = ref<Element | null>(null);
 const panelRef = ref<HTMLElement | null>(null);
+const generatedPanelId = useId();
+// A caller-supplied id wins, so aria-controls always points at the panel.
+const panelId = computed(() =>
+  typeof attrs.id === "string" && attrs.id ? attrs.id : generatedPanelId,
+);
 
 // ── Placement translation ───────────────────────────────────────
 const PLACEMENT_MAP: Record<Anchor, Placement> = {
@@ -291,6 +297,7 @@ const activatorProps = computed(() => {
     },
     "aria-haspopup": "menu",
     "aria-expanded": isOpen.value,
+    "aria-controls": isOpen.value ? panelId.value : undefined,
   };
   if (props.openOnHover) {
     out.onMouseenter = () => {
@@ -496,6 +503,7 @@ watch(
       <!-- eslint-disable-next-line vuejs-accessibility/interactive-supports-focus -- panel routes keydown for its items; focus lives on the menu items, not this container -->
       <div
         v-if="isOpen"
+        :id="panelId"
         ref="panelRef"
         v-bind="attrs"
         :class="mergedContentClass"

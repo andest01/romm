@@ -117,7 +117,8 @@ watch(
 
 <template>
   <v-app id="application" :class="{ 'mouse-hidden': consoleMode && mouseIdle }">
-    <v-main id="main" class="no-transition">
+    <!-- v2 layouts render their own <main>; one landmark per page. -->
+    <v-main id="main" :tag="isV2 ? 'div' : 'main'" class="no-transition">
       <router-view v-if="!isV2" v-slot="{ Component }">
         <component :is="Component" />
         <!-- Fade out the app loading logo -->

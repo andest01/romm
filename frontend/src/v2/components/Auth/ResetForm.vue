@@ -47,7 +47,11 @@ async function submit() {
 </script>
 
 <template>
-  <form class="r-v2-reset-form" @submit.prevent="submit">
+  <form
+    class="r-v2-reset-form"
+    :aria-label="t('login.forgot-password')"
+    @submit.prevent="submit"
+  >
     <RTextField
       v-model="forgotUser"
       :label="t('login.username')"

@@ -48,6 +48,7 @@ describe("RMenuItem link rendering", () => {
     const btn = wrapper.find("button");
     expect(btn.exists()).toBe(true);
     expect(btn.attributes("type")).toBe("button");
+    expect(btn.attributes("role")).toBe("menuitem");
   });
 
   it("drops the href on a disabled link item (no native navigation)", () => {

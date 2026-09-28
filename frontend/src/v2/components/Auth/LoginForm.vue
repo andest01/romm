@@ -70,7 +70,11 @@ defineExpose({ loggingIn });
 </script>
 
 <template>
-  <form class="r-v2-login-form" @submit.prevent="submit">
+  <form
+    class="r-v2-login-form"
+    :aria-label="t('login.login')"
+    @submit.prevent="submit"
+  >
     <RTextField
       v-model="username"
       :label="t('login.username')"
