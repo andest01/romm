@@ -66,6 +66,7 @@
     "vuetify": "^3.9.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@storybook/addon-a11y": "^10.2.19",
@@ -92,6 +93,7 @@
     "eslint-plugin-vuejs-accessibility": "^2.5.0",
     "globals": "^17.0.0",
     "happy-dom": "^20.9.0",
+    "lighthouse": "^13.5.0",
     "openapi-typescript-codegen": "^0.29.0",
     "postcss": "^8.5.23",
     "storybook": "^10.2.19",

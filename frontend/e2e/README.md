@@ -129,6 +129,75 @@ The specs follow this branch's UI, so a site on another version fails where the 
 
 To test a production build of this branch, serve it first: `npm run build && npm run preview`, then set `E2E_BASE_URL=http://localhost:4173`.
 
+### Run Lighthouse audits
+
+Lighthouse measures performance on a simulated slow desktop (real LAN network, 4x CPU slowdown). Which categories run and per-page thresholds are configured in `e2e/lighthouse/lighthouse.spec.ts`. Each page writes a full Lighthouse HTML report to `e2e/.output/lighthouse/`.
+
+```bash
+# All pages
+npm run test:e2e -- --project=lighthouse
+
+# One page
+npm run test:e2e -- --project=lighthouse --grep "@lighthouse:home\b"
+
+# One category across all pages
+npm run test:e2e -- --project=lighthouse --grep "performance"
+```
+
+After a run, open the per-page HTML report for the full Lighthouse UI: waterfall, opportunities, diagnostics:
+
+```bash
+# macOS / Linux
+open e2e/.output/lighthouse/home.html
+
+# Windows
+start e2e/.output/lighthouse/home.html
+```
+
+Or open the Playwright run report, which lists each category's score inline on the test:
+
+```bash
+npm run test:e2e:report
+```
+
+Lighthouse occupies a fixed CDP port (9222), so only one audit runs at a time.
+
+### Run axe a11y audits
+
+axe-core injects into Playwright's browser and scans the live DOM after the app hydrates. Which impact levels block the run is configured per page in `e2e/axe/axe.spec.ts` (defaults: critical and serious). All violations — including non-blocking — are written to `e2e/.output/axe/<page>.json`.
+
+Every run logs `critical=N serious=N moderate=N minor=N` for each page, so CI action logs carry a parseable paper trail even when all tests pass.
+
+```bash
+# All pages
+npm run test:e2e -- --project=axe
+
+# One page
+npm run test:e2e -- --project=axe --grep "@axe:home\b"
+```
+
+Inspect violations after a run:
+
+```bash
+# All violations on home, pretty-printed (requires jq)
+jq . e2e/.output/axe/home.json
+
+# Just critical and serious
+jq '[.[] | select(.impact == "critical" or .impact == "serious")]' e2e/.output/axe/home.json
+
+# Count by impact level
+jq 'group_by(.impact) | map({impact: .[0].impact, count: length})' e2e/.output/axe/home.json
+
+# Windows (no jq)
+Get-Content e2e/.output/axe/home.json | ConvertFrom-Json
+```
+
+Or open the Playwright run report, which shows the violation count and blocking list inline on each failing test:
+
+```bash
+npm run test:e2e:report
+```
+
 ### Sign in again
 
 Sessions are saved in `e2e/.output/auth/` and reused, after a check that each still signs the right account in. One that doesn't (expired, another site, another account) is replaced automatically. To force a fresh sign-in anyway:
@@ -141,13 +210,17 @@ rm -r e2e/.output/auth    # PowerShell: Remove-Item -Recurse e2e/.output/auth
 
 ```text
 e2e/
-  specs/      the tests, and only tests, one folder per page
+  specs/      the tests, one folder per page
     loads.spec.ts   every page opens with every response 2xx
+  lighthouse/ Lighthouse performance audits, one describe per page
+  axe/        axe-core a11y audits, one describe per page
   setup/      preflight and sign-in, run before the specs
   support/    fixtures, helpers, environment and output paths
   .output/    generated and gitignored; delete it to reset
-    auth/       saved sessions
-    specs/      results/ (traces, screenshots) and report/ (HTML)
+    auth/           saved sessions
+    specs/          results/ (traces, screenshots) and report/ (HTML)
+    lighthouse/     one HTML + JSON report per audited page
+    axe/            one JSON violation report per audited page
 ```
 
 - **`e2e/.env`:** required locally, and the only source of `E2E_*` variables. CI sets the same variables in `.github/workflows/e2e.yml`.

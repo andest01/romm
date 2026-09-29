@@ -15,14 +15,14 @@ import { expect, test } from "../support/test";
 // library may not have: the players (/rom/:id/ejs, jsdos, pico8, ruffle,
 // stream), /stream/desktop, /pair, and single collections.
 
-type PageDef = {
+export type PageDef = {
   /** Opened by URL, or by clicking through when the URL holds an id. */
   open: string | ((page: Page) => Promise<void>);
   /** The router sends a viewer without the route's scopes to the 404 page. */
   adminOnly?: boolean;
 };
 
-const PAGES: Record<string, PageDef> = {
+export const PAGES: Record<string, PageDef> = {
   home: { open: "/" },
   platforms: { open: "/platforms" },
   platform: {

@@ -66,5 +66,23 @@ export default defineConfig<E2EOptions>({
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["setup"],
     },
+    {
+      name: "lighthouse",
+      testDir: "./e2e/lighthouse",
+      // Lighthouse occupies a fixed CDP port; parallelism would conflict.
+      workers: 1,
+      // One audit takes up to 60s; beforeAll runs it before any test starts.
+      timeout: 180_000,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+    },
+    {
+      name: "axe",
+      testDir: "./e2e/axe",
+      // axe analysis typically takes 5–15s per page.
+      timeout: 30_000,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+    },
   ],
 });
