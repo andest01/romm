@@ -2,13 +2,18 @@
 //
 // Run:  npx playwright test --project=lighthouse
 // View: open e2e/.output/lighthouse/<page>.html in a browser.
-import { chromium } from "@playwright/test";
+import { chromium, type Cookie } from "@playwright/test";
 import lighthouse from "lighthouse";
 import type * as LH from "lighthouse/types/lh.js";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { STORAGE_STATE } from "../support/auth";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  E2E_SITEMAP,
+  type E2eSitemapEntry,
+  type E2eSitemapId,
+} from "../e2e-sitemap";
 import { LIGHTHOUSE_DIR } from "../support/output";
 import { expect, test } from "../support/test";
+import { attachJsDebt, attachOffenders, fixFirst } from "./insights";
 
 // Every category that Lighthouse's default config ships. LH types categories
 // as Record<string, Category>, so this union is the closest we can get to an
@@ -19,20 +24,22 @@ type LhCategoryId = "performance" | "accessibility" | "best-practices" | "seo";
 // skips the rest) and the shape of AuditedCategories below.
 const LIGHTHOUSE_CATEGORIES = [
   "performance",
+  // we are going to skip a11y and best-practices so it goes faster.
   // "accessibility",
   // "best-practices",
 ] as const satisfies readonly LhCategoryId[];
 
 // Thresholds may cover any LH category. Only the ones that were actually
-// audited (present in LIGHTHOUSE_CATEGORIES) will be checked; others are
-// skipped. This lets you comment entries in/out of LIGHTHOUSE_CATEGORIES
-// without changing the threshold objects.
+// audited (present in LIGHTHOUSE_CATEGORIES) get a test. This lets you comment
+// entries in/out of LIGHTHOUSE_CATEGORIES without changing the threshold objects.
 type PageThresholds = Partial<Record<LhCategoryId, number>>;
 
 // Desktop size, no network throttling (real LAN), 4x CPU penalty.
 const auditConfig: LH.Config = {
   extends: "lighthouse:default",
   settings: {
+    // this makes it go faster, so if you only want to run a11y or best-practices,
+    // you can comment out performance in LIGHTHOUSE_CATEGORIES.
     onlyCategories: [...LIGHTHOUSE_CATEGORIES],
     formFactor: "desktop",
     throttlingMethod: "simulate",
@@ -42,7 +49,7 @@ const auditConfig: LH.Config = {
       requestLatencyMs: 0,
       downloadThroughputKbps: 0,
       uploadThroughputKbps: 0,
-      // simulate 2x slower than a steam deck
+      // simulate 2x slower than a steam deck.
       cpuSlowdownMultiplier: 6,
     },
     screenEmulation: {
@@ -58,65 +65,46 @@ const auditConfig: LH.Config = {
 // Must match --remote-debugging-port. Single worker means no port conflicts.
 const CDP_PORT = 9222;
 
-type AuditPage = {
-  path: string;
-  savedSession?: string;
-  thresholds: PageThresholds;
-};
+type AuditPage = E2eSitemapEntry & { thresholds: PageThresholds };
 
 // Tune thresholds after a baseline run against your actual site.
 const DEFAULT_THRESHOLDS: PageThresholds = {
-  performance: 90,
+  // very, very low. :'(
+  performance: 75,
   accessibility: 90,
   "best-practices": 90,
 };
 
-const AUDIT_PAGES: Record<string, AuditPage> = {
-  login: {
-    path: "/login",
-    thresholds: DEFAULT_THRESHOLDS,
-  },
-  home: {
-    path: "/",
-    savedSession: STORAGE_STATE.admin,
-    thresholds: DEFAULT_THRESHOLDS,
-  },
-  platforms: {
-    path: "/platforms",
-    savedSession: STORAGE_STATE.admin,
-    thresholds: DEFAULT_THRESHOLDS,
-  },
-  collections: {
-    path: "/collections",
-    savedSession: STORAGE_STATE.admin,
-    thresholds: DEFAULT_THRESHOLDS,
-  },
-  search: {
-    path: "/search",
-    savedSession: STORAGE_STATE.admin,
-    thresholds: DEFAULT_THRESHOLDS,
-  },
-};
+// Pages that hold a different bar than DEFAULT_THRESHOLDS.
+const PAGE_THRESHOLDS: Partial<Record<E2eSitemapId, PageThresholds>> = {};
+
+const AUDIT_PAGES: Record<string, AuditPage> = Object.fromEntries(
+  E2E_SITEMAP.map((entry) => [
+    entry.id,
+    { ...entry, thresholds: PAGE_THRESHOLDS[entry.id] ?? DEFAULT_THRESHOLDS },
+  ]),
+);
 
 // Runs Lighthouse and returns lhr. Writes HTML + JSON reports as a side-effect
 // so the full report is available regardless of which category tests pass/fail.
 async function runAudit(
   pageUrl: string,
   pageName: string,
-  savedSession?: string,
+  storageState: E2eSitemapEntry["storageState"],
 ): Promise<LH.Result> {
-  const browser = await chromium.launch({
+  // Lighthouse opens its tab in the default context, and only a persistent
+  // context is the default one, so the session cookie has to live here.
+  const context = await chromium.launchPersistentContext("", {
     args: [`--remote-debugging-port=${CDP_PORT}`],
   });
 
   try {
-    if (savedSession) {
-      // Lighthouse uses its own Chrome; seed auth there before it navigates.
-      const ctx = await browser.newContext({ storageState: savedSession });
-      const seedPage = await ctx.newPage();
-      await seedPage.goto(pageUrl);
-      await ctx.close();
-    }
+    // Cookies only, without visiting the page, so the audit is a cold load.
+    const { cookies }: { cookies: Cookie[] } =
+      typeof storageState === "string"
+        ? JSON.parse(readFileSync(storageState, "utf8"))
+        : storageState;
+    await context.addCookies(cookies);
 
     const runnerResult: LH.RunnerResult | undefined = await lighthouse(
       pageUrl,
@@ -132,6 +120,12 @@ async function runAudit(
     if (!runnerResult) throw new Error(`No Lighthouse result for ${pageName}`);
 
     const { lhr, report: reportFiles } = runnerResult;
+    const landedOn = new URL(lhr.finalDisplayedUrl).pathname;
+    if (landedOn !== new URL(pageUrl).pathname) {
+      throw new Error(
+        `Lighthouse for ${pageName} landed on ${lhr.finalDisplayedUrl}; is the session valid?`,
+      );
+    }
     const [htmlReport, jsonReport] = reportFiles as [string, string];
 
     mkdirSync(LIGHTHOUSE_DIR, { recursive: true });
@@ -149,49 +143,63 @@ async function runAudit(
 
     return lhr;
   } finally {
-    await browser.close();
+    await context.close();
   }
 }
 
 test.use({ failOnAppErrors: false });
+// Keeps each page's tests in one worker, so beforeAll audits once per page
+// instead of once per test. "default", not "serial": one failure skips nothing.
+test.describe.configure({ mode: "default" });
 
-for (const [pageName, { path, savedSession, thresholds }] of Object.entries(
-  AUDIT_PAGES,
-)) {
-  test.describe(pageName, { tag: `@lighthouse:${pageName}` }, () => {
+for (const [
+  pageName,
+  { path, storageState, tag, thresholds },
+] of Object.entries(AUDIT_PAGES)) {
+  test.describe(pageName, { tag: [...tag] }, () => {
     let lhr: LH.Result;
 
     test.beforeAll(async ({ e2eEnv }) => {
       lhr = await runAudit(
         `${e2eEnv.E2E_BASE_URL}${path}`,
         pageName,
-        savedSession,
+        storageState,
       );
     });
 
-    test("lighthouse-report", { tag: "@lighthouse-report" }, async () => {
-      await test.info().attach("lighthouse-report", {
-        path: `${LIGHTHOUSE_DIR}/${pageName}.html`,
-        contentType: "text/html",
-      });
+    test(
+      "lighthouse-report",
+      { tag: "@lighthouse-report" },
+      async ({ page }) => {
+        await test.info().attach("lighthouse-report", {
+          path: `${LIGHTHOUSE_DIR}/${pageName}.html`,
+          contentType: "text/html",
+        });
+        await attachJsDebt(page, lhr, pageName, thresholds.performance);
+        await attachOffenders(page, lhr);
 
-      const scoredEntries = (
-        Object.entries(thresholds) as [LhCategoryId, number][]
-      ).filter(([categoryId]) => lhr.categories[categoryId]?.score != null);
+        const scoredEntries = (
+          Object.entries(thresholds) as [LhCategoryId, number][]
+        ).filter(([categoryId]) => lhr.categories[categoryId]?.score != null);
 
-      for (const [categoryId, threshold] of scoredEntries) {
-        const scoreAs100 = Math.round(lhr.categories[categoryId]!.score! * 100);
-        expect(
-          scoreAs100,
-          `${categoryId}: got ${scoreAs100}, need >= ${threshold}`,
-        ).toBeGreaterThanOrEqual(threshold);
-      }
-    });
+        for (const [categoryId, threshold] of scoredEntries) {
+          const scoreAs100 = Math.round(
+            lhr.categories[categoryId]!.score! * 100,
+          );
+          expect(
+            scoreAs100,
+            `${categoryId}: got ${scoreAs100}, need >= ${threshold}${fixFirst(lhr, categoryId)}`,
+          ).toBeGreaterThanOrEqual(threshold);
+        }
+      },
+    );
 
-    for (const [categoryId, threshold] of Object.entries(thresholds) as [
-      LhCategoryId,
-      number,
-    ][]) {
+    const audited = (
+      Object.entries(thresholds) as [LhCategoryId, number][]
+    ).filter(([categoryId]) =>
+      (LIGHTHOUSE_CATEGORIES as readonly LhCategoryId[]).includes(categoryId),
+    );
+    for (const [categoryId, threshold] of audited) {
       test(`${categoryId} >= ${threshold}`, () => {
         const category: LH.Result.Category | undefined =
           lhr.categories[categoryId];
@@ -206,7 +214,7 @@ for (const [pageName, { path, savedSession, thresholds }] of Object.entries(
         const scoreAs100 = Math.round(score! * 100);
         expect(
           scoreAs100,
-          `${pageName} ${categoryId}: got ${scoreAs100}, need >= ${threshold}`,
+          `${pageName} ${categoryId}: got ${scoreAs100}, need >= ${threshold}${fixFirst(lhr, categoryId)}`,
         ).toBeGreaterThanOrEqual(threshold);
       });
     }

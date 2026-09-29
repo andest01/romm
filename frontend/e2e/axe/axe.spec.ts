@@ -6,9 +6,15 @@ import { AxeBuilder } from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import type { ImpactValue, Result as AxeViolation } from "axe-core";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { gotoHydrated, STORAGE_STATE } from "../support/auth";
+import {
+  E2E_SITEMAP,
+  type E2eSitemapEntry,
+  type E2eSitemapId,
+} from "../e2e-sitemap";
+import { gotoHydrated, SIGNED_OUT } from "../support/auth";
 import { AXE_DIR } from "../support/output";
 import { expect, test } from "../support/test";
+import { attachViolationScreenshots } from "./highlight";
 
 // All impact levels in severity order — used to build the always-on log line.
 const ALL_IMPACTS: readonly ImpactValue[] = [
@@ -26,20 +32,31 @@ type PageBlockingImpacts = readonly ImpactValue[];
 // Tune per page after a baseline run against your actual site.
 const DEFAULT_BLOCKING_IMPACTS: PageBlockingImpacts = ["critical", "serious"];
 
-type AxePage = {
-  path: string;
-  blockingImpacts: PageBlockingImpacts;
-};
+type AxePage = E2eSitemapEntry & { blockingImpacts: PageBlockingImpacts };
 
-const AXE_PAGES: Record<string, AxePage> = {
-  home: { path: "/", blockingImpacts: DEFAULT_BLOCKING_IMPACTS },
-  platforms: { path: "/platforms", blockingImpacts: DEFAULT_BLOCKING_IMPACTS },
-  collections: {
-    path: "/collections",
-    blockingImpacts: DEFAULT_BLOCKING_IMPACTS,
-  },
-  search: { path: "/search", blockingImpacts: DEFAULT_BLOCKING_IMPACTS },
-};
+// Pages that hold a different bar than DEFAULT_BLOCKING_IMPACTS.
+const PAGE_BLOCKING_IMPACTS: Partial<
+  Record<E2eSitemapId, PageBlockingImpacts>
+> = {};
+
+const AXE_PAGES: Record<string, AxePage> = Object.fromEntries(
+  E2E_SITEMAP.map((entry) => [
+    entry.id,
+    {
+      ...entry,
+      blockingImpacts:
+        PAGE_BLOCKING_IMPACTS[entry.id] ?? DEFAULT_BLOCKING_IMPACTS,
+    },
+  ]),
+);
+
+// Signed-out pages render the login form; gotoHydrated would reject them.
+const isSignedOut = ([, { storageState }]: [string, AxePage]) =>
+  storageState === SIGNED_OUT;
+const SIGNED_OUT_PAGES = Object.entries(AXE_PAGES).filter(isSignedOut);
+const SIGNED_IN_PAGES = Object.entries(AXE_PAGES).filter(
+  (entry) => !isSignedOut(entry),
+);
 
 /** Runs axe, writes the full violation JSON, logs the impact summary, and
  *  returns the violations that exceed the page's blocking threshold. */
@@ -67,6 +84,7 @@ async function runAxe(
     (v): v is AxeViolation & { impact: ImpactValue } =>
       v.impact != null && blockingSet.has(v.impact),
   );
+  await attachViolationScreenshots(page, blocking);
 
   const checkedImpacts = blockingImpacts.join(", ");
   const message = `${pageName}: ${blocking.length} violation(s) at [${checkedImpacts}] — see ${AXE_DIR}/${pageName}.json`;
@@ -74,30 +92,35 @@ async function runAxe(
   return { blocking, message };
 }
 
-// Login is audited unauthenticated — the only page intentionally visited
-// without a session.
-test.describe("login", { tag: "@axe:login" }, () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
+for (const [
+  pageName,
+  { path, storageState, tag, blockingImpacts },
+] of SIGNED_OUT_PAGES) {
+  test.describe(pageName, { tag: [...tag] }, () => {
+    test.use({ storageState });
 
-  test(`no violations at [${DEFAULT_BLOCKING_IMPACTS.join(", ")}]`, async ({
-    page,
-  }) => {
-    await page.goto("/login");
-    await page.locator("form.r-v2-login-form").waitFor();
-
-    const { blocking, message } = await runAxe(
+    test(`no violations at [${blockingImpacts.join(", ")}]`, async ({
       page,
-      "login",
-      DEFAULT_BLOCKING_IMPACTS,
-    );
-    expect(blocking, message).toHaveLength(0);
-  });
-});
+    }) => {
+      await page.goto(path);
+      await page.locator("form.r-v2-login-form").waitFor();
 
-// Authenticated pages — signed in as admin.
-for (const [pageName, { path, blockingImpacts }] of Object.entries(AXE_PAGES)) {
-  test.describe(pageName, { tag: `@axe:${pageName}` }, () => {
-    test.use({ storageState: STORAGE_STATE.admin });
+      const { blocking, message } = await runAxe(
+        page,
+        pageName,
+        blockingImpacts,
+      );
+      expect(blocking, message).toHaveLength(0);
+    });
+  });
+}
+
+for (const [
+  pageName,
+  { path, storageState, tag, blockingImpacts },
+] of SIGNED_IN_PAGES) {
+  test.describe(pageName, { tag: [...tag] }, () => {
+    test.use({ storageState });
 
     test(`no violations at [${blockingImpacts.join(", ")}]`, async ({
       page,

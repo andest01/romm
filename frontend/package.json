@@ -25,6 +25,7 @@
     "prebuild": "npm run build:tokens",
     "dev": "vite --host",
     "build": "vite build",
+    "build:e2e": "vite build --sourcemap",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "typecheck:scripts": "tsc --noEmit -p tsconfig.node.json",
@@ -36,7 +37,10 @@
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
     "storybook:test": "vitest run test/storybook.test.ts",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:smoke": "playwright test --project=chromium --grep @smoke",
+    "test:e2e:axe": "playwright test --project=axe",
+    "test:e2e:lighthouse": "playwright test --project=lighthouse",
     "test:e2e:report": "playwright show-report e2e/.output/specs/report"
   },
   "dependencies": {
