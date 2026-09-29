@@ -69,7 +69,8 @@ export default [
   {
     name: "e2e/no-api",
     files: TEST_FILES,
-    ignores: ["e2e/setup/global-setup.ts"],
+    // long-tasks.ts fetches static sourcemaps, not the API.
+    ignores: ["e2e/setup/global-setup.ts", "e2e/lighthouse/long-tasks.ts"],
     rules: {
       // Tests act through the UI and observe the app's own traffic. The
       // preflight in global-setup.ts is the one place that calls the API.

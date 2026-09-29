@@ -13,7 +13,13 @@ import {
 } from "../e2e-sitemap";
 import { LIGHTHOUSE_DIR } from "../support/output";
 import { expect, test } from "../support/test";
-import { attachJsDebt, attachOffenders, fixFirst } from "./insights";
+import {
+  attachJsDebt,
+  attachLongTasks,
+  attachOffenders,
+  fixFirst,
+  traceFile,
+} from "./insights";
 
 // Every category that Lighthouse's default config ships. LH types categories
 // as Record<string, Category>, so this union is the closest we can get to an
@@ -86,7 +92,7 @@ const AUDIT_PAGES: Record<string, AuditPage> = Object.fromEntries(
 );
 
 // Runs Lighthouse and returns lhr. Writes HTML + JSON reports as a side-effect
-// so the full report is available regardless of which category tests pass/fail.
+// so the full report is available whatever the scores.
 async function runAudit(
   pageUrl: string,
   pageName: string,
@@ -131,6 +137,11 @@ async function runAudit(
     mkdirSync(LIGHTHOUSE_DIR, { recursive: true });
     writeFileSync(`${LIGHTHOUSE_DIR}/${pageName}.html`, htmlReport);
     writeFileSync(`${LIGHTHOUSE_DIR}/${pageName}.json`, jsonReport);
+    // The unthrottled recording behind the report: stacks and events the lhr drops.
+    writeFileSync(
+      traceFile(pageName),
+      JSON.stringify(runnerResult.artifacts.Trace),
+    );
 
     const summary = (
       Object.entries(lhr.categories) as [string, LH.Result.Category][]
@@ -148,8 +159,8 @@ async function runAudit(
 }
 
 test.use({ failOnAppErrors: false });
-// Keeps each page's tests in one worker, so beforeAll audits once per page
-// instead of once per test. "default", not "serial": one failure skips nothing.
+// One test per page, so a failure never restarts a worker mid-page and
+// re-runs that page's audit.
 test.describe.configure({ mode: "default" });
 
 for (const [
@@ -175,48 +186,44 @@ for (const [
           path: `${LIGHTHOUSE_DIR}/${pageName}.html`,
           contentType: "text/html",
         });
-        await attachJsDebt(page, lhr, pageName, thresholds.performance);
-        await attachOffenders(page, lhr);
+        const leads = await attachLongTasks(lhr, pageName);
+        await attachJsDebt(page, lhr, pageName, thresholds.performance, leads);
+        await attachOffenders(page, lhr, pageName);
 
-        const scoredEntries = (
-          Object.entries(thresholds) as [LhCategoryId, number][]
-        ).filter(([categoryId]) => lhr.categories[categoryId]?.score != null);
-
-        for (const [categoryId, threshold] of scoredEntries) {
-          const scoreAs100 = Math.round(
-            lhr.categories[categoryId]!.score! * 100,
-          );
-          expect(
-            scoreAs100,
-            `${categoryId}: got ${scoreAs100}, need >= ${threshold}${fixFirst(lhr, categoryId)}`,
-          ).toBeGreaterThanOrEqual(threshold);
+        // Soft, so every category under its threshold is reported, next to
+        // the evidence attached above.
+        expect.soft(leads, "long-task leads from the trace").toBeDefined();
+        const audited = (Object.entries(thresholds) as [LhCategoryId, number][])
+          .filter(([categoryId]) =>
+            (LIGHTHOUSE_CATEGORIES as readonly LhCategoryId[]).includes(
+              categoryId,
+            ),
+          )
+          .map(([categoryId, threshold]) => ({
+            categoryId,
+            threshold,
+            score: lhr.categories[categoryId]?.score ?? null,
+          }));
+        test.info().annotations.push(
+          ...audited
+            .filter(({ score }) => score === null)
+            .map(({ categoryId }) => ({
+              type: "lighthouse:n/a",
+              description: `${categoryId}: Lighthouse could not score it`,
+            })),
+        );
+        for (const { categoryId, threshold, score } of audited.filter(
+          ({ score }) => score !== null,
+        )) {
+          const scoreAs100 = Math.round(score! * 100);
+          expect
+            .soft(
+              scoreAs100,
+              `${pageName} ${categoryId}: got ${scoreAs100}, need >= ${threshold}${fixFirst(lhr, categoryId)}`,
+            )
+            .toBeGreaterThanOrEqual(threshold);
         }
       },
     );
-
-    const audited = (
-      Object.entries(thresholds) as [LhCategoryId, number][]
-    ).filter(([categoryId]) =>
-      (LIGHTHOUSE_CATEGORIES as readonly LhCategoryId[]).includes(categoryId),
-    );
-    for (const [categoryId, threshold] of audited) {
-      test(`${categoryId} >= ${threshold}`, () => {
-        const category: LH.Result.Category | undefined =
-          lhr.categories[categoryId];
-        const score: number | null = category?.score ?? null;
-
-        // [lighthouse:n/a] LH couldn't compute this category — skip rather than fail.
-        test.skip(
-          score === null,
-          `[lighthouse:${pageName}:${categoryId}] score=n/a`,
-        );
-
-        const scoreAs100 = Math.round(score! * 100);
-        expect(
-          scoreAs100,
-          `${pageName} ${categoryId}: got ${scoreAs100}, need >= ${threshold}${fixFirst(lhr, categoryId)}`,
-        ).toBeGreaterThanOrEqual(threshold);
-      });
-    }
   });
 }

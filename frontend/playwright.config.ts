@@ -74,7 +74,8 @@ export default defineConfig<E2EOptions>({
       workers: 1,
       // One audit takes up to 60s; beforeAll runs it before any test starts.
       timeout: 180_000,
-      use: { ...devices["Desktop Chrome"] },
+      // The test's page only draws the attached cards; a failure shot repeats one.
+      use: { ...devices["Desktop Chrome"], screenshot: "off" },
       dependencies: ["setup"],
     },
     {

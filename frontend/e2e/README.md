@@ -154,12 +154,6 @@ npm run test:e2e:lighthouse -- -g "@page:home\b"
 
 # A few pages, for a quick look
 npm run test:e2e:lighthouse -- -g "@page:(home|platforms|collections|administration)\b"
-
-# One category across all pages (matches the test title)
-npm run test:e2e:lighthouse -- -g "performance"
-
-# Just the report attachments
-npm run test:e2e:lighthouse -- -g "@lighthouse-report"
 ```
 
 After a run, open the per-page HTML report for the full Lighthouse UI: waterfall, opportunities, diagnostics:
@@ -172,13 +166,19 @@ open e2e/.output/lighthouse/home.html
 start e2e/.output/lighthouse/home.html
 ```
 
-Or open the Playwright run report, which lists each category's score inline on the test:
+Or open the Playwright run report, which shows the evidence and any failing categories on each page's test:
 
 ```bash
 npm run test:e2e:report
 ```
 
-A failing score lists the top three audits to fix first, by estimated savings. The `lighthouse-report` test also attaches `lighthouse-offenders`: Lighthouse's final screenshot with every element a failing audit points at outlined, and a colour key, plus, when performance is under its threshold, `lighthouse-js-debt`: a card of the scripts hogging the main thread and the packages downloaded but never run, shown inline under Screenshots (every script is in the `lighthouse-js-debt.txt` attachment) (`e2e/lighthouse/insights.ts`). Serve `npm run build:e2e && npm run preview` instead of `build` and each chunk also lists the source files it wastes the most bytes on; the maps don't change what the page runs, so scores stay comparable.
+Each page gets one `lighthouse-report` test. It attaches the evidence first, then checks every audited category against its threshold as a soft assertion, so a red test names each category under its bar (performance, best-practices, ...) with the top three audits to fix first, by estimated savings. Its attachments:
+
+- `lighthouse-offenders`: Lighthouse's final screenshot with every element a failing audit points at outlined, and a colour key.
+- `total-blocking-time-size` (when performance is under its threshold): what fills the long tasks, which code started the heaviest ones, which code dirtied style or layout, and what animates on the main thread. Every long task is in `lighthouse-long-tasks.txt`; `lighthouse-trace.json` opens in Chrome DevTools > Performance.
+- `javascript-bundle-size` (same condition): the scripts hogging the main thread and the packages downloaded but never run. Every script is in `lighthouse-js-debt.txt`.
+
+The cards are drawn by `e2e/lighthouse/insights.ts`. Serve `npm run build:e2e && npm run preview` instead of `build` and each chunk also lists the source files it wastes the most bytes on, and the long tasks point at source lines; the maps don't change what the page runs, so scores stay comparable.
 
 Lighthouse occupies a fixed CDP port (9222), so only one audit runs at a time.
 

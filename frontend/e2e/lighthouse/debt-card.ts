@@ -3,8 +3,16 @@
 // Lighthouse result alone, so e2e/.output/preview-debt.ts can redraw it from
 // a saved JSON report.
 import type * as LH from "lighthouse/types/lh.js";
+import { type Leads, LONG_TASKS_TEXT_NAME, TRACE_NAME } from "./long-tasks";
 
 export const DEBT_TEXT_NAME = "lighthouse-js-debt.txt";
+
+// Each part is its own image; the value doubles as its attachment name.
+export const DEBT_CARD_PARTS = {
+  bundles: "javascript-bundle-size",
+  tbt: "total-blocking-time-size",
+} as const;
+export type DebtCardPart = keyof typeof DEBT_CARD_PARTS;
 
 // App files are shown by their path in the repo, so they can be opened directly.
 const REPO_PREFIX = "frontend/";
@@ -49,7 +57,7 @@ export type DebtCard = {
     // rest summed, adding up to the whole file. Empty without source maps.
     parts: Part[];
     ownMs: number;
-    renderMs: number;
+    otherMs: number;
     longTasks: number;
     bytes: number;
     unusedBytes: number;
@@ -60,6 +68,14 @@ export type DebtCard = {
   textName: string;
   // A size readers already have a feel for, marked on the total bar.
   reference: { bytes: number; label: string } | undefined;
+  // Where the blocking time goes, from the trace; absent when it couldn't be read.
+  leads: Leads | undefined;
+  tbt: { ms: number; score: number } | undefined;
+  leadsTextName: string;
+  traceName: string;
+  // Animations the compositor can't run, so the main thread repaints them each frame.
+  mainThreadAnimations: { selector: string; reason: string }[];
+  domElements: number | undefined;
 };
 
 type Row = Record<string, unknown>;
@@ -80,7 +96,7 @@ function tableItems(lhr: LH.Result, auditId: string): Row[] {
 }
 
 // A dependency by its package name; app code by its path in the repo.
-function sourceName(source: string): string {
+export function sourceName(source: string): string {
   const pkg = source.match(/node_modules\/((?:@[^/]+\/)?[^/]+)/);
   if (pkg) return pkg[1]!;
   const app = source.indexOf("src/");
@@ -192,11 +208,35 @@ function breakdown(all: Part[], count = 10): Part[] {
 const urlPath = (url: string) =>
   URL.canParse(url) ? new URL(url).pathname : url;
 
+function mainThreadAnimations(
+  lhr: LH.Result,
+): DebtCard["mainThreadAnimations"] {
+  return tableItems(lhr, "non-composited-animations").map((row) => {
+    const node = row.node as { selector?: string } | undefined;
+    const sub = row.subItems as
+      { items?: { failureReason?: string; animation?: string }[] } | undefined;
+    const first = sub?.items?.[0];
+    return {
+      selector: node?.selector ?? "(unknown element)",
+      reason: [first?.animation, first?.failureReason]
+        .filter(Boolean)
+        .join(": "),
+    };
+  });
+}
+
+function totalBlockingTime(lhr: LH.Result): DebtCard["tbt"] {
+  const audit = lhr.audits["total-blocking-time"];
+  if (audit?.numericValue === undefined || audit.score === null) return;
+  return { ms: audit.numericValue, score: Math.round(audit.score * 100) };
+}
+
 export function debtCard(
   lhr: LH.Result,
   page: string,
   threshold: number,
   score: number,
+  leads?: Leads,
 ): DebtCard {
   const all = bundles(lhr);
   return {
@@ -208,7 +248,7 @@ export function debtCard(
       file: urlPath(b.url),
       parts: breakdown(parts(b.files)),
       ownMs: b.scriptingMs,
-      renderMs: Math.max(0, b.mainThreadMs - b.scriptingMs),
+      otherMs: Math.max(0, b.mainThreadMs - b.scriptingMs),
       longTasks: b.longTasks,
       bytes: b.bytes,
       unusedBytes: b.unusedBytes,
@@ -218,12 +258,13 @@ export function debtCard(
     mainThreadMsTotal: all.reduce((sum, b) => sum + b.mainThreadMs, 0),
     textName: DEBT_TEXT_NAME,
     reference: screenshotReference(lhr),
+    leads,
+    tbt: totalBlockingTime(lhr),
+    leadsTextName: LONG_TASKS_TEXT_NAME,
+    traceName: TRACE_NAME,
+    mainThreadAnimations: mainThreadAnimations(lhr),
+    domElements: lhr.audits["dom-size-insight"]?.numericValue,
   };
-}
-
-/** Wraps the drawn card as a standalone page; its styles are all inline. */
-export function debtHtml(card: string): string {
-  return `<!doctype html><meta charset="utf-8"><title>JS debt</title><body style="margin:0;background:#000">${card}</body>`;
 }
 
 /** Every bundle and its source files, for searching by name. */
@@ -248,7 +289,13 @@ export function debtText(lhr: LH.Result): string {
 
 // Runs inside the browser via page.evaluate, so everything below must stay
 // self-contained: no imports or module-level references.
-export function drawDebtCard(card: DebtCard): void {
+export function drawDebtCard({
+  card,
+  part,
+}: {
+  card: DebtCard;
+  part: DebtCardPart;
+}): void {
   const C = {
     bg: "#0d1017",
     panel: "#161b26",
@@ -256,7 +303,7 @@ export function drawDebtCard(card: DebtCard): void {
     text: "#fff",
     muted: "#9aa0b4",
     ownJs: "#ffb020",
-    render: "#9b6bff",
+    other: "#9b6bff",
     ran: "#3ddc97",
     bad: "#ff3b5c",
   };
@@ -312,7 +359,7 @@ export function drawDebtCard(card: DebtCard): void {
     "div",
     `width:1100px;padding:28px;box-sizing:border-box;background:${C.bg};color:${C.text};font:15px/1.4 system-ui,sans-serif`,
   );
-  root.id = "lh-debt";
+  root.id = `lh-${part}`;
 
   // Header: which route, how far off, and the totals behind it.
   const code = `font:800 20px ${mono};background:${C.panel};border-radius:6px;padding:2px 10px`;
@@ -321,7 +368,7 @@ export function drawDebtCard(card: DebtCard): void {
     "font:800 24px system-ui;display:flex;align-items:center;gap:10px",
   );
   route.append(
-    "JavaScript performance on",
+    part === "tbt" ? "Total Blocking Time on" : "JavaScript bundle size on",
     el("span", code, card.page),
     el("span", `${code};color:${C.muted}`, card.path),
   );
@@ -343,6 +390,120 @@ export function drawDebtCard(card: DebtCard): void {
     el("span", `font:700 48px/1 system-ui;color:${C.muted}`, "/"),
     figure(card.threshold, "target", C.text),
   );
+
+  if (part === "tbt") {
+    const leads = card.leads;
+    const s2 = (ms: number) => `${(ms / 1000).toFixed(2)} s`;
+    const strong = (text: string, color = C.text) =>
+      el("b", `color:${color};font-weight:800`, text);
+    const code = (text: string) => el("span", `font:13px ${mono}`, text);
+    const muted = (text: string) => el("span", `color:${C.muted}`, text);
+    const block = (title: string, lines: (string | Node)[][]) => {
+      const box = el("div", "min-width:0");
+      box.append(caption(title));
+      for (const parts of lines) {
+        const line = el(
+          "div",
+          "font-size:14px;margin-top:4px;overflow-wrap:anywhere",
+        );
+        line.append(...parts);
+        box.append(line);
+      }
+      return box;
+    };
+
+    // Lighthouse's metric is the number that scores; the trace explains it.
+    const headline = el("div", "font-size:17px;margin-bottom:18px");
+    headline.append(
+      ...(card.tbt
+        ? [
+            "Lighthouse measured ",
+            strong(s2(card.tbt.ms), C.bad),
+            ` of Total Blocking Time (metric score ${card.tbt.score}).`,
+          ]
+        : ["Lighthouse reported no Total Blocking Time."]),
+      el(
+        "div",
+        `color:${C.muted};font-size:14px;margin-top:4px`,
+        leads
+          ? `The trace holds ${leads.longTaskCount} long tasks, about ${s2(leads.blockingMs)} of blocking over the whole load (TBT counts only first paint to interactive). Times are scaled to the simulated ${leads.cpuSlowdown}x slower CPU.`
+          : "No trace to read, so only the audit's hints are below.",
+      ),
+    );
+
+    const panel = el(
+      "div",
+      `background:${C.panel};border-radius:12px;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px 32px`,
+    );
+    if (leads) {
+      panel.append(
+        block(
+          "work inside the long tasks",
+          leads.work.map((w) => [strong(s2(w.ms), C.bad), " ", w.label]),
+        ),
+        block(
+          "heaviest tasks, and what started them",
+          leads.tasks
+            .slice(0, 5)
+            .map((t) => [
+              strong(s2(t.ms), C.bad),
+              muted(` at ${(t.startMs / 1000).toFixed(2)} s, `),
+              code(t.startedBy),
+            ]),
+        ),
+        block(
+          "code that dirtied style or layout, or forced a layout",
+          leads.dirtiedBy.length
+            ? leads.dirtiedBy
+                .slice(0, 6)
+                .map((d) => [strong(`${d.count}x`), " ", code(d.where)])
+            : [[muted("nothing recorded a stack")]],
+        ),
+      );
+    }
+    const animated = new Map<string, number>();
+    for (const { selector, reason } of card.mainThreadAnimations) {
+      const key = `${selector}\n${reason}`;
+      animated.set(key, (animated.get(key) ?? 0) + 1);
+    }
+    panel.append(
+      block("animated on the main thread, every frame", [
+        ...(animated.size
+          ? [...animated].slice(0, 3).map(([key, n]) => {
+              const [selector, reason] = key.split("\n");
+              return [
+                strong(`${n}x`),
+                " ",
+                code(selector!),
+                muted(` (${reason})`),
+              ];
+            })
+          : [[muted("none")]]),
+        ...(card.domElements
+          ? [
+              [
+                strong(card.domElements.toLocaleString("en")),
+                " DOM elements to style and lay out",
+              ],
+            ]
+          : []),
+      ]),
+    );
+
+    root.append(
+      route,
+      score,
+      headline,
+      panel,
+      el(
+        "div",
+        `color:${C.muted};font-size:13px;margin-top:12px`,
+        `Every long task is in ${card.leadsTextName}. Open ${card.traceName} in Chrome DevTools > Performance for the flame chart.`,
+      ),
+    );
+    document.body.append(root);
+    return;
+  }
 
   // The page's JS on one bar, with a familiar image size marked for scale.
   // Inset by the panel padding, so each file's slice below lines up with it.
@@ -405,7 +566,10 @@ export function drawDebtCard(card: DebtCard): void {
       "time, in seconds",
       [
         [C.ownJs, "seconds running the script"],
-        [C.render, "seconds on style and layout it triggered"],
+        [
+          C.other,
+          "seconds of other work in tasks it started (style, layout, paint, frames)",
+        ],
       ],
     ],
   ] as const) {
@@ -425,7 +589,7 @@ export function drawDebtCard(card: DebtCard): void {
 
   const pct = (share: number) =>
     share >= 0.01 ? `${Math.round(share * 100)}%` : "<1%";
-  const maxMs = Math.max(1, ...card.bundles.map((b) => b.ownMs + b.renderMs));
+  const maxMs = Math.max(1, ...card.bundles.map((b) => b.ownMs + b.otherMs));
   // Every item gets a dim cell where the previous one ended, so a column of
   // strips reads as one whole; only the current item's cell is filled.
   const strip = (
@@ -497,20 +661,20 @@ export function drawDebtCard(card: DebtCard): void {
     const time = bar(
       [
         { value: b.ownMs, color: C.ownJs },
-        { value: b.renderMs, color: C.render },
+        { value: b.otherMs, color: C.other },
       ],
       maxMs,
       [
-        metric(sec(b.ownMs + b.renderMs), C.text),
+        metric(sec(b.ownMs + b.otherMs), C.text),
         " main thread: ",
         metric(sec(b.ownMs), C.ownJs),
         " script, ",
-        metric(sec(b.renderMs), C.render),
-        " style and layout",
+        metric(sec(b.otherMs), C.other),
+        " other work in its tasks",
         ...tasks,
       ],
     );
-    time.title = `${b.file}\n${sec(b.ownMs)} running the script, ${sec(b.renderMs)} on style and layout it triggered, ${b.longTasks} long tasks`;
+    time.title = `${b.file}\n${sec(b.ownMs)} running the script, ${sec(b.otherMs)} of other work in tasks it started, ${b.longTasks} long tasks`;
     time.style.cursor = "help";
     panel.append(
       title,

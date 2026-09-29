@@ -1,19 +1,28 @@
 // Turns a Lighthouse result into things a reader acts on: a ranked "fix first"
-// list for failure messages, a JS debt card, and a screenshot with every
-// element a failing audit points at outlined. Self-contained: delete this
-// file, debt-card.ts and their calls in lighthouse.spec.ts to remove it.
+// list for failure messages, a JS debt card, leads for the long tasks, and a
+// screenshot with every element a failing audit points at outlined.
+// Self-contained: delete this folder's helpers and their calls in
+// lighthouse.spec.ts to remove it.
 import type { Page } from "@playwright/test";
 import type * as LH from "lighthouse/types/lh.js";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { LIGHTHOUSE_DIR } from "../support/output";
 import { test } from "../support/test";
 import {
+  DEBT_CARD_PARTS,
   DEBT_TEXT_NAME,
   debtCard,
-  debtHtml,
   debtText,
   drawDebtCard,
 } from "./debt-card";
+import {
+  type Leads,
+  LONG_TASKS_TEXT_NAME,
+  leadsText,
+  longTaskLeads,
+  TRACE_NAME,
+} from "./long-tasks";
+import { standaloneHtml, webpShot } from "./render";
 
 type Audit = LH.Audit.Result;
 type NodeValue = LH.Audit.Details.NodeValue;
@@ -65,13 +74,71 @@ export function fixFirst(
   return lines.length > 0 ? `\nFix first:\n${lines.join("\n")}` : "";
 }
 
-/** When performance is under its threshold, attaches the JS debt card (shown
- *  inline in the report) and every bundle's source files as text. */
+// The report shows only images inline, so the image comes first; the HTML twin
+// adds tooltips. Attached by path: the terminal previews text bodies inline.
+async function attachRendered(
+  page: Page,
+  selector: string,
+  name: string,
+  pageName: string,
+): Promise<void> {
+  const element = page.locator(selector);
+  const shot = await webpShot(element);
+  await test.info().attach(`${name}.${shot.contentType.split("/")[1]}`, shot);
+  const html = `${LIGHTHOUSE_DIR}/${pageName}-${name}.html`;
+  writeFileSync(
+    html,
+    standaloneHtml(
+      `${pageName} ${name}`,
+      await element.evaluate((node) => node.outerHTML),
+    ),
+  );
+  await test.info().attach(`${name}.html`, {
+    path: html,
+    contentType: "text/html",
+  });
+}
+
+export const traceFile = (pageName: string) =>
+  `${LIGHTHOUSE_DIR}/${pageName}.trace.json`;
+
+/** Attaches the trace and what fills its long tasks; returns those leads. */
+export async function attachLongTasks(
+  lhr: LH.Result,
+  pageName: string,
+): Promise<Leads | undefined> {
+  const trace = traceFile(pageName);
+  await test.info().attach(TRACE_NAME, {
+    path: trace,
+    contentType: "application/json",
+  });
+  // A failed explainer must never hide the audit result itself.
+  try {
+    const leads = await longTaskLeads(
+      JSON.parse(readFileSync(trace, "utf8")),
+      lhr.configSettings.throttling.cpuSlowdownMultiplier,
+    );
+    const text = `${LIGHTHOUSE_DIR}/${pageName}-long-tasks.txt`;
+    writeFileSync(text, leadsText(leads, TRACE_NAME));
+    await test.info().attach(LONG_TASKS_TEXT_NAME, {
+      path: text,
+      contentType: "text/plain",
+    });
+    return leads;
+  } catch (error) {
+    console.warn(`[lighthouse] no long-task leads: ${String(error)}`);
+    return undefined;
+  }
+}
+
+/** When performance is under its threshold, attaches the Total Blocking Time
+ *  and bundle size cards (shown inline) and every bundle's files as text. */
 export async function attachJsDebt(
   page: Page,
   lhr: LH.Result,
   pageName: string,
   threshold: number | undefined,
+  leads?: Leads,
 ): Promise<void> {
   const raw = lhr.categories.performance?.score;
   if (threshold === undefined || raw == null) return;
@@ -81,27 +148,17 @@ export async function attachJsDebt(
   // A failed render must never hide the audit result itself.
   try {
     await page.setViewportSize({ width: 1100, height: 800 });
-    await page.setContent('<body style="margin:0;background:#000"></body>');
-    await page.evaluate(
-      drawDebtCard,
-      debtCard(lhr, pageName, threshold, score),
-    );
-    const card = page.locator("#lh-debt");
-    // The report shows only images inline; the HTML twin adds tooltips.
-    await test.info().attach("lighthouse-js-debt", {
-      body: await card.screenshot(),
-      contentType: "image/png",
-    });
-    // Attached by path: the terminal reporter previews text bodies inline.
-    const html = `${LIGHTHOUSE_DIR}/${pageName}-js-debt.html`;
-    writeFileSync(
-      html,
-      debtHtml(await card.evaluate((node) => node.outerHTML)),
-    );
-    await test.info().attach("lighthouse-js-debt.html", {
-      path: html,
-      contentType: "text/html",
-    });
+    const card = debtCard(lhr, pageName, threshold, score, leads);
+    for (const part of ["tbt", "bundles"] as const) {
+      await page.setContent('<body style="margin:0;background:#000"></body>');
+      await page.evaluate(drawDebtCard, { card, part });
+      await attachRendered(
+        page,
+        `#lh-${part}`,
+        DEBT_CARD_PARTS[part],
+        pageName,
+      );
+    }
   } catch (error) {
     console.warn(`[lighthouse] no JS debt card: ${String(error)}`);
   }
@@ -191,6 +248,7 @@ function offenders(lhr: LH.Result): { boxes: Box[]; legend: LegendEntry[] } {
 export async function attachOffenders(
   page: Page,
   lhr: LH.Result,
+  pageName: string,
 ): Promise<void> {
   const shot = lhr.fullPageScreenshot?.screenshot;
   const { boxes, legend } = offenders(lhr);
@@ -240,10 +298,12 @@ export async function attachOffenders(
       { shot, boxes, legend },
     );
 
-    await test.info().attach("lighthouse-offenders", {
-      body: await page.locator("#lh-offenders").screenshot(),
-      contentType: "image/png",
-    });
+    await attachRendered(
+      page,
+      "#lh-offenders",
+      "lighthouse-offenders",
+      pageName,
+    );
   } catch (error) {
     console.warn(`[lighthouse] no offenders screenshot: ${String(error)}`);
   }
