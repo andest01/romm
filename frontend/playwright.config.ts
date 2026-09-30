@@ -36,7 +36,8 @@ export default defineConfig<E2EOptions>({
   workers: env.E2E_WORKERS ?? 2,
   // The HTML report holds each failure's trace: `npm run test:e2e:report`.
   reporter: [
-    [isCI ? "github" : "list"],
+    // `line` shows a running [n/total] count locally.
+    [isCI ? "github" : "line"],
     ["html", { outputFolder: output.report, open: "never" }],
   ],
   // A test that genuinely needs longer uses `test.setTimeout`.

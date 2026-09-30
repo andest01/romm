@@ -37,6 +37,7 @@
     "storybook:build": "storybook build",
     "storybook:test": "vitest run test/storybook.test.ts",
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test --project=chromium --grep @smoke",
     "test:e2e:report": "playwright show-report e2e/.output/specs/report"
   },
   "dependencies": {

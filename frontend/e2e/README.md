@@ -13,6 +13,17 @@ cp e2e/.env.example e2e/.env
 npm run test:e2e
 ```
 
+Every `test:e2e*` script passes whatever follows `--` to Playwright, so `-g` (short for `--grep`) narrows any run to the tests whose title or tag matches a regex:
+
+```bash
+npm run test:e2e:smoke                  # quick test: only @smoke tests, the merge gate
+npm run test:e2e -- -g "@page:home\b"   # one page; \b stops @page:home matching a longer id
+npm run test:e2e -- -g "@page:(home|search)\b"   # several pages
+npm run test:e2e                        # everything
+```
+
+Running everything takes a while, so the recipes below filter throughout; [Tags](#tags) lists what you can filter on.
+
 The example works as-is against `npm run dev` with the seeded accounts below. For any other site, change `E2E_BASE_URL` and the accounts. If anything in `e2e/.env` is missing or malformed, the run stops before starting anything and lists every problem at once.
 
 On a throwaway dev backend, the seed script creates the two accounts from `.env.example` (run it from the repo root). Never run it against a real server; it resets those accounts' passwords.
@@ -113,8 +124,9 @@ Fix what it reports, then click **Refresh Tests** in the Testing sidebar.
 
 ```bash
 npm run test:e2e -- e2e/specs/auth/login.spec.ts
-npm run test:e2e -- -g "rejects a wrong password"
-npm run test:e2e -- --grep "@page:gameDetails\b"   # every test for one page (the keys of PAGES in specs/loads.spec.ts)
+npm run test:e2e -- -g "rejects a wrong password"   # -g matches titles too
+npm run test:e2e -- -g "@page:gameDetails\b"        # every test for one page
+npm run test:e2e -- -gv "@page:gameDetails\b"       # everything except that page
 ```
 
 ### Test another site
@@ -141,6 +153,7 @@ rm -r e2e/.output/auth    # PowerShell: Remove-Item -Recurse e2e/.output/auth
 
 ```text
 e2e/
+  e2e-sitemap.ts  every page with a fixed URL, its session, and the tags
   specs/      the tests, and only tests, one folder per page
     loads.spec.ts   every page opens with every response 2xx
   setup/      preflight and sign-in, run before the specs
@@ -159,3 +172,14 @@ e2e/
 - **Output:** everything the suite writes goes under `.output/`, through the paths in `support/output.ts`.
 - **Checks:** `npm run typecheck:e2e` for the specs, `npm run typecheck:scripts` for `playwright.config.ts`, and lint rules in `eslint.e2e.config.js`.
 - **Changing the suite itself:** see [AGENTS.md](AGENTS.md).
+
+## Tags
+
+Filter on any of these with `-g`. Pages in `e2e-sitemap.ts` carry their tags there, and `loads.spec.ts` spreads them into each `describe`; other specs tag their top-level `describe` by hand.
+
+| Tag          | Where it comes from                                                                                                     | Use                                                    |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `@smoke`     | `SMOKE` in `e2e-sitemap.ts`, spread in where a test belongs in the gate (find its references); never on a sitemap entry | The merge gate: `npm run test:e2e:smoke`               |
+| `@page:<id>` | Every sitemap entry, `CLICK_THROUGH_PAGES` in `specs/loads.spec.ts`, and each page's own specs                          | One page across every spec: `-g "@page:gameDetails\b"` |
+
+Adding a tag shape? Add it to `E2eTag` in `e2e-sitemap.ts` and a row here in the same change.
