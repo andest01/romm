@@ -1,10 +1,12 @@
+import { connect } from "node:tls";
 import { type Account, accountFor, type Role, ROLES } from "../support/auth";
 import { readE2EEnv } from "../support/e2e-environment";
 
 // Preflight, before any test or browser: the backend answers, each account
 // signs in and can read ROMs, and the library has a game. One error lists every
-// problem in about a second, instead of each test timing out on it later. The
-// only place the suite calls the API directly: it isn't a test.
+// problem in about a second, instead of each test timing out on it later. It
+// also notes whether the site speaks HTTP/2. The only place the suite calls the
+// API directly: it isn't a test.
 
 const TIMEOUT_MS = 5_000;
 
@@ -65,6 +67,46 @@ async function checkBackend(target: string): Promise<Record<string, string>> {
   return {};
 }
 
+/** The protocol a TLS handshake settles on ("h2", "http/1.1"), or null when
+ *  the probe fails. Sends no request, so a self-signed certificate is fine. */
+function negotiatedProtocol(url: URL): Promise<string | null> {
+  return new Promise((resolve) => {
+    const socket = connect({
+      host: url.hostname,
+      port: Number(url.port || 443),
+      servername: url.hostname,
+      ALPNProtocols: ["h2", "http/1.1"],
+      rejectUnauthorized: false,
+      timeout: 2_000,
+    });
+    const done = (protocol: string | null) => {
+      socket.destroy();
+      resolve(protocol);
+    };
+    socket.once("secureConnect", () => done(socket.alpnProtocol || null));
+    socket.once("error", () => done(null));
+    socket.once("timeout", () => done(null));
+  });
+}
+
+/** Notes the HTTP version, which shapes every network timing. Never fails. */
+async function reportProtocol(target: string): Promise<void> {
+  const url = new URL(target);
+  if (url.protocol === "http:") {
+    console.log(
+      `e2e: ${url.origin} is plain HTTP, so browsers use HTTP/1.1 (6 connections per host). Network timings will read slower than a site behind an HTTPS proxy with HTTP/2.`,
+    );
+    return;
+  }
+  const protocol = await negotiatedProtocol(url);
+  if (protocol === "h2") console.log(`e2e: ${url.origin} serves HTTP/2.`);
+  else if (protocol) {
+    console.log(
+      `e2e: ${url.origin} serves HTTP/1.1. Turning on HTTP/2 in its reverse proxy lets the browser load requests in parallel instead of 6 at a time.`,
+    );
+  }
+}
+
 async function checkAccount(
   target: string,
   role: Role,
@@ -120,6 +162,7 @@ export default async function globalSetup() {
   // Every other check would only repeat that the backend is unreachable.
   const backend = await checkBackend(target);
   if (Object.keys(backend).length) throw new PreflightError(backend);
+  await reportProtocol(target);
 
   const accounts = await Promise.all(
     ROLES.map((role) => checkAccount(target, role, accountFor(env, role))),

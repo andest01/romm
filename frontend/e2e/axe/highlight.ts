@@ -37,31 +37,75 @@ function selectorOf({ target }: NodeResult): string[] {
     : [];
 }
 
+/** Attaches one line per violation, worst first, like the axe DevTools list. */
+export async function attachViolationList(
+  violations: readonly AxeViolation[],
+): Promise<void> {
+  if (violations.length === 0) return;
+  const order = Object.keys(IMPACT_COLORS);
+  const lines = [...violations]
+    .sort(
+      (a, b) =>
+        order.indexOf(a.impact ?? "minor") - order.indexOf(b.impact ?? "minor"),
+    )
+    .map((v) => {
+      const kind = v.tags.includes("best-practice") ? "best practice" : "WCAG";
+      return `${(v.impact ?? "n/a").padEnd(9)}${String(v.nodes.length).padStart(4)}x  ${v.help} (${v.id}, ${kind})`;
+    });
+  await test.info().attach("axe-violations.txt", {
+    body: lines.join("\n"),
+    contentType: "text/plain",
+  });
+}
+
+/** One screenshot per rule, scrolled to its first offender: v2 scrolls an
+ *  inner container, so a full-page shot only ever holds the first viewport. */
 export async function attachViolationScreenshots(
   page: Page,
   violations: readonly AxeViolation[],
 ): Promise<void> {
-  const byImpact = (Object.keys(IMPACT_COLORS) as Impact[])
-    .map((impact) => ({
-      impact,
-      selectors: violations
-        .filter((v) => v.impact === impact)
-        .flatMap((v) => v.nodes.flatMap(selectorOf)),
+  const order = Object.keys(IMPACT_COLORS);
+  const shots = [...violations]
+    .sort(
+      (a, b) =>
+        order.indexOf(a.impact ?? "minor") - order.indexOf(b.impact ?? "minor"),
+    )
+    .map((v) => ({
+      impact: (v.impact ?? "minor") as Impact,
+      id: v.id,
+      selectors: v.nodes.flatMap(selectorOf),
     }))
     .filter(({ selectors }) => selectors.length > 0);
+  if (shots.length === 0) return;
 
-  for (const { impact, selectors } of byImpact) {
+  // Square shots show more context around each offender. Resized only after
+  // the scan, so axe still ran at the project's own viewport.
+  const viewport = page.viewportSize();
+  if (viewport) {
+    await page.setViewportSize({
+      width: viewport.width,
+      height: viewport.width,
+    });
+  }
+
+  for (const { impact, id, selectors } of shots) {
     // A failed capture must never hide the violations themselves.
     try {
+      // Short timeout: an offender can be hidden (inert, zero-size), and
+      // the shot is still worth taking from wherever the page sits.
+      await page
+        .locator(selectors[0]!)
+        .first()
+        .scrollIntoViewIfNeeded({ timeout: 1000 })
+        .catch(() => undefined);
       const body = await page.screenshot({
-        fullPage: true,
         style: highlightCss(selectors, IMPACT_COLORS[impact]),
       });
       await test
         .info()
-        .attach(`axe-${impact}`, { body, contentType: "image/png" });
+        .attach(`axe-${impact}-${id}`, { body, contentType: "image/png" });
     } catch (error) {
-      console.warn(`[axe] no ${impact} screenshot: ${String(error)}`);
+      console.warn(`[axe] no ${id} screenshot: ${String(error)}`);
     }
   }
 }

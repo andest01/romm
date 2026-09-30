@@ -14,7 +14,7 @@ import {
 import { gotoHydrated, SIGNED_OUT } from "../support/auth";
 import { AXE_DIR } from "../support/output";
 import { expect, test } from "../support/test";
-import { attachViolationScreenshots } from "./highlight";
+import { attachViolationList, attachViolationScreenshots } from "./highlight";
 
 // All impact levels in severity order — used to build the always-on log line.
 const ALL_IMPACTS: readonly ImpactValue[] = [
@@ -30,7 +30,11 @@ const ALL_IMPACTS: readonly ImpactValue[] = [
 type PageBlockingImpacts = readonly ImpactValue[];
 
 // Tune per page after a baseline run against your actual site.
-const DEFAULT_BLOCKING_IMPACTS: PageBlockingImpacts = ["critical", "serious"];
+const DEFAULT_BLOCKING_IMPACTS: PageBlockingImpacts = [
+  "critical",
+  "serious",
+  "moderate",
+];
 
 type AxePage = E2eSitemapEntry & { blockingImpacts: PageBlockingImpacts };
 
@@ -84,7 +88,10 @@ async function runAxe(
     (v): v is AxeViolation & { impact: ImpactValue } =>
       v.impact != null && blockingSet.has(v.impact),
   );
-  await attachViolationScreenshots(page, blocking);
+  // Every level is shown, so best-practice findings (mostly moderate and
+  // minor) are visible even though only blockingImpacts fail the test.
+  await attachViolationScreenshots(page, violations);
+  await attachViolationList(violations);
 
   const checkedImpacts = blockingImpacts.join(", ");
   const message = `${pageName}: ${blocking.length} violation(s) at [${checkedImpacts}] — see ${AXE_DIR}/${pageName}.json`;
