@@ -1,4 +1,4 @@
-import type { Browser, Page } from "@playwright/test";
+import type { Browser, BrowserContextOptions, Page } from "@playwright/test";
 import type { E2EEnv } from "./e2e-environment";
 import { AUTH_DIR } from "./output";
 import { expect, watchAppErrors } from "./test";
@@ -24,6 +24,12 @@ export const STORAGE_STATE: Record<Role, string> = {
   admin: `${AUTH_DIR}/admin.json`,
   viewer: `${AUTH_DIR}/viewer.json`,
 };
+
+/** An empty session, for pages audited as a visitor who hasn't signed in. */
+export const SIGNED_OUT: Exclude<
+  BrowserContextOptions["storageState"],
+  string | undefined
+> = { cookies: [], origins: [] };
 
 /** Fill and submit the login form.
  *
@@ -163,20 +169,23 @@ export async function gotoHydrated(page: Page, path: string) {
     r.url().includes("/api/permissions/me"),
   );
   await page.goto(path);
-  const loginShown = page.locator("form.r-v2-login-form").waitFor();
-  const response = await Promise.race([hydrated, loginShown.then(() => null)]);
-  if (!response) {
+  // ok quick trick here.
+  const shell = page.locator(".r-v2-user__name");
+  const loginForm = page.locator("form.r-v2-login-form");
+  // this is an optimal double-check, but sometimes the page just has to load...
+  await expect(shell.or(loginForm)).toBeVisible({ timeout: 10_000 });
+  // check if we're still in login
+  if (await loginForm.isVisible()) {
     throw new Error(
       `Opened ${path} but landed on the login page: the saved session for this test has expired or was rejected. Run again, and setup signs in afresh (or delete e2e/.output/auth/).`,
     );
   }
+  const response = await hydrated;
   if (!response.ok()) {
     throw new Error(
       `Permissions didn't load (GET /api/permissions/me returned ${response.status()}). The session most likely expired: run again, or delete e2e/.output/auth/ to force a fresh sign-in.`,
     );
   }
-  // Renders once the auth store holds a user: the app shell is ready.
-  await expect(page.locator(".r-v2-user__name")).toBeVisible();
 }
 
 /** Open the ⋯ more-actions menu and return the teleported panel locator. */
