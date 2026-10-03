@@ -12,4 +12,8 @@ export const appAliases: Alias[] = [
   // Every md-editor import, v1 included, gets the XSS config on first load.
   // tsconfig.app.json maps it too, so go-to-definition lands on the plugin.
   { find: /^md-editor-v3$/, replacement: fromRoot("src/plugins/mdeditor.ts") },
+  {
+    find: /^@mdi\/font\/css\/materialdesignicons\.css$/,
+    replacement: fromRoot("src/plugins/vuetify-material-design-icons-smol.css"),
+  },
 ];
