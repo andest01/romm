@@ -4,7 +4,7 @@ import { getCurrentInstance } from "vue";
 import { AsyncMdPreview, lazyMarkdown } from "./asyncMarkdown";
 
 const SAMPLE =
-  "# Notes\n\nA **time-travel** RPG. Notes support the usual Markdown.";
+  "# Chrono Trigger\n\nA **time-travel** RPG. Notes support the usual Markdown.";
 
 const meta = {
   title: "Shared/AsyncMarkdown",
@@ -15,7 +15,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// The real preview: md-editor loads on first render, then draws the heading.
+// The real preview: md-editor loads on first render, then draws the heading,
+// whose id is the conventional anchor for its text.
 export const Preview: Story = {
   render: () => ({
     components: { AsyncMdPreview },
@@ -28,6 +29,7 @@ export const Preview: Story = {
         canvasElement.querySelector(".md-editor-preview h1"),
       ).not.toBeNull(),
     );
+    await expect(canvasElement.querySelector("h1")?.id).toBe("chrono-trigger");
   },
 };
 
