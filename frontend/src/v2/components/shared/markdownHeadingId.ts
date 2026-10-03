@@ -1,7 +1,5 @@
-/** Heading id for md-editor: the lowercase text with runs of other characters
- *  as one hyphen, so `# Chapter One` is reachable from `[x](#chapter-one)`.
- *  md-editor calls it again from its table of contents, so it must depend on
- *  the heading alone: two headings with the same text share an id. */
+/** Lowercase text with runs of other characters as one hyphen: "Chapter One" is `chapter-one`.
+ *  It depends on the text alone because md-editor's table of contents calls it too. */
 export function headingId({ text }: { text: string }): string {
   const slug = text
     .toLowerCase()
