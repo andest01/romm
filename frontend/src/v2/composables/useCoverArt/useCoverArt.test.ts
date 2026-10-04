@@ -106,7 +106,7 @@ describe("altArtPath", () => {
 });
 
 describe("computeCoverArt — cover_path", () => {
-  it("uses the local large cover, object-fit cover, 2/3 ratio", () => {
+  it("uses the local small cover, object-fit cover, 2/3 ratio", () => {
     const r = rom({
       path_cover_large: "covers/large.png",
       path_cover_small: "covers/small.png",
@@ -115,23 +115,23 @@ describe("computeCoverArt — cover_path", () => {
       resourcesPath: RES,
       supportsWebp: false,
     });
-    expect(d.coverUrl).toBe("covers/large.png");
+    expect(d.coverUrl).toBe("covers/small.png");
     expect(d.objectFit).toBe("cover");
     expect(d.ratio).toBeCloseTo(2 / 3);
     expect(d.isAltArt).toBe(false);
     expect(d.animateCD).toBe(false);
     expect(d.videoUrl).toBeNull();
   });
-  it("falls back to the small cover when large is absent", () => {
+  it("falls back to the large cover when the small is absent", () => {
     const d = computeCoverArt(
-      rom({ path_cover_small: "covers/small.png" }),
+      rom({ path_cover_large: "covers/large.png" }),
       "cover_path",
       {
         resourcesPath: RES,
         supportsWebp: false,
       },
     );
-    expect(d.coverUrl).toBe("covers/small.png");
+    expect(d.coverUrl).toBe("covers/large.png");
   });
   it("rewrites the local cover extension to webp when supported", () => {
     const d = computeCoverArt(

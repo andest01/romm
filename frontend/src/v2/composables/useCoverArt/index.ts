@@ -200,7 +200,7 @@ export function computeCoverArt(
   } else if (altPath != null) {
     coverUrl = `${opts.resourcesPath}/${altPath}`;
   } else {
-    const local = rom.path_cover_large ?? rom.path_cover_small ?? null;
+    const local = rom.path_cover_small ?? rom.path_cover_large ?? null;
     coverUrl = local ? toWebpUrl(local, opts.supportsWebp) : local;
   }
 
