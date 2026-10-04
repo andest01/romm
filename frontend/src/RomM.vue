@@ -10,7 +10,6 @@ import {
   watch,
 } from "vue";
 import { useTheme } from "vuetify";
-import SoundtrackMiniPlayer from "@/components/common/SoundtrackMiniPlayer.vue";
 import { useBrowserLocale } from "@/composables/useBrowserLocale";
 import { useUiVersion } from "@/composables/useUiVersion";
 import { useUserLocalStorage } from "@/composables/useUserLocalStorage";
@@ -22,6 +21,11 @@ import storeConsole from "@/stores/console";
 // api-client ↔ router circular-import TDZ (see the theme/scope notes below).
 const BackendStatusBanner = defineAsyncComponent(
   () => import("@/v2/components/AppShell/BackendStatusBanner.vue"),
+);
+// Lazy-loaded: the player drags in the volume slider and menu, which the
+// first screen does not need.
+const SoundtrackMiniPlayer = defineAsyncComponent(
+  () => import("@/components/common/SoundtrackMiniPlayer.vue"),
 );
 
 const consoleStore = storeConsole();

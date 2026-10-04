@@ -12,11 +12,10 @@
 // primary nav focused on browsing destinations.
 import { RSliderBtnGroup, RImg } from "@v2/lib";
 import { useWindowScroll } from "@vueuse/core";
-import { computed } from "vue";
+import { computed, defineAsyncComponent } from "vue";
 import { useI18n } from "vue-i18n";
 import ScanningIndicator from "@/v2/components/AppShell/ScanningIndicator.vue";
 import UserMenu from "@/v2/components/AppShell/UserMenu.vue";
-import NowPlayingPill from "@/v2/components/Soundtrack/NowPlayingPill.vue";
 import { useBreakpoint } from "@/v2/composables/useBreakpoint";
 import { useNavDestinations } from "@/v2/composables/useNavDestinations";
 import { useNavGlass } from "@/v2/composables/useNavGlass";
@@ -25,6 +24,11 @@ defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
 const { smAndDown } = useBreakpoint();
+
+// Lazily loaded: phones only, and it pulls in the player card and menu.
+const NowPlayingPill = defineAsyncComponent(
+  () => import("@/v2/components/Soundtrack/NowPlayingPill.vue"),
+);
 
 // Primary destinations + active-tab logic shared with BottomNav.
 const { destinations: tabs, activeId: activeTab } = useNavDestinations();

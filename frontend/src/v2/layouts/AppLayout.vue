@@ -23,7 +23,6 @@ import BackgroundArt from "@/v2/components/AppShell/BackgroundArt.vue";
 import BottomNav from "@/v2/components/AppShell/BottomNav.vue";
 import CrtOverlay from "@/v2/components/AppShell/CrtOverlay.vue";
 import GlobalDialogs from "@/v2/components/Dialogs/GlobalDialogs.vue";
-import SoundtrackMiniPlayer from "@/v2/components/Soundtrack/MiniPlayer.vue";
 import { provideBackgroundArt } from "@/v2/composables/useBackgroundArt";
 import { installBreakpointAttribute } from "@/v2/composables/useBreakpoint";
 import { installPermissionsHydration } from "@/v2/composables/useCan";
@@ -139,6 +138,11 @@ useEventListener(
 const { enabled: debugEnabled } = useDebugMode();
 const DebugOverlay = defineAsyncComponent(
   () => import("@/v2/components/AppShell/DebugOverlay.vue"),
+);
+// Lazily loaded: nothing plays until a track is chosen, so the player and
+// chiptune engine stay out of the first paint.
+const SoundtrackMiniPlayer = defineAsyncComponent(
+  () => import("@/v2/components/Soundtrack/MiniPlayer.vue"),
 );
 
 const { layerA, layerB, activeLayer } = provideBackgroundArt();
