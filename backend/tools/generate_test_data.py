@@ -1746,6 +1746,10 @@ def _wipe(conn: Connection) -> None:
     # roms_metadata and sibling_roms are views, so they are intentionally
     # absent: deleting their underlying roms clears them.
     tables = [
+        # The seeder writes no image rows, but they describe the files it replaces.
+        "rom_images",
+        "collection_images",
+        "images",
         "play_sessions",
         "device_save_sync",
         "sync_sessions",
