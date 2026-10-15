@@ -1,31 +1,56 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import TYPE_CHECKING
+
 from pydantic import Field
 
-from models.image import COVER_LARGE, COVER_SMALL
+from config import FRONTEND_RESOURCES_PATH
 
 from .base import BaseModel
 
+if TYPE_CHECKING:
+    from handler.database.images_handler import StoredImage
 
-class ImageSizeSchema(BaseModel):
+ART_COVER = "cover"
+# Pillow names a multi-picture JPEG "MPO"; browsers decode it as plain JPEG.
+_MIME_BY_FORMAT = {"MPO": "image/jpeg"}
+
+
+class ArtFileSchema(BaseModel):
+    """One file of a picture: where to fetch it and what it is."""
+
+    url: str
     width: int
     height: int
+    type: str = Field(description="MIME type of the file's content")
 
 
-class CoverImagesSchema(BaseModel):
-    """A rom's cover files, each null when the `images` table doesn't have it yet."""
-
-    large: ImageSizeSchema | None = None
-    small: ImageSizeSchema | None = None
+ArtMap = dict[str, list[ArtFileSchema]]
 
 
-class RomCoverFields(BaseModel):
-    cover: CoverImagesSchema = Field(default_factory=CoverImagesSchema)
+class RomArtFields(BaseModel):
+    art: ArtMap = Field(
+        default_factory=dict,
+        description=(
+            "Pictures by role (`cover`, ...), each listing every file of that picture,"
+            " widest first. A missing role means no such picture is known."
+        ),
+    )
 
 
-def cover_images(sizes_by_role: dict[str, tuple[int, int]]) -> CoverImagesSchema:
-    """The `cover` value for a rom's cover sizes, keyed by role."""
-
-    def size(role: str) -> ImageSizeSchema | None:
-        found = sizes_by_role.get(role)
-        return ImageSizeSchema(width=found[0], height=found[1]) if found else None
-
-    return CoverImagesSchema(large=size(COVER_LARGE), small=size(COVER_SMALL))
+def rom_art(covers: list[StoredImage], version: datetime) -> ArtMap:
+    """The `art` value for a rom whose cover files are `covers`."""
+    if not covers:
+        return {}
+    return {
+        ART_COVER: [
+            ArtFileSchema(
+                url=f"{FRONTEND_RESOURCES_PATH}/{image.path}?ts={version}",
+                width=image.width,
+                height=image.height,
+                type=_MIME_BY_FORMAT.get(image.format, f"image/{image.format.lower()}"),
+            )
+            for image in covers
+        ]
+    }

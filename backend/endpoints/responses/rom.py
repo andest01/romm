@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import NotRequired, TypedDict, get_type_hints
+from typing import TYPE_CHECKING, NotRequired, TypedDict, get_type_hints
 
 from fastapi import Request
 from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
@@ -44,7 +44,10 @@ from models.rom import (
 from utils.conversion_cache import offered_download_formats
 
 from .base import BaseModel, UTCDatetime
-from .image import RomCoverFields, cover_images
+from .image import RomArtFields, rom_art
+
+if TYPE_CHECKING:
+    from handler.database.images_handler import StoredImage
 
 SORT_COMPARE_REGEX = re.compile(r"^([Tt]he|[Aa]|[Aa]nd)\s")
 
@@ -534,7 +537,7 @@ def _visible_siblings(db_rom: Rom, request: Request) -> list[Rom]:
     return [s for s in siblings if perms.can_see_rom(s)]
 
 
-class SimpleRomSchema(RomSchema, RomCoverFields):
+class SimpleRomSchema(RomSchema, RomArtFields):
     screenshot_path: str | None = None
 
     @classmethod
@@ -546,7 +549,7 @@ class SimpleRomSchema(RomSchema, RomCoverFields):
         siblings: Sequence[tuple[Rom, bool]] | None = None,
         screenshot_path: str | None = None,
         has_notes: bool | None = None,
-        cover_sizes: dict[str, tuple[int, int]] | None = None,
+        cover_files: list[StoredImage] | None = None,
     ) -> SimpleRomSchema:
         db_rom = cls.populate_properties(db_rom, request, has_notes=has_notes)
         db_rom.screenshot_path = screenshot_path  # type: ignore[attr-defined]
@@ -578,16 +581,16 @@ class SimpleRomSchema(RomSchema, RomCoverFields):
             SiblingRomSchema.from_rom(s, is_main_sibling=is_main)
             for s, is_main in siblings
         ]
-        if cover_sizes is None:
+        if cover_files is None:
             # Local import: breaks the responses.rom <-> handler.database cycle.
             from handler.database import db_image_handler
 
-            cover_sizes = db_image_handler.get_cover_sizes_for_roms([db_rom.id]).get(
-                db_rom.id, {}
+            cover_files = db_image_handler.get_cover_files_for_roms([db_rom.id]).get(
+                db_rom.id, []
             )
         # Set on a copy: an attribute set on the row could be flushed with the session.
         return cls.model_validate(db_rom).model_copy(
-            update={"cover": cover_images(cover_sizes)}
+            update={"art": rom_art(cover_files, db_rom.updated_at)}
         )
 
     @classmethod

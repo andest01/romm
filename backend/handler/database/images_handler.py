@@ -32,30 +32,43 @@ class ImageFacts:
     avg_color: str | None
 
 
+@dataclass(frozen=True)
+class StoredImage:
+    """One linked image file: its resources-relative path, size and format."""
+
+    path: str
+    width: int
+    height: int
+    format: str
+
+
 class DBImagesHandler(DBBaseHandler):
     @begin_session
-    def get_cover_sizes_for_roms(
+    def get_cover_files_for_roms(
         self,
         rom_ids: list[int],
         *,
         session: Session = INJECTED_SESSION,
-    ) -> dict[int, dict[str, tuple[int, int]]]:
-        """Cached cover (width, height) by role, for the roms in `rom_ids` that have any."""
+    ) -> dict[int, list[StoredImage]]:
+        """Linked cover files, widest first, for the roms in `rom_ids` that have any."""
         if not rom_ids:
             return {}
 
         rows = session.execute(
-            select(RomImage.rom_id, RomImage.role, Image.width, Image.height)
+            select(RomImage.rom_id, Image.path, Image.width, Image.height, Image.format)
             .join(Image, Image.id == RomImage.image_id)
             .where(
                 RomImage.rom_id.in_(rom_ids),
                 RomImage.role.in_((COVER_LARGE, COVER_SMALL)),
             )
+            .order_by(RomImage.rom_id, Image.width.desc())
         ).all()
-        sizes: dict[int, dict[str, tuple[int, int]]] = {}
-        for rom_id, role, width, height in rows:
-            sizes.setdefault(rom_id, {})[role] = (width, height)
-        return sizes
+        files: dict[int, list[StoredImage]] = {}
+        for rom_id, path, width, height, image_format in rows:
+            files.setdefault(rom_id, []).append(
+                StoredImage(path, width, height, image_format)
+            )
+        return files
 
     @begin_session
     def get_bytes_by_path(

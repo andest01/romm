@@ -5,6 +5,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from tests.factories import make_rom
 
+from config import FRONTEND_RESOURCES_PATH
 from endpoints.responses.rom import SimpleRomSchema
 from handler.database import db_image_handler, db_rom_handler
 from handler.database.base_handler import sync_session
@@ -26,7 +27,9 @@ def _add_rom(admin_user: User, platform: Platform, name: str) -> Rom:
     return rom
 
 
-def _cache_cover(rom: Rom, role: str, width: int, height: int) -> None:
+def _cache_cover(
+    rom: Rom, role: str, width: int, height: int, image_format: str = "PNG"
+) -> str:
     path = f"roms/{rom.platform_id}/{rom.id}/cover/{role}.png"
     with sync_session.begin() as session:
         image = Image(
@@ -34,12 +37,24 @@ def _cache_cover(rom: Rom, role: str, width: int, height: int) -> None:
             path_hash=compute_image_path_hash(path),
             width=width,
             height=height,
-            format="PNG",
+            format=image_format,
             bytes=1000,
         )
         session.add(image)
         session.flush()
         session.add(RomImage(rom_id=rom.id, role=role, image_id=image.id))
+    return path
+
+
+def _file(rom_id: int, path: str, width: int, height: int, mime: str) -> dict[str, Any]:
+    rom = db_rom_handler.get_rom(rom_id)
+    assert rom is not None
+    return {
+        "url": f"{FRONTEND_RESOURCES_PATH}/{path}?ts={rom.updated_at}",
+        "width": width,
+        "height": height,
+        "type": mime,
+    }
 
 
 def _items_by_id(client: TestClient, access_token: str) -> dict[int, dict[str, Any]]:
@@ -52,30 +67,31 @@ def _items_by_id(client: TestClient, access_token: str) -> dict[int, dict[str, A
     return {item["id"]: item for item in response.json()["items"]}
 
 
-def test_the_rom_list_carries_each_cached_cover_size(
+def test_the_rom_list_lists_each_cover_file_widest_first(
     client: TestClient, access_token: str, admin_user: User, platform: Platform
 ) -> None:
     cached = _add_rom(admin_user, platform, "cached")
     large_only = _add_rom(admin_user, platform, "large_only")
     uncached = _add_rom(admin_user, platform, "uncached")
-    _cache_cover(cached, COVER_LARGE, 600, 900)
-    _cache_cover(cached, COVER_SMALL, 240, 360)
-    _cache_cover(large_only, COVER_LARGE, 1024, 1024)
+    small = _cache_cover(cached, COVER_SMALL, 240, 360)
+    large = _cache_cover(cached, COVER_LARGE, 600, 900, image_format="JPEG")
+    only = _cache_cover(large_only, COVER_LARGE, 1024, 1024)
 
     items = _items_by_id(client, access_token)
 
-    assert items[cached.id]["cover"] == {
-        "large": {"width": 600, "height": 900},
-        "small": {"width": 240, "height": 360},
+    assert items[cached.id]["art"] == {
+        "cover": [
+            _file(cached.id, large, 600, 900, "image/jpeg"),
+            _file(cached.id, small, 240, 360, "image/png"),
+        ]
     }
-    assert items[large_only.id]["cover"] == {
-        "large": {"width": 1024, "height": 1024},
-        "small": None,
+    assert items[large_only.id]["art"] == {
+        "cover": [_file(large_only.id, only, 1024, 1024, "image/png")]
     }
-    assert items[uncached.id]["cover"] == {"large": None, "small": None}
+    assert items[uncached.id]["art"] == {}
 
 
-def test_get_cover_sizes_for_roms_groups_the_cover_roles_by_rom(
+def test_get_cover_files_for_roms_groups_the_cover_files_by_rom(
     admin_user: User, platform: Platform
 ) -> None:
     small_only = _add_rom(admin_user, platform, "small_only")
@@ -86,21 +102,23 @@ def test_get_cover_sizes_for_roms_groups_the_cover_roles_by_rom(
     _cache_cover(both, COVER_SMALL, 360, 360)
 
     with sync_session.begin() as session:
-        sizes = db_image_handler.get_cover_sizes_for_roms(
+        files = db_image_handler.get_cover_files_for_roms(
             [small_only.id, both.id, none.id], session=session
         )
 
-    assert sizes == {
-        small_only.id: {COVER_SMALL: (240, 360)},
-        both.id: {COVER_LARGE: (1024, 1024), COVER_SMALL: (360, 360)},
+    assert {
+        rom_id: [(f.width, f.height) for f in fs] for rom_id, fs in files.items()
+    } == {
+        small_only.id: [(240, 360)],
+        both.id: [(1024, 1024), (360, 360)],
     }
 
 
-def test_a_single_rom_carries_its_cover_size_too(
+def test_a_single_rom_carries_its_art_too(
     client: TestClient, access_token: str, admin_user: User, platform: Platform
 ) -> None:
     rom = _add_rom(admin_user, platform, "single")
-    _cache_cover(rom, COVER_LARGE, 600, 900)
+    path = _cache_cover(rom, COVER_LARGE, 600, 900)
 
     response = client.get(
         f"/api/roms/{rom.id}/simple",
@@ -108,13 +126,12 @@ def test_a_single_rom_carries_its_cover_size_too(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["cover"] == {
-        "large": {"width": 600, "height": 900},
-        "small": None,
+    assert response.json()["art"] == {
+        "cover": [_file(rom.id, path, 600, 900, "image/png")]
     }
 
 
-def test_the_cover_is_set_on_the_response_not_on_the_rom(
+def test_the_art_is_set_on_the_response_not_on_the_rom(
     admin_user: User, platform: Platform
 ) -> None:
     rom = _add_rom(admin_user, platform, "untouched")
@@ -127,6 +144,5 @@ def test_the_cover_is_set_on_the_response_not_on_the_rom(
     assert db_rom is not None
     schema = SimpleRomSchema.from_orm_with_request(db_rom, request)
 
-    assert not hasattr(db_rom, "cover")
-    assert schema.cover.large is not None
-    assert (schema.cover.large.width, schema.cover.large.height) == (600, 900)
+    assert not hasattr(db_rom, "art")
+    assert [(f.width, f.height) for f in schema.art["cover"]] == [(600, 900)]
