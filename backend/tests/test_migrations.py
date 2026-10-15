@@ -258,6 +258,9 @@ def _replay(connection: sa.Connection, filename: str) -> None:
         ("0148_rom_age_limits.py", "permission_groups"),
         ("0148_rom_age_limits.py", "users"),
         ("0151_state_content_hash.py", "states"),
+        ("0154_images.py", "images"),
+        ("0154_images.py", "rom_images"),
+        ("0154_images.py", "collection_images"),
     ],
 )
 def test_a_revision_replayed_over_the_migrated_schema_is_a_no_op(
@@ -339,6 +342,23 @@ def test_the_state_content_hash_revision_reverses_and_replays():
             migration.upgrade()
 
         assert _schema_of(connection, "states") == before
+
+
+def test_the_images_revision_reverses_and_replays():
+    migration = _load_migration("0154_images.py")
+    tables = ("images", "rom_images", "collection_images")
+
+    with sync_engine.begin() as connection:
+        before = [_schema_of(connection, table) for table in tables]
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.downgrade()
+            assert not any(sa.inspect(connection).has_table(t) for t in tables)
+
+            migration.downgrade()
+            migration.upgrade()
+            migration.upgrade()
+
+        assert [_schema_of(connection, table) for table in tables] == before
 
 
 def test_the_cross_user_smart_scopes_revision_empties_only_those_caches(
