@@ -7,6 +7,7 @@ from endpoints.responses.recommendation import RecommendedRomSchema
 from endpoints.responses.rom import SimpleRomSchema
 from handler.auth.constants import Scope
 from handler.auth.dependencies import get_permissions
+from handler.database import db_image_handler
 from handler.recommendation import recommended_roms
 from utils.router import APIRouter
 
@@ -42,9 +43,12 @@ def get_recommendations(
         refresh=refresh,
     )
 
+    sizes = db_image_handler.get_cover_sizes_for_roms([i.rom.id for i in feed])
     return [
         RecommendedRomSchema(
-            rom=SimpleRomSchema.from_orm_with_request(item.rom, request),
+            rom=SimpleRomSchema.from_orm_with_request(
+                item.rom, request, cover_sizes=sizes.get(item.rom.id, {})
+            ),
             score=item.score,
             reasons=item.reasons,  # type: ignore[arg-type]
             seed_rom_id=item.seed_rom_id,

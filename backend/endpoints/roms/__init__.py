@@ -73,6 +73,7 @@ from handler.auth.dependencies import (
 )
 from handler.database import (
     db_collection_handler,
+    db_image_handler,
     db_platform_handler,
     db_rom_handler,
     db_save_handler,
@@ -774,6 +775,9 @@ def get_roms(
             rom_ids_with_notes = db_rom_handler.get_rom_ids_with_notes(
                 rom_ids, user_id=request.user.id, session=session
             )
+            cover_sizes = db_image_handler.get_cover_sizes_for_roms(
+                rom_ids, session=session
+            )
             if with_files:
                 for item in items:
                     apply_file_stats(item, files_by_rom.get(item.id, []))
@@ -797,6 +801,7 @@ def get_roms(
                     siblings=siblings_by_rom.get(item.id, []),
                     screenshot_path=screenshot_by_rom.get(item.id),
                     has_notes=item.id in rom_ids_with_notes,
+                    cover_sizes=cover_sizes.get(item.id, {}),
                 )
                 for item in items
             ]
@@ -1296,13 +1301,17 @@ def get_similar_roms(
 
     assert_rom_visible(request, rom)
 
+    items = similar_roms(id, limit=limit, permissions=get_permissions(request))
+    sizes = db_image_handler.get_cover_sizes_for_roms([i.rom.id for i in items])
     return [
         SimilarRomSchema(
-            rom=SimpleRomSchema.from_orm_with_request(item.rom, request),
+            rom=SimpleRomSchema.from_orm_with_request(
+                item.rom, request, cover_sizes=sizes.get(item.rom.id, {})
+            ),
             score=item.score,
             reasons=item.reasons,  # type: ignore[arg-type]
         )
-        for item in similar_roms(id, limit=limit, permissions=get_permissions(request))
+        for item in items
     ]
 
 

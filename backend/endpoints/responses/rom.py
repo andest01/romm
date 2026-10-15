@@ -44,6 +44,7 @@ from models.rom import (
 from utils.conversion_cache import offered_download_formats
 
 from .base import BaseModel, UTCDatetime
+from .image import RomCoverFields, cover_images
 
 SORT_COMPARE_REGEX = re.compile(r"^([Tt]he|[Aa]|[Aa]nd)\s")
 
@@ -533,7 +534,7 @@ def _visible_siblings(db_rom: Rom, request: Request) -> list[Rom]:
     return [s for s in siblings if perms.can_see_rom(s)]
 
 
-class SimpleRomSchema(RomSchema):
+class SimpleRomSchema(RomSchema, RomCoverFields):
     screenshot_path: str | None = None
 
     @classmethod
@@ -545,6 +546,7 @@ class SimpleRomSchema(RomSchema):
         siblings: Sequence[tuple[Rom, bool]] | None = None,
         screenshot_path: str | None = None,
         has_notes: bool | None = None,
+        cover_sizes: dict[str, tuple[int, int]] | None = None,
     ) -> SimpleRomSchema:
         db_rom = cls.populate_properties(db_rom, request, has_notes=has_notes)
         db_rom.screenshot_path = screenshot_path  # type: ignore[attr-defined]
@@ -576,7 +578,17 @@ class SimpleRomSchema(RomSchema):
             SiblingRomSchema.from_rom(s, is_main_sibling=is_main)
             for s, is_main in siblings
         ]
-        return cls.model_validate(db_rom)
+        if cover_sizes is None:
+            # Local import: breaks the responses.rom <-> handler.database cycle.
+            from handler.database import db_image_handler
+
+            cover_sizes = db_image_handler.get_cover_sizes_for_roms([db_rom.id]).get(
+                db_rom.id, {}
+            )
+        # Set on a copy: an attribute set on the row could be flushed with the session.
+        return cls.model_validate(db_rom).model_copy(
+            update={"cover": cover_images(cover_sizes)}
+        )
 
     @classmethod
     def from_orm_with_factory(cls, db_rom: Rom) -> SimpleRomSchema:
