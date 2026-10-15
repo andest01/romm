@@ -38,6 +38,9 @@ class Image(BaseModel):
         String(IMAGE_HASH_LENGTH), index=True
     )
     avg_color: Mapped[str | None] = mapped_column(String(7))
+    source_id: Mapped[int | None] = mapped_column(
+        ForeignKey("images.id", ondelete="CASCADE"), index=True
+    )
 
 
 class RomImage(BaseModel):

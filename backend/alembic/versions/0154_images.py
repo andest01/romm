@@ -59,14 +59,17 @@ def upgrade() -> None:
         sa.Column("bytes", sa.BigInteger(), nullable=False),
         sa.Column("content_hash", sa.String(length=64), nullable=True),
         sa.Column("avg_color", sa.String(length=7), nullable=True),
+        sa.Column("source_id", sa.Integer(), nullable=True),
         *_timestamps(),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("path_hash"),
+        sa.ForeignKeyConstraint(["source_id"], ["images.id"], ondelete="CASCADE"),
         if_not_exists=True,
     )
     op.create_index(
         "ix_images_content_hash", "images", ["content_hash"], if_not_exists=True
     )
+    op.create_index("ix_images_source_id", "images", ["source_id"], if_not_exists=True)
     _link_table("rom_images", "rom_id", "roms")
     _link_table("collection_images", "collection_id", "collections")
 
