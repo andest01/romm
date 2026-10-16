@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ArtFileSchema } from './ArtFileSchema';
 import type { ManualMetadata } from './ManualMetadata';
 import type { RomCsdbMetadata } from './RomCsdbMetadata';
 import type { RomDemozooMetadata } from './RomDemozooMetadata';
@@ -22,6 +23,10 @@ import type { RomUserSchema } from './RomUserSchema';
 import type { SaveTargetLayout } from './SaveTargetLayout';
 import type { SiblingRomSchema } from './SiblingRomSchema';
 export type SimpleRomSchema = {
+    /**
+     * Pictures by role (`cover`, ...), each listing every file of that picture, widest first. A missing role means no such picture is known.
+     */
+    art?: Record<string, Array<ArtFileSchema>>;
     id: number;
     igdb_id: (number | null);
     sgdb_id: (number | null);
