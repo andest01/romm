@@ -9,6 +9,7 @@ from handler.database import db_image_handler
 from handler.database.images_handler import ImageFacts
 from handler.filesystem.image_inventory import (
     classify,
+    cover_source_path,
     iter_resource_files,
     read_facts,
 )
@@ -72,8 +73,9 @@ def run_inventory(
         db_image_handler.link_covers()
     )
 
-    # something has to go here after that, db_image_handler.link_sources();
-    # i wish i knew what the source_id was for it.
+    report["copies linked to their original"] = db_image_handler.link_sources(
+        {path: cover_source_path(path) for path in seen}
+    )
 
     vanished = _vanished_rows(root, seen, platform_ids, full_walk=limit is None)
     report["vanished rows"] = len(vanished)

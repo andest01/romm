@@ -5,13 +5,14 @@ import os
 import re
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Final, Literal
 
 from PIL import Image as PILImage
 
 from config.config_manager import MetadataMediaType
 from handler.database.images_handler import ImageFacts
+from handler.filesystem.base_handler import CoverSize
 from utils.media_types import ALLOWED_IMAGE_EXTENSIONS
 
 # Folder names that hold images; video and manuals stay out of the table.
@@ -67,7 +68,11 @@ def cover_source_path(path: str) -> str | None:
         The `big.png` in the same cover folder when `path` is another file there,
         else None (an original, or not a cover).
     """
-    raise NotImplementedError
+    location = classify(path)
+    if location is None or location.kind != "cover":
+        return None
+    original = str(PurePosixPath(path).with_name(f"{CoverSize.BIG.value}.png"))
+    return None if original == path else original
 
 
 def iter_resource_files(root: Path, platform_ids: Sequence[int] = ()) -> Iterator[str]:

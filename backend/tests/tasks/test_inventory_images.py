@@ -203,3 +203,31 @@ def test_link_sources_points_copies_at_their_original() -> None:
 
     assert changed == 2
     assert [_source_of(path) for path in (big, small, webp)] == [None, big, big]
+
+
+def test_link_sources_refuses_a_copy_of_a_copy() -> None:
+    big, small, webp = (
+        f"roms/1/3/cover/{n}" for n in ("big.png", "small.png", "small.webp")
+    )
+    for path in (big, small, webp):
+        _image(path)
+
+    with pytest.raises(ValueError, match="is itself a copy"):
+        db_image_handler.link_sources({big: None, small: big, webp: small})
+
+
+def test_run_inventory_points_cover_copies_at_big_png(
+    tmp_path: Path, platform: Platform
+) -> None:
+    rom = make_rom(platform, "lineage")
+    folder = _write_library(tmp_path, rom)
+    _png(tmp_path, f"{folder}/cover/big.webp", (60, 90))
+
+    report = run_inventory(tmp_path)
+
+    big = f"{folder}/cover/big.png"
+    assert report["copies linked to their original"] == 2
+    assert _source_of(big) is None
+    assert _source_of(f"{folder}/cover/small.png") == big
+    assert _source_of(f"{folder}/cover/big.webp") == big
+    assert _source_of(f"{folder}/box3d/box3d.png") is None

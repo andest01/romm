@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 from fastapi import status
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from tests.factories import make_rom
 
 from config import FRONTEND_RESOURCES_PATH
@@ -146,3 +147,47 @@ def test_the_art_is_set_on_the_response_not_on_the_rom(
 
     assert not hasattr(db_rom, "art")
     assert [(f.width, f.height) for f in schema.art["cover"]] == [(600, 900)]
+
+
+def _copy_of(original_path: str, path: str, width: int, height: int, size: int) -> None:
+    with sync_session.begin() as session:
+        original = session.scalars(
+            select(Image).where(Image.path == original_path)
+        ).one()
+        session.add(
+            Image(
+                path=path,
+                path_hash=compute_image_path_hash(path),
+                width=width,
+                height=height,
+                format="WEBP",
+                bytes=size,
+                source_id=original.id,
+            )
+        )
+
+
+def test_art_lists_each_copy_of_the_cover_once(
+    client: TestClient, access_token: str, admin_user: User, platform: Platform
+) -> None:
+    rom = _add_rom(admin_user, platform, "with_copies")
+    big = _cache_cover(rom, COVER_LARGE, 600, 900)
+    small = _cache_cover(rom, COVER_SMALL, 240, 360)
+    folder = big.rsplit("/", 1)[0]
+    _copy_of(big, f"{folder}/big.webp", 600, 900, size=400)
+    _copy_of(big, f"{folder}/small.webp", 240, 360, size=90)
+    with sync_session.begin() as session:
+        session.scalars(select(Image).where(Image.path == small)).one().source_id = (
+            session.scalars(select(Image.id).where(Image.path == big)).one()
+        )
+
+    items = _items_by_id(client, access_token)
+
+    assert items[rom.id]["art"] == {
+        "cover": [
+            _file(rom.id, f"{folder}/big.webp", 600, 900, "image/webp"),
+            _file(rom.id, big, 600, 900, "image/png"),
+            _file(rom.id, f"{folder}/small.webp", 240, 360, "image/webp"),
+            _file(rom.id, small, 240, 360, "image/png"),
+        ]
+    }

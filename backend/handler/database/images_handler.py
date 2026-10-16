@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import InstrumentedAttribute, Session
 
 from decorators.database import INJECTED_SESSION, begin_session
@@ -17,6 +17,9 @@ from models.image import (
 from models.rom import Rom
 
 from .base_handler import DBBaseHandler
+
+# Paths per `IN (...)` lookup, well under every driver's bound-parameter limit.
+LOOKUP_BATCH = 500
 
 
 @dataclass(frozen=True)
@@ -50,21 +53,40 @@ class DBImagesHandler(DBBaseHandler):
         *,
         session: Session = INJECTED_SESSION,
     ) -> dict[int, list[StoredImage]]:
-        """Linked cover files, widest first, for the roms in `rom_ids` that have any."""
+        """Cover files for the roms in `rom_ids` that have any: the linked ones and
+        their copies, widest first, then smallest file first."""
         if not rom_ids:
             return {}
 
-        rows = session.execute(
-            select(RomImage.rom_id, Image.path, Image.width, Image.height, Image.format)
-            .join(Image, Image.id == RomImage.image_id)
+        linked = (
+            select(RomImage.rom_id, RomImage.image_id)
             .where(
                 RomImage.rom_id.in_(rom_ids),
                 RomImage.role.in_((COVER_LARGE, COVER_SMALL)),
             )
-            .order_by(RomImage.rom_id, Image.width.desc())
+            .subquery()
+        )
+        rows = session.execute(
+            select(
+                linked.c.rom_id,
+                Image.path,
+                Image.width,
+                Image.height,
+                Image.format,
+                Image.bytes,
+            )
+            # A copy of the large cover can also be linked itself (small.png), hence distinct.
+            .join(
+                Image,
+                or_(
+                    Image.id == linked.c.image_id, Image.source_id == linked.c.image_id
+                ),
+            )
+            .distinct()
+            .order_by(linked.c.rom_id, Image.width.desc(), Image.bytes)
         ).all()
         files: dict[int, list[StoredImage]] = {}
-        for rom_id, path, width, height, image_format in rows:
+        for rom_id, path, width, height, image_format, _ in rows:
             files.setdefault(rom_id, []).append(
                 StoredImage(path, width, height, image_format)
             )
@@ -138,9 +160,39 @@ class DBImagesHandler(DBBaseHandler):
                 None for an original.
 
         Returns:
-            How many rows changed.
+            How many rows changed. A copy whose original wasn't walked is left with
+            no source, so prune never cascades into files still on disk.
         """
-        raise NotImplementedError
+        paths = list(source_by_path)
+        changed = 0
+        for start in range(0, len(paths), LOOKUP_BATCH):
+            chunk = paths[start : start + LOOKUP_BATCH]
+            images = session.scalars(
+                select(Image).where(
+                    Image.path_hash.in_([compute_image_path_hash(p) for p in chunk])
+                )
+            ).all()
+            originals = self._ids_by_path(
+                {source_by_path[image.path] for image in images} - {None}, session
+            )
+            for image in images:
+                source = source_by_path[image.path]
+                if source is not None and source_by_path.get(source) is not None:
+                    raise ValueError(f"{image.path}: {source} is itself a copy")
+                wanted = originals.get(source) if source else None
+                if image.source_id != wanted:
+                    image.source_id = wanted
+                    changed += 1
+        return changed
+
+    def _ids_by_path(self, paths: set[str | None], session: Session) -> dict[str, int]:
+        hashes = [compute_image_path_hash(p) for p in paths if p]
+        if not hashes:
+            return {}
+        rows = session.execute(
+            select(Image.path, Image.id).where(Image.path_hash.in_(hashes))
+        ).all()
+        return {path: image_id for path, image_id in rows}
 
     @begin_session
     def list_image_paths(

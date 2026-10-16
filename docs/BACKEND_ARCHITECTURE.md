@@ -625,16 +625,19 @@ Tracks individual files within a ROM (archives can contain multiple files).
 
 One `images` row per image file under the resources folder, filled by the `inventory_images` task. No row means the file is unknown, not missing.
 
-| Column            | Type       | Notes                                                    |
-| ----------------- | ---------- | -------------------------------------------------------- |
-| `id`              | Integer    | PK                                                       |
-| `path`            | Text       | Relative to the resources folder                         |
-| `path_hash`       | String(64) | Unique; sha256 of `path` (MariaDB can't key the text)    |
-| `width`, `height` | Integer    | Pixels, from the file header                             |
-| `format`          | String(16) | Pillow's format name of the content (`PNG`, `JPEG`, ...) |
-| `bytes`           | BigInteger | File size; an unchanged size skips the file on a rerun   |
-| `content_hash`    | String(64) | sha256 of the bytes, indexed                             |
-| `avg_color`       | String(7)  | `#rrggbb`                                                |
+| Column            | Type        | Notes                                                    |
+| ----------------- | ----------- | -------------------------------------------------------- |
+| `id`              | Integer     | PK                                                       |
+| `path`            | Text        | Relative to the resources folder                         |
+| `path_hash`       | String(64)  | Unique; sha256 of `path` (MariaDB can't key the text)    |
+| `width`, `height` | Integer     | Pixels, from the file header                             |
+| `format`          | String(16)  | Pillow's format name of the content (`PNG`, `JPEG`, ...) |
+| `bytes`           | BigInteger  | File size; an unchanged size skips the file on a rerun   |
+| `content_hash`    | String(64)  | sha256 of the bytes, indexed                             |
+| `avg_color`       | String(7)   | `#rrggbb`                                                |
+| `source_id`       | FK → images | The original this file is a copy of; `CASCADE`           |
+
+Lineage is flat: a copy (a resized `small.png`, a WebP or AVIF conversion) points at its original, never at another copy, so `WHERE id = X OR source_id = X` is a file's whole delete tree and `WHERE source_id = X` its stale set when it changes.
 
 `rom_images` (`rom_id`, `role`, `image_id`) and `collection_images` (`collection_id`, `role`, `image_id`) say which image fills an owner's role: `cover_large` or `cover_small` today. Both cascade from their owner and from `images`.
 
@@ -942,7 +945,7 @@ A reset link is emailed when SMTP is set up, the user has an address and `ROMM_B
 
 With rom-converto enabled (`ROM_CONVERTO_ENABLED`, `converto.download_conversion_enabled`), `?format=zso,iso` lists the formats a client can read. A single-file download whose stored format is listed is served as-is. Otherwise the first listed format with a copy cached under `/tmp/romm/cache/converts` (`$ROMM_TMP_PATH/cache/converts` when set) is served, then the first one rom-converto can produce: answered by the same request if it converts within a few seconds, else `202` with `Retry-After` while it finishes. `406` means no listed format can be served, and `HEAD` reports the same without starting a conversion. Only signed-in, non-kiosk users start conversions. A rom's detail response lists the formats its single file can be converted to in `download_formats`, empty when the caller can't start a conversion.
 
-Every `SimpleRomSchema` response (the list, `/{id}/simple`, similar ROMs, recommendations) carries `art`: pictures by role, each a list of that picture's files, widest first.
+Every `SimpleRomSchema` response (the list, `/{id}/simple`, similar ROMs, recommendations) carries `art`: pictures by role, each a list of that picture's files (the linked covers and their copies), widest first, then smallest file first.
 
 ```json
 "art": {
@@ -1785,11 +1788,11 @@ Triggered via `POST /api/tasks/run/{task_name}`, which enqueues on `low_prio_que
 | `cleanup_missing_roms` | Remove DB entries for files no longer on disk                                         |
 | `sync_folder_scan`     | Scan sync folder for new device saves                                                 |
 | `convert_library`      | Convert matched ROMs to `converto.platform_formats` in place, replacing the originals |
-| `inventory_images`     | Record every cover and media image in `images` and link cover roles                   |
+| `inventory_images`     | Record every cover and media image in `images`, link cover roles and cover copies     |
 
 A spec marked `destructive` asks for a typed confirmation before the UI runs it, and one marked `single_instance` answers 409 while a job of it is queued or running. `convert_library` is both, and runs only with `ROM_CONVERTO_ENABLED` set. `inventory_images` is `single_instance`.
 
-`inventory_images` takes optional `platform_ids`, `limit` and `prune`. A rerun reads only files that are new or changed size. With `prune`, it deletes rows whose file is gone; their links cascade.
+`inventory_images` takes optional `platform_ids`, `limit` and `prune`. A rerun reads only files that are new or changed size. Every file in a cover folder other than `big.png` gets `source_id` pointing at that `big.png`. With `prune`, it deletes rows whose file is gone; their links cascade.
 
 `convert_library` only converts losslessly (no xiso) and only identified ROMs, since a converted file no longer hash-matches a DAT. It stages each output under a `.romm_tmp_` directory beside the ROM, deletes the originals (and a cue's tracks) once the output is in place, rewrites `.m3u` entries in folder ROMs, and refreshes the ROM's files, so the ROM keeps its id, saves and collections.
 
