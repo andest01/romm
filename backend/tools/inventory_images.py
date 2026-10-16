@@ -10,6 +10,7 @@ Run from the backend directory:
     uv run tools/inventory_images.py --root /mnt/r         # another resources folder (e.g. a mount)
     uv run tools/inventory_images.py --platform 60 --limit 200
     uv run tools/inventory_images.py --prune               # also delete vanished rows
+    uv run tools/inventory_images.py --full --prune        # re-read every file, in place
 """
 
 import argparse
@@ -37,10 +38,19 @@ def main() -> int:
     parser.add_argument(
         "--prune", action="store_true", help="Delete rows whose file is gone"
     )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Re-read every file, even those whose size is unchanged",
+    )
     args = parser.parse_args()
 
     result = run_inventory(
-        Path(args.root), prune=args.prune, platform_ids=args.platform, limit=args.limit
+        Path(args.root),
+        prune=args.prune,
+        platform_ids=args.platform,
+        limit=args.limit,
+        full=args.full,
     )
     print(json.dumps(result, indent=2))
     return 0

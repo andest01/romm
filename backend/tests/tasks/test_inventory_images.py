@@ -1,10 +1,13 @@
+import asyncio
 from pathlib import Path
 
 import pytest
 from PIL import Image as PILImage
+from pytest_mock import MockerFixture
 from sqlalchemy import select
 from tests.factories import make_rom
 
+import tasks.manual.inventory_images as inventory_module
 from handler.database import db_image_handler
 from handler.database.base_handler import sync_session
 from handler.filesystem.image_inventory import (
@@ -266,3 +269,71 @@ def test_media_of_a_rom_that_no_longer_exists_is_not_linked(tmp_path: Path) -> N
 
     assert report["media links written"] == 0
     assert "roms/1/999999/box3d/box3d.png" in _paths()
+
+
+def _avg_color(path: str) -> str | None:
+    with sync_session.begin() as session:
+        return session.scalars(select(Image.avg_color).where(Image.path == path)).one()
+
+
+def test_full_rereads_every_file_and_keeps_the_rows(
+    tmp_path: Path, platform: Platform
+) -> None:
+    rom = make_rom(platform, "full")
+    _write_library(tmp_path, rom)
+    run_inventory(tmp_path)
+    with sync_session.begin() as session:
+        ids_before = dict(session.execute(select(Image.path, Image.id)).all())
+
+    report = run_inventory(tmp_path, full=True)
+
+    # The report holds only the counters that moved.
+    assert report.get("unchanged", 0) == 0
+    assert report.get("updated", 0) == 0
+    with sync_session.begin() as session:
+        assert dict(session.execute(select(Image.path, Image.id)).all()) == ids_before
+
+
+def test_a_same_size_rewrite_is_caught_only_by_full(
+    tmp_path: Path, platform: Platform
+) -> None:
+    rom = make_rom(platform, "rewrite")
+    folder = _write_library(tmp_path, rom)
+    big = f"{folder}/cover/big.png"
+    run_inventory(tmp_path)
+    before = _avg_color(big)
+    size = (tmp_path / big).stat().st_size
+    PILImage.new("RGB", (60, 90), (30, 20, 10)).save(tmp_path / big, "PNG")
+    assert (tmp_path / big).stat().st_size == size
+
+    run_inventory(tmp_path)
+    assert _avg_color(big) == before
+
+    run_inventory(tmp_path, full=True)
+    assert _avg_color(big) != before
+
+
+def test_progress_starts_at_zero_and_ends_at_the_total(
+    tmp_path: Path, platform: Platform
+) -> None:
+    _write_library(tmp_path, make_rom(platform, "progress"))
+    calls: list[tuple[int, int]] = []
+
+    run_inventory(tmp_path, on_progress=lambda done, total: calls.append((done, total)))
+
+    assert calls == [(0, 3), (3, 3)]
+
+
+async def test_the_task_reports_progress_in_the_job_meta(
+    tmp_path: Path, platform: Platform, mocker: MockerFixture
+) -> None:
+    _write_library(tmp_path, make_rom(platform, "meta"))
+    mocker.patch.object(inventory_module, "RESOURCES_BASE_PATH", str(tmp_path))
+    update_job_meta = mocker.patch("tasks.tasks.update_job_meta")
+
+    await inventory_module.inventory_images_task.run()
+    await asyncio.sleep(0)
+
+    assert update_job_meta.call_args.args[0] == {
+        "update_stats": {"processed": 3, "total": 3}
+    }
