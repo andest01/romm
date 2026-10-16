@@ -24,7 +24,7 @@ import type { SaveTargetLayout } from './SaveTargetLayout';
 import type { SiblingRomSchema } from './SiblingRomSchema';
 export type SimpleRomSchema = {
     /**
-     * Pictures by role (`cover`, ...), each listing every file of that picture, widest first. A missing role means no such picture is known.
+     * Pictures by role (`cover`, `box3d`, `logo`, ...: the media kinds), each listing every file of that picture, widest first, then smallest file first. A missing role means no such picture is known.
      */
     art?: Record<string, Array<ArtFileSchema>>;
     id: number;
