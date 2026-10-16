@@ -45,6 +45,7 @@ class StoredImage:
     height: int
     format: str
     bytes: int
+    content_hash: str | None
 
 
 class DBImagesHandler(DBBaseHandler):
@@ -73,6 +74,7 @@ class DBImagesHandler(DBBaseHandler):
                 Image.height,
                 Image.format,
                 Image.bytes,
+                Image.content_hash,
             )
             .join(
                 Image,

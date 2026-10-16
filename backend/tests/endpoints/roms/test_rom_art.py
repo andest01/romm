@@ -28,6 +28,11 @@ def _add_rom(admin_user: User, platform: Platform, name: str) -> Rom:
     return rom
 
 
+def _hash(path: str) -> str:
+    # Any 64-hex digest serves; the path's own keeps it unique per file.
+    return compute_image_path_hash(path)
+
+
 def _cache_cover(
     rom: Rom, role: str, width: int, height: int, image_format: str = "PNG"
 ) -> str:
@@ -40,6 +45,7 @@ def _cache_cover(
             height=height,
             format=image_format,
             bytes=1000,
+            content_hash=_hash(path),
         )
         session.add(image)
         session.flush()
@@ -47,11 +53,9 @@ def _cache_cover(
     return path
 
 
-def _file(rom_id: int, path: str, width: int, height: int, mime: str) -> dict[str, Any]:
-    rom = db_rom_handler.get_rom(rom_id)
-    assert rom is not None
+def _file(path: str, width: int, height: int, mime: str) -> dict[str, Any]:
     return {
-        "url": f"{FRONTEND_RESOURCES_PATH}/{path}?ts={rom.updated_at}",
+        "url": f"{FRONTEND_RESOURCES_PATH}/{path}?v={_hash(path)[:16]}",
         "width": width,
         "height": height,
         "type": mime,
@@ -82,12 +86,12 @@ def test_the_rom_list_lists_each_cover_file_widest_first(
 
     assert items[cached.id]["art"] == {
         "cover": [
-            _file(cached.id, large, 600, 900, "image/jpeg"),
-            _file(cached.id, small, 240, 360, "image/png"),
+            _file(large, 600, 900, "image/jpeg"),
+            _file(small, 240, 360, "image/png"),
         ]
     }
     assert items[large_only.id]["art"] == {
-        "cover": [_file(large_only.id, only, 1024, 1024, "image/png")]
+        "cover": [_file(only, 1024, 1024, "image/png")]
     }
     assert items[uncached.id]["art"] == {}
 
@@ -128,9 +132,7 @@ def test_a_single_rom_carries_its_art_too(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["art"] == {
-        "cover": [_file(rom.id, path, 600, 900, "image/png")]
-    }
+    assert response.json()["art"] == {"cover": [_file(path, 600, 900, "image/png")]}
 
 
 def test_the_art_is_set_on_the_response_not_on_the_rom(
@@ -163,6 +165,7 @@ def _copy_of(original_path: str, path: str, width: int, height: int, size: int) 
                 height=height,
                 format="WEBP",
                 bytes=size,
+                content_hash=_hash(path),
                 source_id=original.id,
             )
         )
@@ -186,10 +189,10 @@ def test_art_lists_each_copy_of_the_cover_once(
 
     assert items[rom.id]["art"] == {
         "cover": [
-            _file(rom.id, f"{folder}/big.webp", 600, 900, "image/webp"),
-            _file(rom.id, big, 600, 900, "image/png"),
-            _file(rom.id, f"{folder}/small.webp", 240, 360, "image/webp"),
-            _file(rom.id, small, 240, 360, "image/png"),
+            _file(f"{folder}/big.webp", 600, 900, "image/webp"),
+            _file(big, 600, 900, "image/png"),
+            _file(f"{folder}/small.webp", 240, 360, "image/webp"),
+            _file(small, 240, 360, "image/png"),
         ]
     }
 
@@ -208,6 +211,7 @@ def test_art_carries_each_media_kind_under_its_own_role(
             height=1000,
             format="PNG",
             bytes=5000,
+            content_hash=_hash(box3d),
         )
         session.add(image)
         session.flush()
@@ -216,6 +220,32 @@ def test_art_carries_each_media_kind_under_its_own_role(
     art = _items_by_id(client, access_token)[rom.id]["art"]
 
     assert art == {
-        "cover": [_file(rom.id, big, 600, 900, "image/png")],
-        "box3d": [_file(rom.id, box3d, 720, 1000, "image/png")],
+        "cover": [_file(big, 600, 900, "image/png")],
+        "box3d": [_file(box3d, 720, 1000, "image/png")],
     }
+
+
+def test_art_urls_are_valid_in_a_srcset(
+    client: TestClient, access_token: str, admin_user: User, platform: Platform
+) -> None:
+    rom = _add_rom(admin_user, platform, "srcset")
+    _cache_cover(rom, COVER_LARGE, 600, 900)
+
+    url = _items_by_id(client, access_token)[rom.id]["art"]["cover"][0]["url"]
+
+    assert not any(c.isspace() or c == "," for c in url)
+
+
+def test_a_file_without_a_hash_gets_a_plain_url(
+    client: TestClient, access_token: str, admin_user: User, platform: Platform
+) -> None:
+    rom = _add_rom(admin_user, platform, "no_hash")
+    path = _cache_cover(rom, COVER_LARGE, 600, 900)
+    with sync_session.begin() as session:
+        session.scalars(select(Image).where(Image.path == path)).one().content_hash = (
+            None
+        )
+
+    url = _items_by_id(client, access_token)[rom.id]["art"]["cover"][0]["url"]
+
+    assert url == f"{FRONTEND_RESOURCES_PATH}/{path}"

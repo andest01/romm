@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from pydantic import Field
@@ -14,6 +13,8 @@ if TYPE_CHECKING:
     from handler.database.images_handler import StoredImage
 
 ART_COVER = "cover"
+# Hex digits of the content hash in a URL: plenty to tell versions of one file apart.
+VERSION_LENGTH = 16
 # Pillow names a multi-picture JPEG "MPO"; browsers decode it as plain JPEG.
 _MIME_BY_FORMAT = {"MPO": "image/jpeg"}
 
@@ -41,7 +42,15 @@ class RomArtFields(BaseModel):
     )
 
 
-def rom_art(files: list[StoredImage], version: datetime) -> ArtMap:
+def _url(image: StoredImage) -> str:
+    url = f"{FRONTEND_RESOURCES_PATH}/{image.path}"
+    # The bytes' hash: the URL changes exactly when the file does.
+    if image.content_hash:
+        url += f"?v={image.content_hash[:VERSION_LENGTH]}"
+    return url
+
+
+def rom_art(files: list[StoredImage]) -> ArtMap:
     """The `art` value for a rom whose linked files are `files`, in their order."""
     art: ArtMap = {}
     listed: set[tuple[str, str]] = set()
@@ -53,7 +62,7 @@ def rom_art(files: list[StoredImage], version: datetime) -> ArtMap:
         listed.add((role, image.path))
         art.setdefault(role, []).append(
             ArtFileSchema(
-                url=f"{FRONTEND_RESOURCES_PATH}/{image.path}?ts={version}",
+                url=_url(image),
                 width=image.width,
                 height=image.height,
                 type=_MIME_BY_FORMAT.get(image.format, f"image/{image.format.lower()}"),

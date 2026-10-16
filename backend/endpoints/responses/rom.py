@@ -589,9 +589,7 @@ class SimpleRomSchema(RomSchema, RomArtFields):
                 db_rom.id, []
             )
         # Set on a copy: an attribute set on the row could be flushed with the session.
-        return cls.model_validate(db_rom).model_copy(
-            update={"art": rom_art(art_files, db_rom.updated_at)}
-        )
+        return cls.model_validate(db_rom).model_copy(update={"art": rom_art(art_files)})
 
     @classmethod
     def from_orm_with_factory(cls, db_rom: Rom) -> SimpleRomSchema:
