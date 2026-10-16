@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 
 from sqlalchemy import delete, select
@@ -124,6 +124,23 @@ class DBImagesHandler(DBBaseHandler):
             Collection.path_cover_s,
         )
         return roms[0] + collections[0], roms[1] + collections[1]
+
+    @begin_session
+    def link_sources(
+        self,
+        source_by_path: Mapping[str, str | None],
+        session: Session = INJECTED_SESSION,
+    ) -> int:
+        """Point each image's `source_id` at the row of the original its path names.
+
+        Args:
+            source_by_path: Walked paths, each mapped to its original's path, or
+                None for an original.
+
+        Returns:
+            How many rows changed.
+        """
+        raise NotImplementedError
 
     @begin_session
     def list_image_paths(

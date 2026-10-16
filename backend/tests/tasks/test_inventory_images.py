@@ -5,9 +5,20 @@ from PIL import Image as PILImage
 from sqlalchemy import select
 from tests.factories import make_rom
 
+from handler.database import db_image_handler
 from handler.database.base_handler import sync_session
-from handler.filesystem.image_inventory import ImageLocation, classify
-from models.image import COVER_LARGE, COVER_SMALL, Image, RomImage
+from handler.filesystem.image_inventory import (
+    ImageLocation,
+    classify,
+    cover_source_path,
+)
+from models.image import (
+    COVER_LARGE,
+    COVER_SMALL,
+    Image,
+    RomImage,
+    compute_image_path_hash,
+)
 from models.platform import Platform
 from models.rom import Rom
 from tasks.manual.inventory_images import run_inventory
@@ -141,3 +152,54 @@ def test_a_cleared_cover_path_loses_its_link(
             session.scalars(select(RomImage.role).where(RomImage.rom_id == rom.id))
         )
     assert roles == {COVER_SMALL}
+
+
+@pytest.mark.parametrize(
+    "path,expected",
+    [
+        ("roms/60/793/cover/small.png", "roms/60/793/cover/big.png"),
+        ("roms/60/793/cover/big.webp", "roms/60/793/cover/big.png"),
+        ("roms/60/793/cover/small.webp", "roms/60/793/cover/big.png"),
+        ("collections/7/cover/small.png", "collections/7/cover/big.png"),
+        ("roms/60/793/cover/big.png", None),
+        ("roms/60/793/box3d/box3d.png", None),
+        ("roms/60/793/screenshots/0.jpg", None),
+    ],
+)
+def test_a_cover_copy_names_its_original(path: str, expected: str | None) -> None:
+    assert cover_source_path(path) == expected
+
+
+def _image(path: str) -> None:
+    with sync_session.begin() as session:
+        session.add(
+            Image(
+                path=path,
+                path_hash=compute_image_path_hash(path),
+                width=10,
+                height=10,
+                format="PNG",
+                bytes=100,
+            )
+        )
+
+
+def _source_of(path: str) -> str | None:
+    with sync_session.begin() as session:
+        image = session.scalars(select(Image).where(Image.path == path)).one()
+        if image.source_id is None:
+            return None
+        return session.get_one(Image, image.source_id).path
+
+
+def test_link_sources_points_copies_at_their_original() -> None:
+    big, small, webp = (
+        f"roms/1/2/cover/{name}" for name in ("big.png", "small.png", "big.webp")
+    )
+    for path in (big, small, webp):
+        _image(path)
+
+    changed = db_image_handler.link_sources({big: None, small: big, webp: big})
+
+    assert changed == 2
+    assert [_source_of(path) for path in (big, small, webp)] == [None, big, big]

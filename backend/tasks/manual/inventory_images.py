@@ -72,6 +72,9 @@ def run_inventory(
         db_image_handler.link_covers()
     )
 
+    # something has to go here after that, db_image_handler.link_sources();
+    # i wish i knew what the source_id was for it.
+
     vanished = _vanished_rows(root, seen, platform_ids, full_walk=limit is None)
     report["vanished rows"] = len(vanished)
     if prune:

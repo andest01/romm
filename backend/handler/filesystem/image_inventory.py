@@ -57,6 +57,19 @@ def classify(path: str) -> ImageLocation | None:
     return None
 
 
+def cover_source_path(path: str) -> str | None:
+    """The original that a cover file was made from.
+
+    Args:
+        path: A resources-relative path, as `classify` takes.
+
+    Returns:
+        The `big.png` in the same cover folder when `path` is another file there,
+        else None (an original, or not a cover).
+    """
+    raise NotImplementedError
+
+
 def iter_resource_files(root: Path, platform_ids: Sequence[int] = ()) -> Iterator[str]:
     """Every file under `roms/` (or only the given platforms) and `collections/`, relative to `root`."""
     tops = (
