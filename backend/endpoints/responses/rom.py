@@ -549,7 +549,7 @@ class SimpleRomSchema(RomSchema, RomArtFields):
         siblings: Sequence[tuple[Rom, bool]] | None = None,
         screenshot_path: str | None = None,
         has_notes: bool | None = None,
-        cover_files: list[StoredImage] | None = None,
+        art_files: list[StoredImage] | None = None,
     ) -> SimpleRomSchema:
         db_rom = cls.populate_properties(db_rom, request, has_notes=has_notes)
         db_rom.screenshot_path = screenshot_path  # type: ignore[attr-defined]
@@ -581,16 +581,16 @@ class SimpleRomSchema(RomSchema, RomArtFields):
             SiblingRomSchema.from_rom(s, is_main_sibling=is_main)
             for s, is_main in siblings
         ]
-        if cover_files is None:
+        if art_files is None:
             # Local import: breaks the responses.rom <-> handler.database cycle.
             from handler.database import db_image_handler
 
-            cover_files = db_image_handler.get_cover_files_for_roms([db_rom.id]).get(
+            art_files = db_image_handler.get_art_files_for_roms([db_rom.id]).get(
                 db_rom.id, []
             )
         # Set on a copy: an attribute set on the row could be flushed with the session.
         return cls.model_validate(db_rom).model_copy(
-            update={"art": rom_art(cover_files, db_rom.updated_at)}
+            update={"art": rom_art(art_files, db_rom.updated_at)}
         )
 
     @classmethod

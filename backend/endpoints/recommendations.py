@@ -43,11 +43,11 @@ def get_recommendations(
         refresh=refresh,
     )
 
-    covers = db_image_handler.get_cover_files_for_roms([i.rom.id for i in feed])
+    art = db_image_handler.get_art_files_for_roms([i.rom.id for i in feed])
     return [
         RecommendedRomSchema(
             rom=SimpleRomSchema.from_orm_with_request(
-                item.rom, request, cover_files=covers.get(item.rom.id, [])
+                item.rom, request, art_files=art.get(item.rom.id, [])
             ),
             score=item.score,
             reasons=item.reasons,  # type: ignore[arg-type]

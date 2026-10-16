@@ -92,7 +92,7 @@ def test_the_rom_list_lists_each_cover_file_widest_first(
     assert items[uncached.id]["art"] == {}
 
 
-def test_get_cover_files_for_roms_groups_the_cover_files_by_rom(
+def test_get_art_files_for_roms_groups_the_files_by_rom(
     admin_user: User, platform: Platform
 ) -> None:
     small_only = _add_rom(admin_user, platform, "small_only")
@@ -103,15 +103,16 @@ def test_get_cover_files_for_roms_groups_the_cover_files_by_rom(
     _cache_cover(both, COVER_SMALL, 360, 360)
 
     with sync_session.begin() as session:
-        files = db_image_handler.get_cover_files_for_roms(
+        files = db_image_handler.get_art_files_for_roms(
             [small_only.id, both.id, none.id], session=session
         )
 
     assert {
-        rom_id: [(f.width, f.height) for f in fs] for rom_id, fs in files.items()
+        rom_id: [(f.role, f.width, f.height) for f in fs]
+        for rom_id, fs in files.items()
     } == {
-        small_only.id: [(240, 360)],
-        both.id: [(1024, 1024), (360, 360)],
+        small_only.id: [(COVER_SMALL, 240, 360)],
+        both.id: [(COVER_LARGE, 1024, 1024), (COVER_SMALL, 360, 360)],
     }
 
 
@@ -190,4 +191,31 @@ def test_art_lists_each_copy_of_the_cover_once(
             _file(rom.id, f"{folder}/small.webp", 240, 360, "image/webp"),
             _file(rom.id, small, 240, 360, "image/png"),
         ]
+    }
+
+
+def test_art_carries_each_media_kind_under_its_own_role(
+    client: TestClient, access_token: str, admin_user: User, platform: Platform
+) -> None:
+    rom = _add_rom(admin_user, platform, "with_media")
+    big = _cache_cover(rom, COVER_LARGE, 600, 900)
+    box3d = f"roms/{rom.platform_id}/{rom.id}/box3d/box3d.png"
+    with sync_session.begin() as session:
+        image = Image(
+            path=box3d,
+            path_hash=compute_image_path_hash(box3d),
+            width=720,
+            height=1000,
+            format="PNG",
+            bytes=5000,
+        )
+        session.add(image)
+        session.flush()
+        session.add(RomImage(rom_id=rom.id, role="box3d", image_id=image.id))
+
+    art = _items_by_id(client, access_token)[rom.id]["art"]
+
+    assert art == {
+        "cover": [_file(rom.id, big, 600, 900, "image/png")],
+        "box3d": [_file(rom.id, box3d, 720, 1000, "image/png")],
     }

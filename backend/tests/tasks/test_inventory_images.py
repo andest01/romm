@@ -10,7 +10,7 @@ from handler.database.base_handler import sync_session
 from handler.filesystem.image_inventory import (
     ImageLocation,
     classify,
-    cover_source_path,
+    original_path,
 )
 from models.image import (
     COVER_LARGE,
@@ -87,7 +87,7 @@ def test_run_inventory_records_known_images_and_links_covers(
         roles = set(
             session.scalars(select(RomImage.role).where(RomImage.rom_id == rom.id))
         )
-    assert roles == {COVER_LARGE, COVER_SMALL}
+    assert roles == {COVER_LARGE, COVER_SMALL, "box3d"}
 
 
 def test_a_rerun_reads_nothing_unchanged(tmp_path: Path, platform: Platform) -> None:
@@ -147,11 +147,7 @@ def test_a_cleared_cover_path_loses_its_link(
     result = run_inventory(tmp_path)
 
     assert result["cover links removed"] == 1
-    with sync_session.begin() as session:
-        roles = set(
-            session.scalars(select(RomImage.role).where(RomImage.rom_id == rom.id))
-        )
-    assert roles == {COVER_SMALL}
+    assert _roles(rom.id) == {COVER_SMALL, "box3d"}
 
 
 @pytest.mark.parametrize(
@@ -163,11 +159,14 @@ def test_a_cleared_cover_path_loses_its_link(
         ("collections/7/cover/small.png", "collections/7/cover/big.png"),
         ("roms/60/793/cover/big.png", None),
         ("roms/60/793/box3d/box3d.png", None),
+        ("roms/60/793/box3d/box3d.webp", "roms/60/793/box3d/box3d.png"),
+        ("roms/60/793/logo/logo.webp", "roms/60/793/logo/logo.png"),
         ("roms/60/793/screenshots/0.jpg", None),
+        ("roms/60/793/video/video.mp4", None),
     ],
 )
-def test_a_cover_copy_names_its_original(path: str, expected: str | None) -> None:
-    assert cover_source_path(path) == expected
+def test_a_copy_names_its_original(path: str, expected: str | None) -> None:
+    assert original_path(path) == expected
 
 
 def _image(path: str) -> None:
@@ -231,3 +230,39 @@ def test_run_inventory_points_cover_copies_at_big_png(
     assert _source_of(f"{folder}/cover/small.png") == big
     assert _source_of(f"{folder}/cover/big.webp") == big
     assert _source_of(f"{folder}/box3d/box3d.png") is None
+
+
+def _roles(rom_id: int) -> set[str]:
+    with sync_session.begin() as session:
+        return set(
+            session.scalars(select(RomImage.role).where(RomImage.rom_id == rom_id))
+        )
+
+
+def test_media_is_linked_by_kind_and_unlinked_when_its_file_goes(
+    tmp_path: Path, platform: Platform
+) -> None:
+    rom = make_rom(platform, "media")
+    folder = _write_library(tmp_path, rom)
+    _png(tmp_path, f"{folder}/logo/logo.png", (60, 20))
+    _png(tmp_path, f"{folder}/logo/logo.webp", (60, 20))
+
+    run_inventory(tmp_path)
+    assert _roles(rom.id) == {"box3d", "logo"}
+    assert _source_of(f"{folder}/logo/logo.webp") == f"{folder}/logo/logo.png"
+
+    for name in ("logo.png", "logo.webp"):
+        (tmp_path / folder / "logo" / name).unlink()
+    report = run_inventory(tmp_path)
+
+    assert _roles(rom.id) == {"box3d"}
+    assert report["media links removed"] == 1
+
+
+def test_media_of_a_rom_that_no_longer_exists_is_not_linked(tmp_path: Path) -> None:
+    _png(tmp_path, "roms/1/999999/box3d/box3d.png", (40, 50))
+
+    report = run_inventory(tmp_path)
+
+    assert report["media links written"] == 0
+    assert "roms/1/999999/box3d/box3d.png" in _paths()

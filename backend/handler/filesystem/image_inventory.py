@@ -58,21 +58,38 @@ def classify(path: str) -> ImageLocation | None:
     return None
 
 
-def cover_source_path(path: str) -> str | None:
-    """The original that a cover file was made from.
+def _original_name(kind: str) -> str | None:
+    # Every provider stores one file per media kind as <kind>/<kind>.png.
+    if kind == "screenshots":
+        return None
+    return f"{CoverSize.BIG.value}.png" if kind == "cover" else f"{kind}.png"
+
+
+def original_path(path: str) -> str | None:
+    """The original that a cover or media file was made from.
 
     Args:
         path: A resources-relative path, as `classify` takes.
 
     Returns:
-        The `big.png` in the same cover folder when `path` is another file there,
-        else None (an original, or not a cover).
+        The original in the same folder (`big.png` for covers, `<kind>.png` for
+        media) when `path` is another file there, else None.
     """
     location = classify(path)
-    if location is None or location.kind != "cover":
+    name = _original_name(location.kind) if location else None
+    if name is None:
         return None
-    original = str(PurePosixPath(path).with_name(f"{CoverSize.BIG.value}.png"))
+    original = str(PurePosixPath(path).with_name(name))
     return None if original == path else original
+
+
+def is_media_original(path: str, location: ImageLocation) -> bool:
+    """Whether `path` is a rom's media original, such as `box3d/box3d.png`."""
+    return (
+        location.owner == "rom"
+        and location.kind != "cover"
+        and PurePosixPath(path).name == _original_name(location.kind)
+    )
 
 
 def iter_resource_files(root: Path, platform_ids: Sequence[int] = ()) -> Iterator[str]:

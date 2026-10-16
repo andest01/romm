@@ -37,59 +37,54 @@ class ImageFacts:
 
 @dataclass(frozen=True)
 class StoredImage:
-    """One linked image file: its resources-relative path, size and format."""
+    """One file of a rom's picture: the role it is linked under, and its facts."""
 
+    role: str
     path: str
     width: int
     height: int
     format: str
+    bytes: int
 
 
 class DBImagesHandler(DBBaseHandler):
     @begin_session
-    def get_cover_files_for_roms(
+    def get_art_files_for_roms(
         self,
         rom_ids: list[int],
         *,
         session: Session = INJECTED_SESSION,
     ) -> dict[int, list[StoredImage]]:
-        """Cover files for the roms in `rom_ids` that have any: the linked ones and
-        their copies, widest first, then smallest file first."""
+        """Every linked file and its copies, per rom, widest first, then smallest file."""
         if not rom_ids:
             return {}
 
         linked = (
-            select(RomImage.rom_id, RomImage.image_id)
-            .where(
-                RomImage.rom_id.in_(rom_ids),
-                RomImage.role.in_((COVER_LARGE, COVER_SMALL)),
-            )
+            select(RomImage.rom_id, RomImage.role, RomImage.image_id)
+            .where(RomImage.rom_id.in_(rom_ids))
             .subquery()
         )
         rows = session.execute(
             select(
                 linked.c.rom_id,
+                linked.c.role,
                 Image.path,
                 Image.width,
                 Image.height,
                 Image.format,
                 Image.bytes,
             )
-            # A copy of the large cover can also be linked itself (small.png), hence distinct.
             .join(
                 Image,
                 or_(
                     Image.id == linked.c.image_id, Image.source_id == linked.c.image_id
                 ),
             )
-            .distinct()
-            .order_by(linked.c.rom_id, Image.width.desc(), Image.bytes)
+            .order_by(linked.c.rom_id, Image.width.desc(), Image.bytes, Image.path)
         ).all()
         files: dict[int, list[StoredImage]] = {}
-        for rom_id, path, width, height, image_format, _ in rows:
-            files.setdefault(rom_id, []).append(
-                StoredImage(path, width, height, image_format)
-            )
+        for rom_id, *facts in rows:
+            files.setdefault(rom_id, []).append(StoredImage(*facts))
         return files
 
     @begin_session
@@ -146,6 +141,61 @@ class DBImagesHandler(DBBaseHandler):
             Collection.path_cover_s,
         )
         return roms[0] + collections[0], roms[1] + collections[1]
+
+    @begin_session
+    def link_media(
+        self,
+        media_by_rom: Mapping[int, Mapping[str, str]],
+        session: Session = INJECTED_SESSION,
+    ) -> tuple[int, int]:
+        """Link each rom's media originals under a role named after their kind.
+
+        Args:
+            media_by_rom: Walked roms, each mapped to {kind: original's path}; an
+                empty map clears that rom's media links.
+
+        Returns:
+            (links written, links removed).
+        """
+        written = removed = 0
+        rom_ids = list(media_by_rom)
+        for start in range(0, len(rom_ids), LOOKUP_BATCH):
+            chunk = rom_ids[start : start + LOOKUP_BATCH]
+            # A folder can outlive its rom; linking it would break the foreign key.
+            known = set(session.scalars(select(Rom.id).where(Rom.id.in_(chunk))).all())
+            ids = self._ids_by_path(
+                {path for rom_id in chunk for path in media_by_rom[rom_id].values()},
+                session,
+            )
+            wanted = {
+                (rom_id, kind): ids[path]
+                for rom_id in chunk
+                if rom_id in known
+                for kind, path in media_by_rom[rom_id].items()
+                if path in ids
+            }
+            current = {
+                (row.rom_id, row.role): row
+                for row in session.scalars(
+                    select(RomImage).where(
+                        RomImage.rom_id.in_(chunk),
+                        RomImage.role.not_in((COVER_LARGE, COVER_SMALL)),
+                    )
+                ).all()
+            }
+            for (rom_id, kind), image_id in wanted.items():
+                row = current.get((rom_id, kind))
+                if row is None:
+                    session.add(RomImage(rom_id=rom_id, role=kind, image_id=image_id))
+                    written += 1
+                elif row.image_id != image_id:
+                    row.image_id = image_id
+                    written += 1
+            for key, row in current.items():
+                if key not in wanted:
+                    session.delete(row)
+                    removed += 1
+        return written, removed
 
     @begin_session
     def link_sources(
@@ -243,7 +293,9 @@ def _link[Link: (RomImage, CollectionImage)](
     }
     current = {
         (getattr(row, owner_name), row.role): row
-        for row in session.scalars(select(link)).all()
+        for row in session.scalars(
+            select(link).where(link.role.in_((COVER_LARGE, COVER_SMALL)))
+        ).all()
     }
     written = 0
     for (owner, role), image_id in wanted.items():

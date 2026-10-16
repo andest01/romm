@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from pydantic import Field
 
 from config import FRONTEND_RESOURCES_PATH
+from models.image import COVER_LARGE, COVER_SMALL
 
 from .base import BaseModel
 
@@ -33,24 +34,29 @@ class RomArtFields(BaseModel):
     art: ArtMap = Field(
         default_factory=dict,
         description=(
-            "Pictures by role (`cover`, ...), each listing every file of that picture,"
-            " widest first. A missing role means no such picture is known."
+            "Pictures by role (`cover`, `box3d`, `logo`, ...: the media kinds), each"
+            " listing every file of that picture, widest first, then smallest file"
+            " first. A missing role means no such picture is known."
         ),
     )
 
 
-def rom_art(covers: list[StoredImage], version: datetime) -> ArtMap:
-    """The `art` value for a rom whose cover files are `covers`."""
-    if not covers:
-        return {}
-    return {
-        ART_COVER: [
+def rom_art(files: list[StoredImage], version: datetime) -> ArtMap:
+    """The `art` value for a rom whose linked files are `files`, in their order."""
+    art: ArtMap = {}
+    listed: set[tuple[str, str]] = set()
+    for image in files:
+        role = ART_COVER if image.role in (COVER_LARGE, COVER_SMALL) else image.role
+        # small.png is linked as the small cover and is also the large one's copy.
+        if (role, image.path) in listed:
+            continue
+        listed.add((role, image.path))
+        art.setdefault(role, []).append(
             ArtFileSchema(
                 url=f"{FRONTEND_RESOURCES_PATH}/{image.path}?ts={version}",
                 width=image.width,
                 height=image.height,
                 type=_MIME_BY_FORMAT.get(image.format, f"image/{image.format.lower()}"),
             )
-            for image in covers
-        ]
-    }
+        )
+    return art

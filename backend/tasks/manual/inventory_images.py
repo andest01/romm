@@ -9,8 +9,9 @@ from handler.database import db_image_handler
 from handler.database.images_handler import ImageFacts
 from handler.filesystem.image_inventory import (
     classify,
-    cover_source_path,
+    is_media_original,
     iter_resource_files,
+    original_path,
     read_facts,
 )
 from logger.logger import log
@@ -35,6 +36,8 @@ def run_inventory(
     report: Counter[str] = Counter()
     kinds: Counter[str] = Counter()
     seen: set[str] = set()
+    # Every walked rom, even one with no media, so its stale media links go.
+    media_by_rom: dict[int, dict[str, str]] = {}
     pending: list[str] = []
 
     def flush() -> None:
@@ -61,6 +64,10 @@ def run_inventory(
             continue
         seen.add(path)
         kinds[location.kind] += 1
+        if location.owner == "rom":
+            media = media_by_rom.setdefault(location.owner_id, {})
+            if is_media_original(path, location):
+                media[location.kind] = path
         pending.append(path)
         if len(pending) >= BATCH_SIZE:
             flush()
@@ -73,8 +80,11 @@ def run_inventory(
         db_image_handler.link_covers()
     )
 
+    report["media links written"], report["media links removed"] = (
+        db_image_handler.link_media(media_by_rom)
+    )
     report["copies linked to their original"] = db_image_handler.link_sources(
-        {path: cover_source_path(path) for path in seen}
+        {path: original_path(path) for path in seen}
     )
 
     vanished = _vanished_rows(root, seen, platform_ids, full_walk=limit is None)

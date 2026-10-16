@@ -775,7 +775,7 @@ def get_roms(
             rom_ids_with_notes = db_rom_handler.get_rom_ids_with_notes(
                 rom_ids, user_id=request.user.id, session=session
             )
-            cover_files = db_image_handler.get_cover_files_for_roms(
+            art_files = db_image_handler.get_art_files_for_roms(
                 rom_ids, session=session
             )
             if with_files:
@@ -801,7 +801,7 @@ def get_roms(
                     siblings=siblings_by_rom.get(item.id, []),
                     screenshot_path=screenshot_by_rom.get(item.id),
                     has_notes=item.id in rom_ids_with_notes,
-                    cover_files=cover_files.get(item.id, []),
+                    art_files=art_files.get(item.id, []),
                 )
                 for item in items
             ]
@@ -1302,11 +1302,11 @@ def get_similar_roms(
     assert_rom_visible(request, rom)
 
     items = similar_roms(id, limit=limit, permissions=get_permissions(request))
-    covers = db_image_handler.get_cover_files_for_roms([i.rom.id for i in items])
+    art = db_image_handler.get_art_files_for_roms([i.rom.id for i in items])
     return [
         SimilarRomSchema(
             rom=SimpleRomSchema.from_orm_with_request(
-                item.rom, request, cover_files=covers.get(item.rom.id, [])
+                item.rom, request, art_files=art.get(item.rom.id, [])
             ),
             score=item.score,
             reasons=item.reasons,  # type: ignore[arg-type]
