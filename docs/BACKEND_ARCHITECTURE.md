@@ -301,6 +301,7 @@ backend/
 │   ├── device.py              # Device, SyncMode enum
 │   ├── device_save_sync.py    # DeviceSaveSync
 │   ├── firmware.py            # Firmware
+│   ├── image.py               # Image, RomImage, CollectionImage
 │   ├── client_token.py        # ClientToken
 │   ├── play_session.py        # PlaySession (per-user playtime tracking)
 │   ├── sync_session.py        # SyncSession (device sync coordination)
@@ -323,6 +324,7 @@ backend/
 │       ├── cleanup_missing_roms.py       # Drop DB entries for missing files
 │       ├── convert_library.py            # Store matched ROMs in each platform's library format
 │       ├── cleanup_orphaned_resources.py # Remove unreferenced artwork
+│       ├── inventory_images.py           # Record resource images in the images table
 │       └── sync_folder_scan.py           # Scan sync folder for new saves
 │
 ├── utils/                     # Shared helpers
@@ -345,6 +347,8 @@ backend/
 │   └── emoji.py               # Emoji utilities
 │
 ├── tools/                     # Development utilities
+│   ├── generate_test_data.py  # Seed a prod-like test library
+│   ├── inventory_images.py    # CLI for the inventory_images task
 │   └── xml_diagnostics.py     # XML diagnostic tool
 │
 ├── tests/                     # Test suite
@@ -510,10 +514,11 @@ Constants: `FILE_NAME_MAX_LENGTH=450`, `FILE_PATH_MAX_LENGTH=1000`, `FILE_EXTENS
      │                    │    │         ├────> saves           │
      │                    │    │         ├────> states          │
      │                    │    │         ├────> screenshots     │
+     │                    │    │         ├────> rom_images ────> images
      │                    │    │         └────> sibling_roms (self M:M)
      │                    │    │
      │         ┌──────────┴────┴──┐
-     └────────>│   collections    │  (M:M via collections_roms)
+     └────────>│   collections    │  (M:M via collections_roms; covers via collection_images)
                ├──────────────────┤
                │ smart_collections│  (filter-based, dynamic)
                ├──────────────────┤
@@ -611,6 +616,30 @@ Tracks individual files within a ROM (archives can contain multiple files).
 | `missing_from_fs`                              | Boolean                 | Sync state                                                                                                                         |
 
 **Relationships:** rom (M:1), track_meta (1:1, `SOUNDTRACK` files only)
+
+---
+
+#### Images
+
+**Tables:** `images`, `rom_images`, `collection_images`
+
+One `images` row per image file under the resources folder, filled by the `inventory_images` task. No row means the file is unknown, not missing.
+
+| Column            | Type        | Notes                                                    |
+| ----------------- | ----------- | -------------------------------------------------------- |
+| `id`              | Integer     | PK                                                       |
+| `path`            | Text        | Relative to the resources folder                         |
+| `path_hash`       | String(64)  | Unique; sha256 of `path` (MariaDB can't key the text)    |
+| `width`, `height` | Integer     | Pixels, from the file header                             |
+| `format`          | String(16)  | Pillow's format name of the content (`PNG`, `JPEG`, ...) |
+| `bytes`           | BigInteger  | File size; an unchanged size skips the file on a rerun   |
+| `content_hash`    | String(64)  | sha256 of the bytes, indexed                             |
+| `avg_color`       | String(7)   | `#rrggbb`                                                |
+| `source_id`       | FK → images | The original this file is a copy of; `CASCADE`           |
+
+Lineage is flat: a copy (a resized `small.png`, a WebP or AVIF conversion) points at its original, never at another copy, so `WHERE id = X OR source_id = X` is a file's whole delete tree and `WHERE source_id = X` its stale set when it changes.
+
+`rom_images` (`rom_id`, `role`, `image_id`) and `collection_images` (`collection_id`, `role`, `image_id`) say which image fills an owner's role: `cover_large` and `cover_small`, and for roms one role per media kind (`box3d`, `logo`, ...), named after its folder. Both cascade from their owner and from `images`.
 
 ---
 
@@ -915,6 +944,19 @@ A reset link is emailed when SMTP is set up, the user has an address and `ROMM_B
 | POST   | `/unidentified`              | ROMS_READ  | Get unidentified ROMs                            |
 
 With rom-converto enabled (`ROM_CONVERTO_ENABLED`, `converto.download_conversion_enabled`), `?format=zso,iso` lists the formats a client can read. A single-file download whose stored format is listed is served as-is. Otherwise the first listed format with a copy cached under `/tmp/romm/cache/converts` (`$ROMM_TMP_PATH/cache/converts` when set) is served, then the first one rom-converto can produce: answered by the same request if it converts within a few seconds, else `202` with `Retry-After` while it finishes. `406` means no listed format can be served, and `HEAD` reports the same without starting a conversion. Only signed-in, non-kiosk users start conversions. A rom's detail response lists the formats its single file can be converted to in `download_formats`, empty when the caller can't start a conversion.
+
+Every `SimpleRomSchema` response (the list, `/{id}/simple`, similar ROMs, recommendations) carries `art`: pictures by role (`cover`, then one per media kind such as `box3d`), each a list of that picture's files (the linked original and its copies), widest first, then smallest file first.
+
+```json
+"art": {
+  "cover": [
+    {"url": "/assets/romm/resources/roms/4/801/cover/big.png?ts=…", "width": 600, "height": 900, "type": "image/png"},
+    {"url": "/assets/romm/resources/roms/4/801/cover/small.png?ts=…", "width": 240, "height": 360, "type": "image/png"}
+  ]
+}
+```
+
+A role is absent until `inventory_images` has recorded its files. A client picks a file by width (or hands them all to `srcset`), and sets the tile's size from `width` and `height` before the image loads. More files of a picture (other sizes, other formats) and more roles add entries without changing the schema. The list endpoint loads every page's files in one query.
 
 #### ROM Upload (Chunked)
 
@@ -1385,6 +1427,7 @@ Each entity has a dedicated handler providing CRUD operations:
 | `db_client_tokens_handler`    | Hash-based lookup, scope management                                                |
 | `db_play_sessions_handler`    | Play session ingestion and aggregation                                             |
 | `db_sync_sessions_handler`    | Device sync session lifecycle (push/pull, SSH)                                     |
+| `db_image_handler`            | Upsert image facts, link cover roles, load a page's cover files in one query       |
 
 ### 8.3 Metadata Handlers (`handler/metadata/`)
 
@@ -1418,6 +1461,7 @@ Each external provider has a handler that normalizes data into a common format:
 | `firmware_handler`  | BIOS file management, verification                 |
 | `platforms_handler` | Platform folder creation and detection             |
 | `resources_handler` | Download and cache artwork                         |
+| `image_inventory`   | Walk the resources folder, read each image's facts |
 
 **Supported archive formats:** ZIP, 7Z, TAR, GZIP, BZ2, RAR
 
@@ -1744,8 +1788,11 @@ Triggered via `POST /api/tasks/run/{task_name}`, which enqueues on `low_prio_que
 | `cleanup_missing_roms` | Remove DB entries for files no longer on disk                                         |
 | `sync_folder_scan`     | Scan sync folder for new device saves                                                 |
 | `convert_library`      | Convert matched ROMs to `converto.platform_formats` in place, replacing the originals |
+| `inventory_images`     | Record every cover and media image in `images`, link cover and media roles and copies |
 
-A spec marked `destructive` asks for a typed confirmation before the UI runs it, and one marked `single_instance` answers 409 while a job of it is queued or running. `convert_library` is both, and runs only with `ROM_CONVERTO_ENABLED` set.
+A spec marked `destructive` asks for a typed confirmation before the UI runs it, and one marked `single_instance` answers 409 while a job of it is queued or running. `convert_library` is both, and runs only with `ROM_CONVERTO_ENABLED` set. `inventory_images` is `single_instance`.
+
+`inventory_images` takes optional `platform_ids`, `limit`, `prune` and `full`. A rerun reads only files that are new or changed size; `full` re-reads every file and updates rows in place, so ids, links and `source_id` survive (with `prune`, a complete rebuild). It reports `update_stats` progress once per batch of 500 and logs a start, per-batch and end line. A rom's media original is `<kind>/<kind>.png`, the path every provider stores, linked under the role `<kind>`. Every other file in a cover or media folder gets `source_id` pointing at that folder's original (`big.png` for covers). With `prune`, it deletes rows whose file is gone; their links cascade.
 
 `convert_library` only converts losslessly (no xiso) and only identified ROMs, since a converted file no longer hash-matches a DAT. It stages each output under a `.romm_tmp_` directory beside the ROM, deletes the originals (and a cue's tracks) once the output is in place, rewrites `.m3u` entries in folder ROMs, and refreshes the ROM's files, so the ROM keeps its id, saves and collections.
 

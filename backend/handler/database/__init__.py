@@ -6,6 +6,7 @@ from .deleted_assets_handler import DBDeletedAssetsHandler
 from .device_save_sync_handler import DBDeviceSaveSyncHandler
 from .devices_handler import DBDevicesHandler
 from .firmware_handler import DBFirmwareHandler
+from .images_handler import DBImagesHandler
 from .memory_cards_handler import DBMemoryCardsHandler
 from .music_playlists_handler import DBMusicPlaylistsHandler
 from .notification_channels_handler import DBNotificationChannelsHandler
@@ -30,6 +31,7 @@ db_deleted_asset_handler = DBDeletedAssetsHandler()
 db_device_handler = DBDevicesHandler()
 db_device_save_sync_handler = DBDeviceSaveSyncHandler()
 db_firmware_handler = DBFirmwareHandler()
+db_image_handler = DBImagesHandler()
 db_memory_card_handler = DBMemoryCardsHandler()
 db_music_playlist_handler = DBMusicPlaylistsHandler()
 db_notification_channel_handler = DBNotificationChannelsHandler()

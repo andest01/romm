@@ -196,6 +196,70 @@ For responsive layouts, use the viewport toolbar presets from `.storybook/rommVi
 
 To run `npm run dev` or `npm run preview` against another RomM instance (for example a home server with a full library), set `DEV_PROXY_TARGET` in the repo-root `.env` to its origin, such as `https://romm.example.com`. Vite then proxies `/api`, `/ws` and `/assets/romm` there instead of the local backend. Leave it empty to keep the default `http://127.0.0.1:${DEV_PORT}`. The remote's TLS certificate must be valid. Sign in with a username and password: OIDC login does not work through the proxy, because the identity provider redirects to the remote's `OIDC_REDIRECT_URI`, so the session never reaches localhost.
 
+## Seeding a test library
+
+`backend/tools/generate_test_data.py` fills a database with a prod-like library (platforms, users, roms, files, saves, collections...) and draws cover art on disk. It writes to the database and `RESOURCES_BASE_PATH` from your `.env`, so point both at a throwaway database and folder, not a library you care about.
+
+```sh
+cd backend
+uv run tools/generate_test_data.py --roms 2000 --image-fidelity 2 --wipe
+```
+
+That seeds 2,000 roms in under a minute. It prints the seed it used and a login (every seeded user's password is `password`). Useful flags, all listed in `--help`:
+
+- `--wipe` deletes the rows the script populates before seeding.
+- `--seed N` reproduces the same rows and images (default `1337`).
+- `--image-fidelity` sets how real the covers are:
+  - `1` (default) draws one-size mosaics.
+  - `2` uses the real mix of cover sizes and shapes, drawn as debug art showing each rom's id, size and path.
+  - `3` also matches real file weights, JPEG data inside some `big.png` files included.
+- `--image-limit N` draws covers for the first N roms only, and `--no-images` skips them.
+- `--image-media` adds ScreenScraper media (box3d, fanart...).
+
+The seeded roms have no files under `library/`, so a scan would mark them missing. The frontend's `assets/romm/resources` symlink should point at the same resources folder, so the UI shows the seeded covers.
+
+After a seed, record the images in the `images` table so the API returns their sizes in `art`. This runs the `inventory_images` task directly, without a worker:
+
+```sh
+uv run tools/inventory_images.py
+```
+
+### Seeding cookbook
+
+**"I want a library to click around in, fast."** Layout, filters and pagination work. Under a minute, inventory included:
+
+```sh
+uv run tools/generate_test_data.py --roms 2000 --image-fidelity 2 --wipe
+uv run tools/inventory_images.py
+```
+
+For rows only, add `--no-images` (a few seconds). For a few covers to look at, `--image-limit 200`.
+
+**"I'm tuning image performance."** Conversion, file sizes, WebP. Level 3 matches real bytes per pixel and puts JPEG data in some `big.png` files, as real libraries do:
+
+```sh
+uv run tools/generate_test_data.py --roms 500 --image-fidelity 3 --wipe
+uv run tools/inventory_images.py
+```
+
+Or keep the fast level 2 for most roms and a level-3 slice for measuring: at `--image-fidelity 2`, every rom whose id is a multiple of `--image-weighted-every` (default 10) is drawn at level 3, so `WHERE id % 10 = 0` selects the realistic files. `--image-workers N` sets how many processes draw (default: all cores).
+
+**"I'm working on box art and media."** 3D boxes, logos, fanart, the gallery's box art styles. `--image-media` draws every media kind for the roms with ScreenScraper data (about half) and records the paths in their `ss_metadata`:
+
+```sh
+uv run tools/generate_test_data.py --roms 2000 --image-fidelity 2 --image-media --wipe
+uv run tools/inventory_images.py
+```
+
+Already seeded without media? Every rom's images come from its own seeded random stream, so a `--dry-run` with the same flags plus `--image-media` redraws the same covers byte for byte and adds the media, without touching the database. This works after a `--wipe` seed (a dry run numbers roms from 1) with the same `--seed`, `--roms` and other row flags:
+
+```sh
+uv run tools/generate_test_data.py --roms 2000 --image-fidelity 2 --image-media --dry-run
+uv run tools/inventory_images.py
+```
+
+The API's `art` then lists the media, but the rows' `ss_metadata` still names none, so the gallery's box art styles stay empty until a full seed with `--image-media`.
+
 ## Setting up the linter
 
 We use [Trunk](https://trunk.io) for linting, which combines multiple linters and formatters with sensible defaults and a single configuration file. You'll need to install the Trunk CLI to use it.

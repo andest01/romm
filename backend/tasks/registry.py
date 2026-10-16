@@ -228,6 +228,16 @@ CLEANUP_MISSING_FIRMWARE_SPEC: Final = TaskSpec(
     manual_run=True,
 )
 
+INVENTORY_IMAGES_SPEC: Final = TaskSpec(
+    implementation="tasks.manual.inventory_images.inventory_images_task",
+    title="Inventory images",
+    description="Record every cover and media image under the resources folder in the images table",
+    task_type=TaskType.UPDATE,
+    enabled=True,
+    manual_run=True,
+    single_instance=True,
+)
+
 SYNC_FOLDER_SCAN_SPEC: Final = TaskSpec(
     implementation="tasks.manual.sync_folder_scan.sync_folder_scan_task",
     title="Sync Folder Scan",
@@ -294,6 +304,7 @@ MANUAL_TASKS: Final[dict[str, TaskSpec]] = {
     "sync_folder_scan": SYNC_FOLDER_SCAN_SPEC,
     "recompute_save_content_hashes": RECOMPUTE_SAVE_CONTENT_HASHES_SPEC,
     "convert_library": CONVERT_LIBRARY_SPEC,
+    "inventory_images": INVENTORY_IMAGES_SPEC,
 }
 
 

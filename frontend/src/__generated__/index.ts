@@ -15,6 +15,7 @@ export type { AppriseFieldSchema } from './models/AppriseFieldSchema';
 export type { AppriseServiceSchema } from './models/AppriseServiceSchema';
 export type { AppriseUrlFieldsSchema } from './models/AppriseUrlFieldsSchema';
 export type { AppriseUrlPayload } from './models/AppriseUrlPayload';
+export type { ArtFileSchema } from './models/ArtFileSchema';
 export type { AuditAction } from './models/AuditAction';
 export type { AuditActorKind } from './models/AuditActorKind';
 export type { AuditCategory } from './models/AuditCategory';
