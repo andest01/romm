@@ -79,6 +79,7 @@ import {
   compactCoverUrl,
   compactCardVars,
 } from "@/v2/components/GameCard/compactCard";
+import { useBackgroundArt } from "@/v2/composables/useBackgroundArt";
 import { useBreakpoint } from "@/v2/composables/useBreakpoint";
 import { coverRatio, isBoxartStyle } from "@/v2/composables/useCoverArt";
 import { useCoverBuffer } from "@/v2/composables/useCoverBuffer";
@@ -97,13 +98,15 @@ import {
   useGalleryVirtualItems,
   type GalleryItem,
 } from "@/v2/composables/useGalleryVirtualItems";
+import { claimStickY } from "@/v2/composables/useGamepad";
 import { useGridCruise } from "@/v2/composables/useGridCruise";
 import { useGridNav } from "@/v2/composables/useGridNav";
 import { useListExpansion } from "@/v2/composables/useListExpansion";
 import { usePinnedToolbar } from "@/v2/composables/usePinnedToolbar";
 import { useResponsiveColumns } from "@/v2/composables/useResponsiveColumns";
+import { useStickScroll } from "@/v2/composables/useStickScroll";
 import { useVirtualScrollDebug } from "@/v2/composables/useVirtualScrollDebug";
-import { useWebpSupport } from "@/v2/composables/useWebpSupport";
+import { toWebpUrl, useWebpSupport } from "@/v2/composables/useWebpSupport";
 import storeGalleryRoms, {
   DEFAULT_ORDER_BY,
   type GalleryOrderKey,
@@ -373,6 +376,26 @@ const router = useRouter();
 // The compact cards are plain links with no handler of their own; this one
 // handler routes a click on any of them. Modified clicks fall through to the
 // browser (new tab, new window).
+// The page backdrop takes the cover of the card under the pointer or the cursor,
+// as the table rows do. It holds still while cruising or flying and settles on
+// the cursor's card when the scroll stops.
+const setBgArt = useBackgroundArt();
+function showBackdrop(position: number | null | undefined) {
+  if (cruising.value || flying.value || position == null) return;
+  const rom = getRomAt(position);
+  if (!rom) return;
+  // The backdrop is blurred, so the small cover (already loaded by the card) is enough.
+  const path = rom.path_cover_small || rom.path_cover_large || null;
+  const url = path ? toWebpUrl(path, supportsWebp.value) : rom.url_cover;
+  if (url) setBgArt(url);
+}
+function onCompactPointerOver(e: PointerEvent) {
+  if (!compact.value) return;
+  const card = (e.target as Element | null)?.closest<HTMLElement>(
+    "a.r-v2-compact-card",
+  );
+  if (card?.dataset.pos) showBackdrop(Number(card.dataset.pos));
+}
 function onCompactClick(e: MouseEvent) {
   if (!compact.value || e.defaultPrevented || e.button !== 0) return;
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -450,12 +473,15 @@ useGridNav(sectionEl, {
   rowSelector: ".r-v2-shell__row",
   roving: true,
   revealEdge,
+  // The compact grid has its own cursor and tab stop.
+  disabled: () => compact.value,
 });
 useGridNav(sectionEl, {
   rowSelector: ".game-list-row",
   getCells: (row) => [row],
   roving: true,
   revealEdge,
+  disabled: () => layout.value !== "list",
 });
 
 const loadingInitial = computed(
@@ -751,7 +777,12 @@ function nearRows(): IntersectionObserver {
   return nearObserver;
 }
 const vNear = {
-  mounted: (el: HTMLElement) => nearRows().observe(el),
+  mounted: (el: HTMLElement) => {
+    nearRows().observe(el);
+    paintCursorIn(el);
+  },
+  // A row that re-renders (a window arrives, a class is reset) gets the cursor back.
+  updated: (el: HTMLElement) => paintCursorIn(el),
   unmounted: (el: HTMLElement) => nearObserver?.unobserve(el),
 };
 onBeforeUnmount(() => nearObserver?.disconnect());
@@ -761,6 +792,45 @@ onBeforeUnmount(() => nearObserver?.disconnect());
 // everything while the scroll flies. The cards still paint their own covers
 // once their row is near; a flying grid hides them and runs on text alone.
 const flying = ref(false);
+
+// One-time entrance for the compact grid: plays when the grid first has results
+// and when the layout switches to it, never on scroll. Only rows mounted inside
+// the viewport animate (all of them, so no seam shows on screen), with the
+// stagger delay capped; the class comes off once it has played, so a recycled row
+// never replays it.
+const ENTRANCE_MAX_DELAY_ROWS = 14;
+const ENTRANCE_STEP_MS = 19;
+const ENTRANCE_MS = 176;
+const entering = ref(false);
+let entranceBase = 0;
+let entranceEnd = 0;
+let entranceTimer: ReturnType<typeof setTimeout> | undefined;
+function playEntrance() {
+  clearTimeout(entranceTimer);
+  entranceBase = viewportRange.value.first;
+  entranceEnd = viewportRange.value.last + 1;
+  entering.value = true;
+  entranceTimer = setTimeout(
+    () => {
+      entering.value = false;
+    },
+    ENTRANCE_MS + ENTRANCE_MAX_DELAY_ROWS * ENTRANCE_STEP_MS + 100,
+  );
+}
+watch(
+  () => [compact.value, layout.value, galleryRoms.total > 0] as const,
+  ([isCompact, mode, hasRows]) => {
+    if (isCompact && mode === "grid" && hasRows) playEntrance();
+  },
+  { flush: "post", immediate: true },
+);
+onBeforeUnmount(() => clearTimeout(entranceTimer));
+function entranceStyle(index: number) {
+  if (!entering.value) return compactRowStyle;
+  if (index < entranceBase || index > entranceEnd) return compactRowStyle;
+  const i = Math.min(index - entranceBase, ENTRANCE_MAX_DELAY_ROWS);
+  return { ...compactRowStyle, "--enter-i": i };
+}
 const coverBuffer = useCoverBuffer({
   rowPositions: (row) => {
     const r = cursorRows.value.rows[row];
@@ -1111,19 +1181,97 @@ function rowAt(scrollTop: number): number {
 
 // Hold Up or Down (keyboard or D-pad) and the grid scrolls at a constant,
 // ramping speed with the card at the middle of the screen as the selection.
+const cruising = ref(false);
 const cruise = useGridCruise({
   scroller: containerEl,
   rowHeight: () => COMPACT_ROW_H_PX,
   scrollTopFor: centeredTop,
   rowCount: () => cursorRows.value.rows.length,
   rowAt,
-  onStart: cancelGlide,
+  onStart: () => {
+    // A glide in flight is heading for the cursor's row: land it first, so the
+    // cruise starts from where the cursor is and not from a stale scroll.
+    const el = containerEl();
+    if (glideFrame && el) el.scrollTop = glideTarget;
+    cancelGlide();
+    cruising.value = true;
+  },
   onRow: (row) => selectRow(row),
   onEnd: (row) => {
+    cruising.value = false;
     if (row === null) return;
     selectRow(row);
+    showBackdrop(compactCursor.value);
     glideTo(centeredTop(row));
   },
+});
+
+// The left stick as an analog scroll: it creeps with the push, the selection
+// follows the center past a dead band, and it settles on release. The grid
+// claims the stick's Y axis while it is on screen, so the pad stops sending
+// Up and Down for it.
+// A dialog check is a page-wide query, so it runs only once the stick is
+// pushed (the stick loop asks every frame) and at most every 250 ms then.
+let dialogCheckedAt = 0;
+let dialogIsOpen = false;
+function dialogOpen(): boolean {
+  const now = performance.now();
+  if (now - dialogCheckedAt > 250) {
+    dialogCheckedAt = now;
+    dialogIsOpen = !!document.querySelector('[role="dialog"], dialog[open]');
+  }
+  return dialogIsOpen;
+}
+const stickScroll = useStickScroll({
+  scroller: containerEl,
+  rowHeight: () => COMPACT_ROW_H_PX,
+  scrollTopFor: centeredTop,
+  rowCount: () => cursorRows.value.rows.length,
+  currentRow: () =>
+    compactCursor.value === null
+      ? null
+      : rowOfIndex(cursorRows.value.rows, compactCursor.value),
+  blocked: () =>
+    cruise.isActive() ||
+    glideFrame !== 0 ||
+    isEditable(document.activeElement) ||
+    dialogOpen(),
+  onStart: () => {
+    cancelGlide();
+    cruising.value = true;
+    const { rows } = cursorRows.value;
+    const el = containerEl();
+    if (compactCursor.value === null && el && rows.length) {
+      compactCursor.value = rows[rowAt(el.scrollTop)]!.start;
+    }
+  },
+  onRow: (row) => selectRow(row),
+  // Release leaves the view where it is: the selection takes the card nearest
+  // the center and nothing glides, so a light push never ends in a jump.
+  onEnd: (row) => {
+    cruising.value = false;
+    const el = containerEl();
+    if (row === null || !el) return;
+    selectRow(rowAt(el.scrollTop));
+    showBackdrop(compactCursor.value);
+  },
+});
+let releaseStickY: (() => void) | null = null;
+watch(
+  () => compact.value && layout.value === "grid",
+  (on) => {
+    releaseStickY?.();
+    releaseStickY = null;
+    stickScroll.stop();
+    if (!on) return;
+    releaseStickY = claimStickY();
+    stickScroll.start();
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => {
+  stickScroll.stop();
+  releaseStickY?.();
 });
 
 // The card in `row` nearest the column the cursor has been holding.
@@ -1279,6 +1427,38 @@ function onCompactKey(e: KeyboardEvent) {
 }
 useEventListener(window, "keydown", onCompactKey, { capture: true });
 useEventListener(window, "keyup", (e: KeyboardEvent) => cruise.keyUp(e.key));
+watch(compactCursor, (position) => showBackdrop(position));
+
+// The cursor is painted on the DOM, not passed down as a prop: a prop would
+// re-render every mounted row on each step, which a held key does 8 to 20
+// times a second.
+let paintedCursor: number | null = null;
+function setCursorClass(card: Element, on: boolean) {
+  card.classList.toggle("is-cursor", on);
+  card.setAttribute("tabindex", on ? "0" : "-1");
+}
+function cardAt(position: number): Element | null {
+  return document.getElementById(`cc-${position}`);
+}
+function paintCursorIn(row: HTMLElement) {
+  const position = compactCursor.value;
+  if (position === null) return;
+  const card = row.querySelector(`a.r-v2-compact-card[data-pos="${position}"]`);
+  if (card && !card.classList.contains("is-cursor")) setCursorClass(card, true);
+}
+watch(
+  compactCursor,
+  (position) => {
+    if (paintedCursor !== null) {
+      const old = cardAt(paintedCursor);
+      if (old) setCursorClass(old, false);
+    }
+    paintedCursor = position;
+    const card = position === null ? null : cardAt(position);
+    if (card) setCursorClass(card, true);
+  },
+  { flush: "sync" },
+);
 // A new result set or a different card drops the old cursor.
 watch([() => galleryRoms.total, compact], () => {
   compactCursor.value = null;
@@ -1318,6 +1498,12 @@ function rowPositions(row: {
   const out: number[] = [];
   for (let p = row.startPosition; p < row.endPosition; p++) out.push(p);
   return out;
+}
+
+// Each cell with its rom, read once: the template would otherwise read the
+// store three times per card on every render.
+function rowCells(row: { startPosition: number; endPosition: number }) {
+  return rowPositions(row).map((p) => ({ p, rom: getRomAt(p) }));
 }
 
 type RowItem = Extract<GalleryItem, { kind: "row" }>;
@@ -1410,6 +1596,7 @@ defineExpose({
       'r-v2-shell--floating': toolbarPosition === 'floating',
       'r-v2-shell--no-strip': !stripVisible,
       'r-v2-shell--flying': flying,
+      'r-v2-shell--cruising': cruising,
     }"
     :style="{
       '--r-v2-shell-toolbar-h': `${toolbarHeight}px`,
@@ -1432,6 +1619,7 @@ defineExpose({
       :body-attrs="gridAttrs"
       :tabindex="-1"
       @click="onCompactClick"
+      @pointerover.passive="onCompactPointerOver"
       @wheel.passive="onManualScroll"
       @touchstart.passive="stopFollow"
       @pointerdown.passive="endLetterJump"
@@ -1557,31 +1745,32 @@ defineExpose({
             v-else-if="itemKind(item as GalleryItem) === 'row'"
             v-near
             class="r-v2-shell__row"
-            :style="compact ? compactRowStyle : undefined"
+            :style="compact ? entranceStyle(index) : undefined"
           >
             <div
-              v-for="(p, slotIdx) in rowPositions(asRow(item as GalleryItem))"
+              v-for="({ p, rom }, slotIdx) in rowCells(
+                asRow(item as GalleryItem),
+              )"
               :key="p"
               role="gridcell"
               class="r-v2-shell__cell"
-              :aria-selected="getRomAt(p) ? isRomSelected(p) : undefined"
+              :aria-selected="rom ? isRomSelected(p) : undefined"
             >
               <template v-if="compact">
                 <GameCardCompact
-                  v-if="getRomAt(p)"
-                  :rom="getRomAt(p)!"
+                  v-if="rom"
+                  :rom="rom"
                   :webp="supportsWebp"
                   :position="p"
-                  :focused="compactCursor === p"
                 />
                 <span v-else class="r-v2-compact-skeleton" />
               </template>
               <template v-else>
                 <GameCard
-                  v-if="getRomAt(p)"
+                  v-if="rom"
                   class="r-v2-card-fade"
                   :style="{ '--card-fade-i': slotIdx }"
-                  :rom="getRomAt(p)!"
+                  :rom="rom"
                   :webp="supportsWebp"
                   :show-platform-badge="showPlatformBadge"
                   selectable
@@ -1712,6 +1901,42 @@ defineExpose({
 </template>
 
 <style scoped>
+/* The one-time entrance: a short rise and fade, staggered by row. */
+.r-v2-shell__row[style*="--enter-i"] {
+  animation: r-v2-shell-enter 176ms var(--r-motion-ease-out) both;
+  animation-delay: calc(var(--enter-i) * 19ms);
+}
+@keyframes r-v2-shell-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .r-v2-shell__row[style*="--enter-i"] {
+    animation-name: r-v2-shell-enter-reduced;
+    animation-delay: 0ms;
+  }
+  @keyframes r-v2-shell-enter-reduced {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+/* While cruising or flying, hover and selection backgrounds hold still (the
+   cards under a stationary pointer would flicker); they fade in on stop. */
+.r-v2-shell--cruising :deep(.r-v2-compact-card),
+.r-v2-shell--flying :deep(.r-v2-compact-card) {
+  pointer-events: none;
+  transition: none;
+}
 /* A flying scroll shows text only; covers come back when it settles. */
 .r-v2-shell--flying :deep(.r-v2-compact-card::before) {
   background-image: none;
