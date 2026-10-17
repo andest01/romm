@@ -218,6 +218,36 @@ That seeds 2,000 roms in under a minute. It prints the seed it used and a login 
 
 The seeded roms have no files under `library/`, so a scan would mark them missing. The frontend's `assets/romm/resources` symlink should point at the same resources folder, so the UI shows the seeded covers.
 
+### Seeding cookbook
+
+**"I want a library to click around in, fast."** Layout, filters and pagination work. Under a minute:
+
+```sh
+uv run tools/generate_test_data.py --roms 2000 --image-fidelity 2 --wipe
+```
+
+For rows only, add `--no-images` (a few seconds). For a few covers to look at, `--image-limit 200`.
+
+**"I'm tuning image performance."** Conversion, file sizes, WebP. Level 3 matches real bytes per pixel and puts JPEG data in some `big.png` files, as real libraries do:
+
+```sh
+uv run tools/generate_test_data.py --roms 500 --image-fidelity 3 --wipe
+```
+
+Or keep the fast level 2 for most roms and a level-3 slice for measuring: at `--image-fidelity 2`, every rom whose id is a multiple of `--image-weighted-every` (default 10) is drawn at level 3, so `WHERE id % 10 = 0` selects the realistic files. `--image-workers N` sets how many processes draw (default: all cores).
+
+**"I'm working on box art and media."** 3D boxes, logos, fanart, the gallery's box art styles. `--image-media` draws every media kind for the roms with ScreenScraper data (about half) and records the paths in their `ss_metadata`:
+
+```sh
+uv run tools/generate_test_data.py --roms 2000 --image-fidelity 2 --image-media --wipe
+```
+
+Already seeded without media, and only need the files? Every rom's images come from its own seeded random stream, so a `--dry-run` with the same flags plus `--image-media` redraws the same covers byte for byte and adds the media files, without touching the database. This works after a `--wipe` seed (a dry run numbers roms from 1) with the same `--seed`, `--roms` and other row flags. The rows' `ss_metadata` still names no media, so the gallery's box art styles stay empty until a full seed with `--image-media`:
+
+```sh
+uv run tools/generate_test_data.py --roms 2000 --image-fidelity 2 --image-media --dry-run
+```
+
 ## Setting up the linter
 
 We use [Trunk](https://trunk.io) for linting, which combines multiple linters and formatters with sensible defaults and a single configuration file. You'll need to install the Trunk CLI to use it.
