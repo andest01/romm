@@ -1,4 +1,4 @@
-import type { AxiosProgressEvent } from "axios";
+import type { AxiosProgressEvent, AxiosResponse } from "axios";
 import Bowser from "bowser";
 import type {
   Body_delete_roms_api_roms_delete_post as DeleteRomsInput,
@@ -21,6 +21,7 @@ import type {
 } from "@/__generated__";
 import { type CustomLimitOffsetPage_SimpleRomSchema_ as GetRomsResponse } from "@/__generated__/models/CustomLimitOffsetPage_SimpleRomSchema_";
 import api from "@/services/api";
+import { fieldsParam, type Projected } from "@/services/api/fields";
 import socket from "@/services/socket";
 import storeUpload from "@/stores/upload";
 import { getDownloadPath } from "@/utils/downloadPath";
@@ -233,9 +234,17 @@ export interface GetRomsParams {
   withFilterValues?: boolean;
   withRomIdIndex?: boolean;
   withTotal?: boolean;
+  /** Return only these fields per rom (plus `id`); every field when absent. */
+  fields?: readonly (keyof SimpleRomSchema)[];
   // Cancel an in-flight request
   signal?: AbortSignal;
 }
+
+/** A `/roms` page whose items were projected to `K` with `fields`. */
+export type ProjectedRomsPage<K extends keyof SimpleRomSchema> = Omit<
+  GetRomsResponse,
+  "items"
+> & { items: Projected<SimpleRomSchema, K>[] };
 
 /** The `/roms` query string for `params`, shared with the cached client. */
 export function buildGetRomsQuery({
@@ -295,6 +304,7 @@ export function buildGetRomsQuery({
   withFilterValues = undefined,
   withRomIdIndex = undefined,
   withTotal = undefined,
+  fields = undefined,
 }: Omit<GetRomsParams, "signal">) {
   return {
     platform_ids:
@@ -436,9 +446,17 @@ export function buildGetRomsQuery({
       ? { with_rom_id_index: withRomIdIndex }
       : {}),
     ...(withTotal !== undefined ? { with_total: withTotal } : {}),
+    ...(fields !== undefined ? { fields: fieldsParam(fields) } : {}),
   };
 }
 
+// Projected first: `Parameters<typeof getRoms>` reads the last overload, the full one.
+function getRoms<const K extends keyof SimpleRomSchema>(
+  params: GetRomsParams & { fields: readonly K[] },
+): Promise<AxiosResponse<ProjectedRomsPage<K>>>;
+function getRoms(
+  params: GetRomsParams & { fields?: undefined },
+): Promise<AxiosResponse<GetRomsResponse>>;
 async function getRoms({ signal, ...params }: GetRomsParams) {
   return api.get<GetRomsResponse>(`/roms`, {
     params: buildGetRomsQuery(params),

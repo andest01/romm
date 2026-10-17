@@ -537,6 +537,29 @@ def _visible_siblings(db_rom: Rom, request: Request) -> list[Rom]:
     return [s for s in siblings if perms.can_see_rom(s)]
 
 
+# Named sets a client can ask for as `@name` in `fields=`. Provider blobs are listed
+# by hand: `manual_metadata` holds the user's own overrides, not a provider's.
+ROM_FIELD_GROUPS: dict[str, frozenset[str]] = {
+    "provider_metadata": frozenset(
+        {
+            "igdb_metadata",
+            "moby_metadata",
+            "ss_metadata",
+            "launchbox_metadata",
+            "hasheous_metadata",
+            "flashpoint_metadata",
+            "hltb_metadata",
+            "demozoo_metadata",
+            "pouet_metadata",
+            "csdb_metadata",
+            "steam_metadata",
+            "gamelist_metadata",
+            "merged_ra_metadata",
+        }
+    ),
+}
+
+
 class SimpleRomSchema(RomSchema, RomArtFields):
     screenshot_path: str | None = None
 
