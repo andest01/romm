@@ -367,7 +367,8 @@ const scrollbarWidth = ref(0);
 const CARD_GAP_PX = 12;
 // The compact landscape card (search) has one constant size, so nothing about
 // the layout waits on an image.
-const compact = computed(() => galleryRoms.compactCards);
+// Rows projected to the card's fields can only be painted by the compact card.
+const compact = computed(() => galleryRoms.fields !== undefined);
 const compactRowStyle = {
   ...compactCardVars(),
   paddingBottom: `${COMPACT_ROW_GAP_PX}px`,

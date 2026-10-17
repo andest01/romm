@@ -457,6 +457,10 @@ function getRoms<const K extends keyof SimpleRomSchema>(
 function getRoms(
   params: GetRomsParams & { fields?: undefined },
 ): Promise<AxiosResponse<GetRomsResponse>>;
+// Params that may or may not carry `fields`: the rows' type is only known to the caller.
+function getRoms(
+  params: GetRomsParams,
+): Promise<AxiosResponse<GetRomsResponse>>;
 async function getRoms({ signal, ...params }: GetRomsParams) {
   return api.get<GetRomsResponse>(`/roms`, {
     params: buildGetRomsQuery(params),
