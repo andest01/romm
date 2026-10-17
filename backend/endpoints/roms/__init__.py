@@ -813,12 +813,18 @@ def get_roms(
                 else None
             )
 
-        if with_rom_id_index:
-            page_ids = list(rom_id_index[params.offset : params.offset + params.limit])
-        else:
+        # A window fetch (no id index asked for) pages out of the list the bootstrap
+        # already cached, when it is there; otherwise it runs its own query.
+        cached_ids = (
+            None
+            if with_rom_id_index
+            else db_rom_handler.peek_rom_id_index(sidecar_cache_key)
+        )
+
+        def live_page_ids() -> list[int]:
             # Ordering the entity itself carries every JSON metadata blob
             # through the sort, for a page that keeps `limit` of them.
-            page_ids = list(
+            return list(
                 session.scalars(
                     query.with_only_columns(Rom.id)
                     .offset(params.offset)
@@ -826,13 +832,15 @@ def get_roms(
                 ).all()
             )
 
-        if page_ids:
+        def load_page(ids: list[int]) -> list[Rom]:
+            if not ids:
+                return []
             # The ids already passed the filters and the sibling grouping, so the
             # rows load without re-running either.
             page_rows = session.scalars(
                 db_rom_handler.get_page_rows_query(
                     unfiltered_query,
-                    page_ids,
+                    ids,
                     sort_key=sort_key,
                     order_by=order_by,
                     order_dir=order_dir,
@@ -842,9 +850,20 @@ def get_roms(
                 )
             ).all()
             rows_by_id = {rom.id: rom for rom in page_rows}
-            page_items = [rows_by_id[i] for i in page_ids if i in rows_by_id]
+            return [rows_by_id[i] for i in ids if i in rows_by_id]
+
+        if with_rom_id_index:
+            page_ids = list(rom_id_index[params.offset : params.offset + params.limit])
+        elif cached_ids is not None:
+            page_ids = cached_ids[params.offset : params.offset + params.limit]
         else:
-            page_items = []
+            page_ids = live_page_ids()
+
+        page_items = load_page(page_ids)
+        if cached_ids is not None and len(page_items) < len(page_ids):
+            # A cached id no longer loads (the rom was deleted or hidden since the
+            # list was built), so this request is answered from the live query.
+            page_items = load_page(live_page_ids())
 
         return CustomLimitOffsetPage(
             items=_transform(page_items),

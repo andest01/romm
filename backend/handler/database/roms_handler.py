@@ -2170,6 +2170,25 @@ class DBRomsHandler(DBBaseHandler):
             _store_versioned_cache(redis_key, version, result)
         return result
 
+    def peek_rom_id_index(self, cache_key: str | None) -> list[int] | None:
+        """The cached ordered id list for an unscoped set, or None if it is not cached.
+
+        Unlike `get_rom_id_index` this never computes the list: a window fetch only
+        wants it when the bootstrap already built it, and falls back to its own
+        query when not.
+        """
+        redis_key: str | None = None
+        version: str | None = None
+        if cache_key:
+            version = _filter_values_cache_version()
+            redis_key = _rom_id_index_redis_key(cache_key, version)
+            cached = sync_cache.get(redis_key)
+            if cached is not None:
+                rom_ids: list[int] = json.loads(cached)
+                return rom_ids
+
+        return None
+
     @begin_session
     def get_rom_id_index(
         self,
