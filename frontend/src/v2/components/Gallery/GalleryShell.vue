@@ -42,7 +42,12 @@ import {
   watchEffect,
 } from "vue";
 import { useI18n } from "vue-i18n";
-import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute } from "vue-router";
+import {
+  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
+  useRoute,
+  useRouter,
+} from "vue-router";
 import { useUISettings } from "@/composables/useUISettings";
 import storeGalleryFilter from "@/stores/galleryFilter";
 import AlphaJumpMenu from "@/v2/components/Gallery/AlphaJumpMenu.vue";
@@ -64,6 +69,14 @@ import {
   type ListSortKey,
 } from "@/v2/components/Gallery/listColumns";
 import { GameCard, GameCardSkeleton } from "@/v2/components/GameCard";
+import GameCardCompact from "@/v2/components/GameCard/GameCardCompact.vue";
+import {
+  COMPACT_CARD_H_PX,
+  COMPACT_CARD_W_PX,
+  COMPACT_GAP_PX,
+  COMPACT_ROW_GAP_PX,
+  compactCardVars,
+} from "@/v2/components/GameCard/compactCard";
 import { useBreakpoint } from "@/v2/composables/useBreakpoint";
 import { coverRatio, isBoxartStyle } from "@/v2/composables/useCoverArt";
 import { useCssLength } from "@/v2/composables/useCssLength";
@@ -77,6 +90,7 @@ import { useGallerySelectAll } from "@/v2/composables/useGallerySelectAll";
 import { useGallerySelectionInput } from "@/v2/composables/useGallerySelectionInput";
 import { useGalleryViewModeUrl } from "@/v2/composables/useGalleryViewModeUrl";
 import {
+  ROW_CHROME_PX,
   useGalleryVirtualItems,
   type GalleryItem,
 } from "@/v2/composables/useGalleryVirtualItems";
@@ -94,6 +108,12 @@ import storeGalleryRoms, {
 import storeGallerySelection from "@/v2/stores/gallerySelection";
 import storeScrollRestoration from "@/v2/stores/scrollRestoration";
 import { isEditable } from "@/v2/utils/editable";
+import {
+  moveCursor,
+  rowOfIndex,
+  type CursorKey,
+  type CursorRow,
+} from "@/v2/utils/gridCursor";
 
 interface Props {
   /** Whether the header slot has content to render. False suppresses
@@ -336,8 +356,31 @@ const scrollbarWidth = ref(0);
 // Card-art width reference (matches GameCard's `--r-card-art-w`); sets the
 // fixed card HEIGHT (a 2/3 cover at this width). Real width follows the ratio.
 const CARD_GAP_PX = 12;
-const cardWidth = () => (xs.value ? 130 : 158);
-const cardHeight = () => Math.round(cardWidth() / (2 / 3));
+// The compact landscape card (search) has one constant size, so nothing about
+// the layout waits on an image.
+const compact = computed(() => galleryRoms.compactCards);
+const compactRowStyle = {
+  ...compactCardVars(),
+  paddingBottom: `${COMPACT_ROW_GAP_PX}px`,
+};
+const router = useRouter();
+// The compact cards are plain links with no handler of their own; this one
+// handler routes a click on any of them. Modified clicks fall through to the
+// browser (new tab, new window).
+function onCompactClick(e: MouseEvent) {
+  if (!compact.value || e.defaultPrevented || e.button !== 0) return;
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const card = (e.target as Element | null)?.closest<HTMLElement>(
+    "a.r-v2-compact-card",
+  );
+  if (!card?.dataset.romId) return;
+  e.preventDefault();
+  void router.push(`/rom/${card.dataset.romId}`);
+}
+const cardWidth = () =>
+  compact.value ? COMPACT_CARD_W_PX : xs.value ? 130 : 158;
+const cardHeight = () =>
+  compact.value ? COMPACT_CARD_H_PX : Math.round(cardWidth() / (2 / 3));
 const { columns, usableWidth } = useResponsiveColumns(scrollerEl, {
   cardWidth,
   gap: CARD_GAP_PX,
@@ -442,10 +485,15 @@ const { virtualItems, letterToIndex, availableLetters, getItemHeight } =
     cardHeight,
     rowWidth: usableWidth,
     gap: CARD_GAP_PX,
-    ratioAt,
+    // Compact cards never measure: every position packs at the card's own shape.
+    ratioAt: (position: number) => (compact.value ? 0 : ratioAt(position)),
     ratioVersion,
     listSettledDetail: listExpansion.settledPanelHeight,
-    fallbackRatio: coverAspectRatio,
+    fallbackRatio: () =>
+      compact.value
+        ? COMPACT_CARD_W_PX / COMPACT_CARD_H_PX
+        : coverAspectRatio.value,
+    rowChromePx: () => (compact.value ? COMPACT_ROW_GAP_PX : ROW_CHROME_PX),
   });
 
 useResizeObserver(scrollerEl, () => {
@@ -538,16 +586,21 @@ function onViewportRangeChange(range: { first: number; last: number }) {
 // single-column phone keeps enough rows for smooth scrolling without
 // overshooting. List rows are one item each → a flat row count is fine.
 const GRID_OVERSCAN_CARDS = 60;
+// Compact rows are 60px, so a generous overscan keeps text mounted far from the
+// viewport; only the covers wait for the near-observer below.
+const COMPACT_OVERSCAN_ROWS = 40;
 const virtualOverscan = computed(() =>
   layout.value === "list"
     ? 12
-    : Math.min(
-        20,
-        Math.max(
-          4,
-          Math.round(GRID_OVERSCAN_CARDS / Math.max(1, columns.value)),
+    : compact.value
+      ? COMPACT_OVERSCAN_ROWS
+      : Math.min(
+          20,
+          Math.max(
+            4,
+            Math.round(GRID_OVERSCAN_CARDS / Math.max(1, columns.value)),
+          ),
         ),
-      ),
 );
 
 // ── Debug overlay bridge ────────────────────────────────────────────
@@ -657,9 +710,44 @@ function collectVisiblePositions(range: {
   return out;
 }
 
+// Compact text comes from the fetched windows, so fetch far past the viewport
+// (more ahead than behind) and a fast scroll lands on rows that already have text.
+const COMPACT_FETCH_BEHIND_ROWS = 40;
+const COMPACT_FETCH_AHEAD_ROWS = 80;
 function syncFetches(range: { first: number; last: number }) {
-  galleryRoms.syncVisibleWindows(collectVisiblePositions(range));
+  const widened = compact.value
+    ? {
+        first: Math.max(0, range.first - COMPACT_FETCH_BEHIND_ROWS),
+        last: Math.min(
+          virtualItems.value.length - 1,
+          range.last + COMPACT_FETCH_AHEAD_ROWS,
+        ),
+      }
+    : range;
+  galleryRoms.syncVisibleWindows(collectVisiblePositions(widened));
 }
+
+// Covers paint only in rows near the viewport: one observer over the rows (not
+// every card) marks them `is-near`, and the card's CSS holds the cover back
+// until then. Text is never held back.
+const NEAR_MARGIN_PX = 600;
+let nearObserver: IntersectionObserver | null = null;
+function nearRows(): IntersectionObserver {
+  nearObserver ??= new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        entry.target.classList.toggle("is-near", entry.isIntersecting);
+      }
+    },
+    { root: scrollerEl.value ?? null, rootMargin: `${NEAR_MARGIN_PX}px 0px` },
+  );
+  return nearObserver;
+}
+const vNear = {
+  mounted: (el: HTMLElement) => nearRows().observe(el),
+  unmounted: (el: HTMLElement) => nearObserver?.unobserve(el),
+};
+onBeforeUnmount(() => nearObserver?.disconnect());
 
 const scheduleFetchSync = useDebounceFn(syncFetches, FETCH_DEBOUNCE_MS);
 
@@ -842,6 +930,107 @@ onMounted(() => {
 });
 useEventListener(window, "keydown", onShellKey);
 
+// Keyboard and controller cursor for the compact grid. The controller's D-pad
+// arrives as synthetic arrow keys, so one handler serves both. The cursor is an
+// index into the results: a key press is arithmetic over the packed rows, never
+// a DOM read, so held keys stay cheap however far the list goes.
+const compactCursor = ref<number | null>(null);
+let cursorPreferredX: number | null = null;
+const cursorRows = computed(() => {
+  const rows: CursorRow[] = [];
+  const itemIndex: number[] = [];
+  virtualItems.value.forEach((item, i) => {
+    if (item.kind === "row") {
+      rows.push({ start: item.startPosition, end: item.endPosition });
+      itemIndex.push(i);
+    }
+  });
+  return { rows, itemIndex };
+});
+const CURSOR_KEYS: ReadonlySet<string> = new Set([
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "PageUp",
+  "PageDown",
+  "Home",
+  "End",
+]);
+
+// Scroll just far enough that the cursor's row is on screen, with a row of margin.
+function revealCursor(position: number) {
+  const { rows, itemIndex } = cursorRows.value;
+  const idx = itemIndex[rowOfIndex(rows, position)];
+  if (idx === undefined) return;
+  const range = viewportRange.value;
+  if (idx <= range.first) {
+    scrollToItem(Math.max(0, idx - 1), false);
+  } else if (idx >= range.last) {
+    scrollToItem(Math.max(0, idx - (range.last - range.first) + 2), false);
+  }
+}
+
+function onCompactKey(e: KeyboardEvent) {
+  if (!compact.value || layout.value !== "grid" || e.defaultPrevented) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  // Only when focus is on the page itself or inside the gallery: a dialog or a
+  // text field keeps its own keys.
+  const target = e.target as Node | null;
+  const inGallery =
+    target === document.body ||
+    target === document.documentElement ||
+    (!!target && !!sectionEl.value?.contains(target));
+  if (!inGallery || isEditable(e.target)) return;
+  const { rows, itemIndex } = cursorRows.value;
+  if (rows.length === 0) return;
+
+  if (e.key === "Enter" || e.key === " ") {
+    const here = compactCursor.value;
+    // A focused card is a link: its own click already routes it.
+    if (here === null || (e.target as Element).closest?.("a.r-v2-compact-card"))
+      return;
+    const rom = getRomAt(here);
+    if (!rom) return;
+    e.preventDefault();
+    void router.push(`/rom/${rom.id}`);
+    return;
+  }
+  if (!CURSOR_KEYS.has(e.key)) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  const range = viewportRange.value;
+  if (compactCursor.value === null) {
+    // The first press only shows the cursor, on the top-left card in view.
+    const top = Math.max(
+      0,
+      itemIndex.findIndex((i) => i >= range.first),
+    );
+    compactCursor.value = rows[top]!.start;
+    cursorPreferredX = null;
+    return;
+  }
+  const next = moveCursor(
+    e.key as CursorKey,
+    compactCursor.value,
+    cursorPreferredX,
+    rows,
+    () => COMPACT_CARD_W_PX,
+    COMPACT_GAP_PX,
+    Math.max(1, range.last - range.first - 1),
+  );
+  cursorPreferredX = next.preferredX;
+  compactCursor.value = next.index;
+  revealCursor(next.index);
+}
+useEventListener(window, "keydown", onCompactKey, { capture: true });
+// A new result set or a different card drops the old cursor.
+watch([() => galleryRoms.total, compact], () => {
+  compactCursor.value = null;
+  cursorPreferredX = null;
+});
+
 onBeforeUnmount(() => {
   // A press still in flight would otherwise fire its timer into whatever
   // replaces this gallery.
@@ -987,6 +1176,7 @@ defineExpose({
       class="r-v2-shell__scroller"
       :body-attrs="gridAttrs"
       :tabindex="-1"
+      @click="onCompactClick"
       @wheel.passive="endLetterJump"
       @pointerdown.passive="endLetterJump"
       @keydown="endLetterJump"
@@ -1109,7 +1299,9 @@ defineExpose({
 
           <div
             v-else-if="itemKind(item as GalleryItem) === 'row'"
+            v-near
             class="r-v2-shell__row"
+            :style="compact ? compactRowStyle : undefined"
           >
             <div
               v-for="(p, slotIdx) in rowPositions(asRow(item as GalleryItem))"
@@ -1118,18 +1310,30 @@ defineExpose({
               class="r-v2-shell__cell"
               :aria-selected="getRomAt(p) ? isRomSelected(p) : undefined"
             >
-              <GameCard
-                v-if="getRomAt(p)"
-                class="r-v2-card-fade"
-                :style="{ '--card-fade-i': slotIdx }"
-                :rom="getRomAt(p)!"
-                :webp="supportsWebp"
-                :show-platform-badge="showPlatformBadge"
-                selectable
-                :position="p"
-                @ratio="onCardRatio"
-              />
-              <GameCardSkeleton v-else />
+              <template v-if="compact">
+                <GameCardCompact
+                  v-if="getRomAt(p)"
+                  :rom="getRomAt(p)!"
+                  :webp="supportsWebp"
+                  :position="p"
+                  :focused="compactCursor === p"
+                />
+                <span v-else class="r-v2-compact-skeleton" />
+              </template>
+              <template v-else>
+                <GameCard
+                  v-if="getRomAt(p)"
+                  class="r-v2-card-fade"
+                  :style="{ '--card-fade-i': slotIdx }"
+                  :rom="getRomAt(p)!"
+                  :webp="supportsWebp"
+                  :show-platform-badge="showPlatformBadge"
+                  selectable
+                  :position="p"
+                  @ratio="onCardRatio"
+                />
+                <GameCardSkeleton v-else />
+              </template>
             </div>
           </div>
 
@@ -1381,6 +1585,14 @@ html[data-bp~="md-and-up"] .r-v2-shell__list-header {
 }
 .r-v2-shell__cell > * {
   flex-shrink: 0;
+}
+/* A compact card that has not loaded yet: its own size, so nothing shifts. */
+.r-v2-compact-skeleton {
+  display: block;
+  width: var(--r-compact-w);
+  height: var(--r-compact-h);
+  border-radius: var(--r-radius-art);
+  background: color-mix(in srgb, var(--r-color-fg) 7%, transparent);
 }
 
 /* Card reveal animation (.r-v2-card-fade) lives in global.css, shared

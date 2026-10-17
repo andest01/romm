@@ -49,7 +49,7 @@ export type { GalleryItem, GalleryItemKind } from "./types";
 
 // Row chrome below the cover art added to the cover box height to get a
 // grid row's total height: 7px gap + 16px label + 18px bottom padding = 41.
-const ROW_CHROME_PX = 41;
+export const ROW_CHROME_PX = 41;
 // Reference card-art width the row height is derived from when the caller
 // doesn't pass one (md gallery card). Height = width / ratio + chrome.
 const REFERENCE_COVER_WIDTH_PX = 158;
@@ -155,6 +155,8 @@ interface Options {
    *  measures, and one waiting on its image paints there until it loads.
    *  Defaults to box art (2/3). */
   fallbackRatio?: MaybeRefOrGetter<number> | undefined;
+  /** Px of a grid row below the card (label, gaps). Defaults to the classic card's. */
+  rowChromePx?: MaybeRefOrGetter<number> | undefined;
   /** Bump to force a re-pack when measured ratios change (Vue tracks it). */
   ratioVersion?: Ref<number> | ComputedRef<number>;
   /** Px of detail panel the list row at `position` settles at (0 for the
@@ -243,7 +245,11 @@ export function useGalleryVirtualItems(opts: Options) {
 
   // Uniform row height (cards share one fixed art height) keeps the scroller
   // exact-offset regardless of how many variable-width cards a row holds.
-  const rowHeightPx = computed(() => cardHeightPx() + ROW_CHROME_PX);
+  const rowHeightPx = computed(
+    () =>
+      cardHeightPx() +
+      (opts.rowChromePx != null ? toValue(opts.rowChromePx) : ROW_CHROME_PX),
+  );
 
   const fallbackRatio = () => {
     const r = opts.fallbackRatio != null ? toValue(opts.fallbackRatio) : 0;

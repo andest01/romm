@@ -27,7 +27,7 @@ import { defineStore } from "pinia";
 import type { SimpleRomSchema } from "@/__generated__/";
 import type { CustomLimitOffsetPage_SimpleRomSchema_ as GetRomsResponse } from "@/__generated__/models/CustomLimitOffsetPage_SimpleRomSchema_";
 import { userStorage } from "@/composables/useUserLocalStorage";
-import romApi from "@/services/api/rom";
+import romApi, { type GetRomsParams } from "@/services/api/rom";
 import {
   type Collection,
   type SmartCollection,
@@ -36,9 +36,22 @@ import {
 import storeGalleryFilter from "@/stores/galleryFilter";
 import storePlatforms, { type Platform } from "@/stores/platforms";
 import type { ExtractPiniaStoreType } from "@/types";
+import { GAME_CARD_FIELDS } from "@/v2/components/GameCard/gameCardContract";
 import { playtimeHoursToSeconds } from "@/v2/utils/time";
 
 export type SimpleRom = SimpleRomSchema;
+
+/** One `/roms` page, projected to the compact card's fields when `compact` is on.
+ * The rows are then a card's worth, not full ROMs: only a card reads them. */
+async function fetchRomsPage(
+  params: Omit<GetRomsParams, "fields">,
+  compact: boolean,
+): Promise<GetRomsResponse> {
+  const response = compact
+    ? await romApi.getRoms({ ...params, fields: GAME_CARD_FIELDS })
+    : await romApi.getRoms(params);
+  return response.data as unknown as GetRomsResponse;
+}
 
 /** Sort keys the backend accepts for `/roms` ordering. The handler
  * resolves the column against `Rom`, then `RomMetadata`, then
@@ -229,6 +242,8 @@ interface State {
    * MissingGamesSection (Settings) intentionally leaves this `false`
    * so each missing file shows as its own row, never collapsed. */
   currentSearch: boolean;
+  /** The compact card is showing: fetch only the fields it paints. */
+  compactCards: boolean;
   total: number;
   // The count a re-sort is refetching (null when unknown). A new order can't
   // change it, so the bootstrap skeleton paints that many instead of a page.
@@ -267,6 +282,7 @@ const defaults = (): State => ({
   currentVirtualCollection: null,
   currentSmartCollection: null,
   currentSearch: false,
+  compactCards: false,
   total: 0,
   reorderTotal: null,
   charIndex: {},
@@ -545,23 +561,21 @@ export default defineStore("v2GalleryRoms", {
       inFlightControllers.set(ctrlKey, controller);
 
       try {
-        const response = await romApi.getRoms({
-          ...params,
-          ...sidecars,
-          limit: 1,
-          signal: controller.signal,
-        });
+        const data = await fetchRomsPage(
+          {
+            ...params,
+            ...sidecars,
+            limit: 1,
+            signal: controller.signal,
+          },
+          this.compactCards,
+        );
         // Re-check that this bootstrap is still the relevant one:
         // invalidateWindows / resetGallery may have aborted us and a
         // newer bootstrap may have replaced our entry under the same key.
         // Identity comparison avoids applying stale metadata in that race.
         if (inFlightControllers.get(ctrlKey) !== controller) return;
-        this._applyMetadata(
-          response.data,
-          galleryFilter,
-          platformsStore,
-          sidecars,
-        );
+        this._applyMetadata(data, galleryFilter, platformsStore, sidecars);
       } catch (err) {
         if (axios.isCancel(err)) return;
         console.error("[v2GalleryRoms] bootstrap fetch failed", err);
@@ -621,11 +635,14 @@ export default defineStore("v2GalleryRoms", {
       const withAggregations = !this.metadataLoaded;
 
       try {
-        const response = await romApi.getRoms({
-          ...params,
-          ...(withAggregations ? {} : SKIP_AGGREGATES),
-          signal: controller.signal,
-        });
+        const data = await fetchRomsPage(
+          {
+            ...params,
+            ...(withAggregations ? {} : SKIP_AGGREGATES),
+            signal: controller.signal,
+          },
+          this.compactCards,
+        );
         // Re-check identity: invalidateWindows / resetGallery / a context
         // switch may have run while we were waiting, and a fresh fetch may
         // already own this offset. Compare the controller rather than
@@ -633,7 +650,6 @@ export default defineStore("v2GalleryRoms", {
         // so we never apply stale data over the new context.
         if (inFlightControllers.get(ctrlKey) !== controller) return;
 
-        const data = response.data;
         // Only apply the full metadata when this window actually fetched the
         // aggregations (a window reached before the bootstrap resolved).
         // Otherwise char_index / filter_values come back empty and would

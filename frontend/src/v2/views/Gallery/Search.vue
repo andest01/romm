@@ -5,13 +5,15 @@
 // `GalleryShell`.
 import { RTag } from "@v2/lib";
 import { storeToRefs } from "pinia";
-import { nextTick, onMounted, ref } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import GalleryShell from "@/v2/components/Gallery/GalleryShell.vue";
 import PageHeader from "@/v2/components/shared/PageHeader.vue";
 import storeGalleryRoms from "@/v2/stores/galleryRoms";
 
 const { t } = useI18n();
+const route = useRoute();
 const galleryRoms = storeGalleryRoms();
 const { total, initialFetching } = storeToRefs(galleryRoms);
 
@@ -30,10 +32,16 @@ onMounted(async () => {
   // GameListRow's onMounted). No big initial batch.
   galleryRoms.resetGallery();
   galleryRoms.currentSearch = true;
+  // The compact landscape card, unless `?cards=classic` asks for the old one.
+  galleryRoms.compactCards = route.query.cards !== "classic";
   await galleryRoms.fetchInitialMetadata();
   initialSearch.value = true;
   await nextTick();
   shellRef.value?.applyRestoredScroll();
+});
+
+onBeforeUnmount(() => {
+  galleryRoms.compactCards = false;
 });
 </script>
 

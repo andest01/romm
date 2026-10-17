@@ -41,10 +41,13 @@
 import { computed, provide, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import type { SimpleRom } from "@/stores/roms";
 import GameActionBtn from "@/v2/components/GameActions/GameActionBtn.vue";
 import CardFlags from "@/v2/components/GameCard/CardFlags.vue";
 import SiblingBadge from "@/v2/components/GameCard/SiblingBadge.vue";
+import type {
+  GameCardEmits,
+  GameCardProps,
+} from "@/v2/components/GameCard/gameCardContract";
 import CoverArtPip from "@/v2/components/shared/CoverArtPip.vue";
 import GameCover from "@/v2/components/shared/GameCover.vue";
 import PlatformIcon from "@/v2/components/shared/PlatformIcon.vue";
@@ -63,77 +66,7 @@ import storeGallerySelection from "@/v2/stores/gallerySelection";
 
 defineOptions({ inheritAttrs: false });
 
-interface Props {
-  rom: SimpleRom;
-  to?: string | undefined;
-  hero?: boolean;
-  /** Card scale tier. Drives the cover art width/height via the shared
-   *  `--r-card-art-w/h` tokens, and the hero variant's `--r-hero-w/h`
-   *  when `hero` is true.
-   *    xs (48 × 64)   - list-row avatars
-   *    sm (120 × 162) - dense pickers
-   *    md (158 × 213) - gallery default (no class, keeps the global token)
-   *    lg (200 × 270) - edit-dialog preview
-   *    xl (240 × 324) - detail page cover
-   *  Hero scales linearly with size (it's just an aspect-ratio change,
-   *  not a separate scale), so `hero` + any `size` paints the 16:9
-   *  shape at that tier's footprint. */
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  focused?: boolean;
-  webp?: boolean;
-  showPlatformIcon?: boolean;
-  /** Passive mode: root is `<article role="button">` instead of a
-   *  router-link; action overlay / rating / status / platform-icon /
-   *  bg-art highlight are all suppressed. Click emits `@click` for the
-   *  consumer to handle. Hover scale stays unless `noHover` is set. */
-  static?: boolean;
-  /** Fully decorative: root is a plain `<div>` with no role, no
-   *  tabindex, no router wiring, no own click handlers. The whole
-   *  card is visual content; the parent (typically an `<a>` or row
-   *  button) owns interactivity and navigation. Avoids the nested-
-   *  interactive HTML quirk when the card lives inside an anchor (eg.
-   *  list-row avatars). Implies `static` semantics: no overlay /
-   *  badges / bg highlight. */
-  decorative?: boolean;
-  /** Suppress the hover scale + shadow. Use for purely-decorative
-   *  surfaces (edit-dialog cover preview) where the card isn't an
-   *  affordance. Only meaningful in `static` mode. */
-  noHover?: boolean;
-  /** Toggle the label below the cover. Defaults true to match the
-   *  gallery experience. */
-  showTitle?: boolean;
-  /** Override the resolved cover URL. Used for local preview blobs
-   *  (edit dialog) and external provider URLs (match dialog source
-   *  variants). Bypasses the path/webp/url_cover chain. */
-  coverSrc?: string | null | undefined;
-  /** When a `coverSrc` override is shown (e.g. the continue-playing
-   *  screenshot), float a small 2D cover-art thumbnail in the bottom-right
-   *  corner so the game stays identifiable. No-op without a `coverSrc`. */
-  coverPip?: boolean;
-  /** Paint a brand-coloured outline to mark the card as selected
-   *  (cover-variant picker, multi-select gallery). When `selectable`
-   *  is true this prop is ignored: the card subscribes directly to
-   *  `gallerySelection` so a single source of truth (the store)
-   *  drives every selected card across the gallery. Left unset, a static
-   *  card gets no `aria-pressed`. */
-  selected?: boolean | undefined;
-  /** Opt the card into the gallery's multi-select store. When true:
-   *  the card reads its selected state from `gallerySelection`,
-   *  shows a checkbox affordance (on hover or whenever the gallery
-   *  is in selection mode), and routes its clicks through the
-   *  selection-input composable (shift = range, ctrl/cmd = toggle,
-   *  long-press on touch = enter mode). Defaults false so non-
-   *  gallery consumers (pickers, edit-dialog previews) keep their
-   *  prop-driven behaviour. */
-  selectable?: boolean;
-  /** Sparse position of the rom inside the gallery: the anchor that
-   *  shift-range selection uses. Provided by `GalleryShell`. Required
-   *  when `selectable` is true (the composable needs a position to
-   *  store/restore the range anchor). */
-  position?: number | undefined;
-}
-
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<GameCardProps>(), {
   to: undefined,
   size: "md",
   showPlatformIcon: true,
@@ -259,13 +192,7 @@ function onPlatformClick(e: MouseEvent) {
   actions?.goToPlatform();
 }
 
-const emit = defineEmits<{
-  (e: "click", event: MouseEvent): void;
-  /** The cover's natural aspect ratio (width / height) once its image
-   *  loads: forwarded from GameCover so the gallery can flow-pack cards
-   *  at their true shape. Carries the rom id so the consumer can key it. */
-  (e: "ratio", payload: { romId: number; ratio: number }): void;
-}>();
+const emit = defineEmits<GameCardEmits>();
 
 // Gallery selection: only wired when the consumer opts in via
 // `selectable`. Outside the gallery (pickers, previews) the store
