@@ -8,8 +8,12 @@
 // why GameCard keeps `rom: SimpleRom` and the compact card defers its actions.
 import type { Projected } from "@/services/api/fields";
 import type { SimpleRom } from "@/stores/roms";
+import { METADATA_PROVIDERS } from "@/v2/utils/metadataProviders";
 
-/** Every ROM field a card reads to paint itself. Reading another one in GameCardCompact is a type error. */
+/** The id fields behind the provider badges (`activeProviders` reads them). */
+const PROVIDER_ID_KEYS = METADATA_PROVIDERS.map((p) => p.key);
+
+/** Every ROM field a card or a table row reads to paint itself. Reading another one in GameCardCompact is a type error. */
 export const GAME_CARD_FIELDS = [
   "name",
   "fs_name",
@@ -29,11 +33,15 @@ export const GAME_CARD_FIELDS = [
   "url_cover",
   "path_video",
   "has_file_on_disk",
-  "flashpoint_id",
   "ss_metadata",
   "gamelist_metadata",
   "launchbox_metadata",
   "updated_at",
+  "fs_size_bytes",
+  "created_at",
+  "hltb_metadata",
+  "metadatum",
+  ...PROVIDER_ID_KEYS,
 ] as const satisfies readonly (keyof SimpleRom)[];
 
 /** A ROM carrying at least the fields a card paints. A full `SimpleRom` satisfies it. */

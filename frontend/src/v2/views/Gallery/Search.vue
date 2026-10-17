@@ -9,6 +9,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import GalleryShell from "@/v2/components/Gallery/GalleryShell.vue";
+import { GAME_CARD_FIELDS } from "@/v2/components/GameCard/gameCardContract";
 import PageHeader from "@/v2/components/shared/PageHeader.vue";
 import storeGalleryRoms from "@/v2/stores/galleryRoms";
 
@@ -33,7 +34,8 @@ onMounted(async () => {
   galleryRoms.resetGallery();
   galleryRoms.currentSearch = true;
   // The compact landscape card, unless `?cards=classic` asks for the old one.
-  galleryRoms.compactCards = route.query.cards !== "classic";
+  galleryRoms.fields =
+    route.query.cards === "classic" ? undefined : GAME_CARD_FIELDS;
   await galleryRoms.fetchInitialMetadata();
   initialSearch.value = true;
   await nextTick();
@@ -41,7 +43,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  galleryRoms.compactCards = false;
+  galleryRoms.fields = undefined;
 });
 </script>
 

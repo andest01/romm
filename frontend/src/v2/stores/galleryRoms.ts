@@ -36,20 +36,14 @@ import {
 import storeGalleryFilter from "@/stores/galleryFilter";
 import storePlatforms, { type Platform } from "@/stores/platforms";
 import type { ExtractPiniaStoreType } from "@/types";
-import { GAME_CARD_FIELDS } from "@/v2/components/GameCard/gameCardContract";
 import { playtimeHoursToSeconds } from "@/v2/utils/time";
 
 export type SimpleRom = SimpleRomSchema;
 
-/** One `/roms` page, projected to the compact card's fields when `compact` is on.
- * The rows are then a card's worth, not full ROMs: only a card reads them. */
-async function fetchRomsPage(
-  params: Omit<GetRomsParams, "fields">,
-  compact: boolean,
-): Promise<GetRomsResponse> {
-  const response = compact
-    ? await romApi.getRoms({ ...params, fields: GAME_CARD_FIELDS })
-    : await romApi.getRoms(params);
+/** One `/roms` page. With `params.fields` the rows carry only those fields,
+ * so only a reader of exactly those fields may use them. */
+async function fetchRomsPage(params: GetRomsParams): Promise<GetRomsResponse> {
+  const response = await romApi.getRoms(params);
   return response.data as unknown as GetRomsResponse;
 }
 
@@ -242,8 +236,8 @@ interface State {
    * MissingGamesSection (Settings) intentionally leaves this `false`
    * so each missing file shows as its own row, never collapsed. */
   currentSearch: boolean;
-  /** The compact card is showing: fetch only the fields it paints. */
-  compactCards: boolean;
+  /** Fetch only these fields per rom (plus `id`); every field when undefined. */
+  fields: readonly (keyof SimpleRomSchema)[] | undefined;
   total: number;
   // The count a re-sort is refetching (null when unknown). A new order can't
   // change it, so the bootstrap skeleton paints that many instead of a page.
@@ -282,7 +276,7 @@ const defaults = (): State => ({
   currentVirtualCollection: null,
   currentSmartCollection: null,
   currentSearch: false,
-  compactCards: false,
+  fields: undefined,
   total: 0,
   reorderTotal: null,
   charIndex: {},
@@ -561,15 +555,13 @@ export default defineStore("v2GalleryRoms", {
       inFlightControllers.set(ctrlKey, controller);
 
       try {
-        const data = await fetchRomsPage(
-          {
-            ...params,
-            ...sidecars,
-            limit: 1,
-            signal: controller.signal,
-          },
-          this.compactCards,
-        );
+        const data = await fetchRomsPage({
+          ...params,
+          ...sidecars,
+          ...(this.fields ? { fields: this.fields } : {}),
+          limit: 1,
+          signal: controller.signal,
+        });
         // Re-check that this bootstrap is still the relevant one:
         // invalidateWindows / resetGallery may have aborted us and a
         // newer bootstrap may have replaced our entry under the same key.
@@ -635,14 +627,12 @@ export default defineStore("v2GalleryRoms", {
       const withAggregations = !this.metadataLoaded;
 
       try {
-        const data = await fetchRomsPage(
-          {
-            ...params,
-            ...(withAggregations ? {} : SKIP_AGGREGATES),
-            signal: controller.signal,
-          },
-          this.compactCards,
-        );
+        const data = await fetchRomsPage({
+          ...params,
+          ...(withAggregations ? {} : SKIP_AGGREGATES),
+          ...(this.fields ? { fields: this.fields } : {}),
+          signal: controller.signal,
+        });
         // Re-check identity: invalidateWindows / resetGallery / a context
         // switch may have run while we were waiting, and a fresh fetch may
         // already own this offset. Compare the controller rather than
