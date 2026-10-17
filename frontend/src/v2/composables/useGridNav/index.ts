@@ -62,6 +62,9 @@ export interface UseGridNavOptions {
    *  the controls of the active cell stay tabbable and every other cell's
    *  get `tabindex="-1"`, including cells that mount later. */
   roving?: boolean;
+  /** True while another controller owns this grid's keys and tab stop (the
+   *  compact search grid has its own cursor); the nav does nothing then. */
+  disabled?: () => boolean;
   /** Renders the grid's first or last row when it virtualises its rows, so
    *  Ctrl+Home / Ctrl+End can reach rows that aren't mounted. */
   revealEdge?: (edge: "first" | "last") => void;
@@ -236,7 +239,7 @@ export function useGridNav(
 
   let syncFrame = 0;
   function scheduleSyncRoving() {
-    if (!options.roving || syncFrame) return;
+    if (!options.roving || syncFrame || options.disabled?.()) return;
     syncFrame = requestAnimationFrame(() => {
       syncFrame = 0;
       syncRoving();
@@ -414,7 +417,7 @@ export function useGridNav(
   }
 
   function onKey(e: KeyboardEvent) {
-    if (!GRID_KEYS.has(e.key)) return;
+    if (options.disabled?.() || !GRID_KEYS.has(e.key)) return;
     if (!rootRef.value) return;
     // Only steer when focus is already inside the grid; don't hijack
     // arrow keys meant for input fields, menus, or other widgets.
@@ -477,6 +480,7 @@ export function useGridNav(
   // Runs as late children arrive (fetches finishing, skeletons swapping to
   // cards), so pad focus lands on the first cell once it shows up.
   function maybeAutofocus() {
+    if (options.disabled?.()) return;
     if (modality.value !== "pad") return;
     if (!rootRef.value) return;
     if (rootRef.value.contains(document.activeElement)) return;
@@ -488,6 +492,7 @@ export function useGridNav(
   // inside the grid (arrow nav, mouse, click). The next mount on this
   // same route restores it.
   function onFocusIn(e: FocusEvent) {
+    if (options.disabled?.()) return;
     const target = e.target;
     if (!(target instanceof HTMLElement)) return;
     if (!rootRef.value?.contains(target)) return;

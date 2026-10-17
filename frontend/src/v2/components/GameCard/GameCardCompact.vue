@@ -74,6 +74,7 @@ const meta = computed(() => {
 
 <template>
   <a
+    :id="position === undefined ? undefined : `cc-${position}`"
     class="r-v2-compact-card"
     :class="{
       'is-cursor': focused,
@@ -128,6 +129,7 @@ const meta = computed(() => {
   color: inherit;
   text-decoration: none;
   outline: none;
+  transition: background-color var(--r-motion-fast) var(--r-motion-ease-out);
 }
 .r-v2-compact-card::before {
   content: "";
@@ -156,16 +158,35 @@ const meta = computed(() => {
   outline: 1px dashed color-mix(in srgb, var(--r-color-fg) 16%, transparent);
   outline-offset: -1px;
 }
-/* Hover, focus, the keyboard / controller cursor and selection all act on the
-   whole card, text included, not just the thumbnail. */
+/* Hover and selection tint the whole card, as a list row does; focus and the
+   keyboard / controller cursor draw a ring. */
 html:not([data-input="pad"]) .r-v2-compact-card:hover {
-  background-color: color-mix(in srgb, var(--r-color-fg) 7%, transparent);
+  background-color: var(--r-color-bg-elevated);
 }
-.r-v2-compact-card:focus-visible,
-.r-v2-compact-card.is-cursor,
+/* Selected reads as the list row's brand tint, with the same deeper tint on hover. */
 .r-v2-compact-card.is-selected {
-  outline: 2px solid var(--r-color-brand-primary);
-  outline-offset: 2px;
+  background-color: color-mix(
+    in srgb,
+    var(--r-color-brand-primary) 14%,
+    transparent
+  );
+}
+html:not([data-input="pad"]) .r-v2-compact-card.is-selected:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--r-color-brand-primary) 22%,
+    transparent
+  );
+}
+/* Key and pad focus, and the grid cursor, paint the same inset ring as a focused
+   list row; mouse and touch show none. */
+html:not([data-input]) .r-v2-compact-card:focus-visible,
+html:not([data-input]) .r-v2-compact-card.is-cursor,
+html[data-input="key"] .r-v2-compact-card:focus-visible,
+html[data-input="key"] .r-v2-compact-card.is-cursor,
+html[data-input="pad"] .r-v2-compact-card:focus-visible,
+html[data-input="pad"] .r-v2-compact-card.is-cursor {
+  box-shadow: inset 0 0 0 var(--r-focus-ring-width) var(--r-color-focus);
 }
 .r-v2-compact-card__title {
   grid-column: 2;

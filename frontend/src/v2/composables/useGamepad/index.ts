@@ -166,6 +166,20 @@ type PadState = {
 
 let installed = false;
 
+let stickYClaims = 0;
+
+/** A view that reads the stick's up/down axis itself claims it, so useGamepad
+ *  stops turning it into ArrowUp/ArrowDown. Returns the release function. */
+export function claimStickY(): () => void {
+  stickYClaims++;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    stickYClaims--;
+  };
+}
+
 export function useGamepad() {
   // Resolved here (setup context) so install() can reach them from inside
   // the RAF loop without needing the component instance.
@@ -308,7 +322,9 @@ export function useGamepad() {
         });
         tickAxis(st, "y", y, t, (dir) => {
           onAnyInput();
-          if (!gameOwnsInput) dispatchKey(dir < 0 ? ARROWS.up : ARROWS.down);
+          if (!gameOwnsInput && stickYClaims === 0) {
+            dispatchKey(dir < 0 ? ARROWS.up : ARROWS.down);
+          }
         });
 
         // Buttons. Three tracks, evaluated in order:

@@ -33,7 +33,9 @@ export interface GridCruiseOptions {
 const START_ROWS_PER_SEC = 8;
 const MAX_ROWS_PER_SEC = 20;
 const RAMP_MS = 1000;
-/** The 350 ms initial delay plus slack. */
+/** The pad's first repeat lands 350 ms after the press: inside this window. A
+ *  quicker second Up is a second tap, not a hold. */
+const HOLD_MIN_MS = 300;
 const HOLD_WINDOW_MS = 450;
 /** No pad data and no events for this long means released. */
 const SILENCE_MS = 300;
@@ -144,7 +146,9 @@ export function useGridCruise(opts: GridCruiseOptions) {
     const isRepeat =
       source.via === "key"
         ? !!source.repeat
-        : key === lastKey && now - lastAt < HOLD_WINDOW_MS;
+        : key === lastKey &&
+          now - lastAt >= HOLD_MIN_MS &&
+          now - lastAt < HOLD_WINDOW_MS;
     lastKey = key;
     lastAt = now;
     if (!isRepeat) return false;

@@ -42,6 +42,25 @@ describe("useGridCruise", () => {
     expect(onStart).not.toHaveBeenCalled();
   });
 
+  it("reads a quick second pad tap as a tap, not the start of a hold", () => {
+    const { cruise, onStart } = setup();
+    cruise.feed("ArrowUp", { via: "pad" });
+    vi.advanceTimersByTime(180);
+
+    expect(cruise.feed("ArrowUp", { via: "pad" })).toBe(false);
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it("reads the pad's first repeat, 350 ms after the press, as a hold", () => {
+    const { cruise, onStart } = setup();
+    cruise.feed("ArrowDown", { via: "pad" });
+    vi.advanceTimersByTime(350);
+
+    expect(cruise.feed("ArrowDown", { via: "pad" })).toBe(true);
+    expect(onStart).toHaveBeenCalledOnce();
+    cruise.cancel();
+  });
+
   it("takes over on a held key's first repeat and scrolls in a straight line", () => {
     const { cruise, scroller, onStart, onRow } = setup();
     cruise.feed("ArrowDown", { via: "key", repeat: false });
