@@ -669,6 +669,11 @@ def build_launchbox_metadata(rng: random.Random, f: dict[str, Any]) -> dict[str,
     }
 
 
+def build_gamelist_metadata(f: dict[str, Any]) -> dict[str, Any]:
+    # EmulationStation rates 0-1; the rating view scales it by 100.
+    return {"rating": round(f["rating"] / 100, 2)}
+
+
 def build_hasheous_metadata(rng: random.Random) -> dict[str, Any]:
     return {
         "tosec_match": rng.random() < 0.3,
@@ -1158,6 +1163,7 @@ def main() -> int:
             has_ss = rng.random() < 0.55
             has_ra = hashable and rng.random() < 0.30
             has_lb = rng.random() < 0.40
+            has_gl = rng.random() < 0.15
             has_hash = rng.random() < 0.35
             has_hltb = rng.random() < 0.30
             has_fp = platform["slug"] in ("flash", "browser") or rng.random() < 0.05
@@ -1220,7 +1226,7 @@ def main() -> int:
                     "sgdb_id": None,
                     "tgdb_id": None,
                     "flashpoint_id": rand_hex(rng, 8) if has_fp else None,
-                    "gamelist_id": None,
+                    "gamelist_id": rand_hex(rng, 8) if has_gl else None,
                     "libretro_id": None,
                     "fs_name": fs_name,
                     "fs_name_no_tags": parts.no_tags,
@@ -1251,7 +1257,7 @@ def main() -> int:
                     "flashpoint_metadata": (
                         build_flashpoint_metadata(rng, f) if has_fp else {}
                     ),
-                    "gamelist_metadata": {},
+                    "gamelist_metadata": (build_gamelist_metadata(f) if has_gl else {}),
                     "manual_metadata": {},
                     "path_cover_s": path_cover_s,
                     "path_cover_l": path_cover_l,
