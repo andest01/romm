@@ -20,7 +20,7 @@ from fastapi import (
 )
 from fastapi import Path as PathVar
 from fastapi import Query, Request, UploadFile, status
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -39,10 +39,12 @@ from config import (
     LIBRARY_BASE_PATH,
 )
 from decorators.auth import protected_route
+from endpoints.fields import FieldSelection, field_selection, project, wants
 from endpoints.responses import BulkOperationResponse
 from endpoints.responses.base import PAGE_QUERY, LimitOffsetPage, PageParams
 from endpoints.responses.recommendation import SimilarRomSchema
 from endpoints.responses.rom import (
+    ROM_FIELD_GROUPS,
     DetailedRomSchema,
     ManualMetadata,
     RomUserSchema,
@@ -566,9 +568,16 @@ def parse_released_days(values: list[str] | None) -> list[tuple[int, int]]:
 
 
 ROM_FILTER_QUERY = as_query_dependency(RomFilterParams)
+ROM_FIELDS = field_selection(SimpleRomSchema, groups=ROM_FIELD_GROUPS)
 
 
-@protected_route(router.get, "", [Scope.ROMS_READ])
+@protected_route(
+    router.get,
+    "",
+    [Scope.ROMS_READ],
+    # A `fields=` response is returned as JSON; the model still documents the shape.
+    response_model=CustomLimitOffsetPage[SimpleRomSchema],
+)
 def get_roms(
     request: Request,
     filters: Annotated[RomFilterParams, Depends(ROM_FILTER_QUERY)],
@@ -644,7 +653,8 @@ def get_roms(
         bool,
         Query(description="Whether to include each rom's file entries."),
     ] = False,
-) -> CustomLimitOffsetPage[SimpleRomSchema]:
+    fields: Annotated[FieldSelection, Depends(ROM_FIELDS)] = None,
+) -> CustomLimitOffsetPage[SimpleRomSchema] | JSONResponse:
     """Retrieve roms."""
     perms = get_permissions(request)
     parsed_released_days = parse_released_days(released_days)
@@ -765,14 +775,24 @@ def get_roms(
                 if with_files
                 else {}
             )
-            siblings_by_rom = db_rom_handler.get_siblings_for_roms(
-                rom_ids,
-                user_id=request.user.id,
-                session=session,
-                visibility=perms.rom_visibility,
+            # Loads for fields the caller left out are skipped; the empty values
+            # stand in, since None would make each item query on its own.
+            siblings_by_rom = (
+                db_rom_handler.get_siblings_for_roms(
+                    rom_ids,
+                    user_id=request.user.id,
+                    session=session,
+                    visibility=perms.rom_visibility,
+                )
+                if wants(fields, "sibling_roms")
+                else {}
             )
-            rom_ids_with_notes = db_rom_handler.get_rom_ids_with_notes(
-                rom_ids, user_id=request.user.id, session=session
+            rom_ids_with_notes = (
+                db_rom_handler.get_rom_ids_with_notes(
+                    rom_ids, user_id=request.user.id, session=session
+                )
+                if wants(fields, "has_notes")
+                else set()
             )
             if with_files:
                 for item in items:
@@ -780,7 +800,7 @@ def get_roms(
 
             # Continue-playing rail
             screenshot_by_rom: dict[int, str | None] = {}
-            if filters.last_played:
+            if filters.last_played and wants(fields, "screenshot_path"):
                 latest_saves = db_save_handler.get_latest_saves_for_roms(
                     user_id=request.user.id, rom_ids=rom_ids, session=session
                 )
@@ -865,7 +885,7 @@ def get_roms(
             # list was built), so this request is answered from the live query.
             page_items = load_page(live_page_ids())
 
-        return CustomLimitOffsetPage(
+        page = CustomLimitOffsetPage(
             items=_transform(page_items),
             total=resolve_total(),
             limit=params.limit,
@@ -873,6 +893,15 @@ def get_roms(
             char_index=char_index_dict,
             rom_id_index=list(rom_id_index),
             filter_values=filter_values,
+        )
+        if fields is None:
+            return page
+        # Returned as-is: response_model would reject the items' missing keys.
+        return JSONResponse(
+            content={
+                **page.model_dump(mode="json", exclude={"items"}),
+                "items": [project(item, fields) for item in page.items],
+            }
         )
 
 
