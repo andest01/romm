@@ -75,10 +75,13 @@ import {
   COMPACT_CARD_W_PX,
   COMPACT_GAP_PX,
   COMPACT_ROW_GAP_PX,
+  COMPACT_ROW_H_PX,
+  compactCoverUrl,
   compactCardVars,
 } from "@/v2/components/GameCard/compactCard";
 import { useBreakpoint } from "@/v2/composables/useBreakpoint";
 import { coverRatio, isBoxartStyle } from "@/v2/composables/useCoverArt";
+import { useCoverBuffer } from "@/v2/composables/useCoverBuffer";
 import { useCssLength } from "@/v2/composables/useCssLength";
 import { useDebouncedSearch } from "@/v2/composables/useDebouncedSearch";
 import { useDebugMode } from "@/v2/composables/useDebugMode";
@@ -94,6 +97,7 @@ import {
   useGalleryVirtualItems,
   type GalleryItem,
 } from "@/v2/composables/useGalleryVirtualItems";
+import { useGridCruise } from "@/v2/composables/useGridCruise";
 import { useGridNav } from "@/v2/composables/useGridNav";
 import { useListExpansion } from "@/v2/composables/useListExpansion";
 import { usePinnedToolbar } from "@/v2/composables/usePinnedToolbar";
@@ -109,7 +113,9 @@ import storeGallerySelection from "@/v2/stores/gallerySelection";
 import storeScrollRestoration from "@/v2/stores/scrollRestoration";
 import { isEditable } from "@/v2/utils/editable";
 import {
+  centerX,
   moveCursor,
+  nearestInRow,
   rowOfIndex,
   type CursorKey,
   type CursorRow,
@@ -575,6 +581,7 @@ const viewportRange = ref<{ first: number; last: number }>({
 });
 function onViewportRangeChange(range: { first: number; last: number }) {
   viewportRange.value = range;
+  bufferUpdate(range);
   void scheduleFetchSync(range);
 }
 
@@ -588,7 +595,7 @@ function onViewportRangeChange(range: { first: number; last: number }) {
 const GRID_OVERSCAN_CARDS = 60;
 // Compact rows are 60px, so a generous overscan keeps text mounted far from the
 // viewport; only the covers wait for the near-observer below.
-const COMPACT_OVERSCAN_ROWS = 40;
+const COMPACT_OVERSCAN_ROWS = 60;
 const virtualOverscan = computed(() =>
   layout.value === "list"
     ? 12
@@ -712,8 +719,8 @@ function collectVisiblePositions(range: {
 
 // Compact text comes from the fetched windows, so fetch far past the viewport
 // (more ahead than behind) and a fast scroll lands on rows that already have text.
-const COMPACT_FETCH_BEHIND_ROWS = 40;
-const COMPACT_FETCH_AHEAD_ROWS = 80;
+const COMPACT_FETCH_BEHIND_ROWS = 100;
+const COMPACT_FETCH_AHEAD_ROWS = 300;
 function syncFetches(range: { first: number; last: number }) {
   const widened = compact.value
     ? {
@@ -749,7 +756,60 @@ const vNear = {
 };
 onBeforeUnmount(() => nearObserver?.disconnect());
 
-const scheduleFetchSync = useDebounceFn(syncFetches, FETCH_DEBOUNCE_MS);
+// Cover look-ahead: warms the browser cache with the covers just ahead of the
+// scroll (a lead sized by speed, topped up before it runs out), and drops
+// everything while the scroll flies. The cards still paint their own covers
+// once their row is near; a flying grid hides them and runs on text alone.
+const flying = ref(false);
+const coverBuffer = useCoverBuffer({
+  rowPositions: (row) => {
+    const r = cursorRows.value.rows[row];
+    if (!r) return [];
+    return Array.from({ length: r.end - r.start }, (_, i) => r.start + i);
+  },
+  rowCount: () => cursorRows.value.rows.length,
+  rowHeight: () => COMPACT_ROW_H_PX,
+  coverUrl: (position) => {
+    const rom = getRomAt(position);
+    return rom ? compactCoverUrl(rom, supportsWebp.value) : null;
+  },
+  onFlying: (on) => {
+    flying.value = on;
+  },
+});
+const scrollEl = computed(() => scrollerRef.value?.containerEl ?? null);
+useEventListener(
+  scrollEl,
+  "scroll",
+  () => {
+    const el = scrollEl.value;
+    if (compact.value && el) coverBuffer.scroll(el.scrollTop, el.clientHeight);
+  },
+  { passive: true },
+);
+// Item indices (letter headers included) to cursor-row indices.
+function bufferUpdate(range: { first: number; last: number }) {
+  if (!compact.value || range.last < range.first) return;
+  const { itemIndex } = cursorRows.value;
+  if (itemIndex.length === 0) return;
+  const rowFor = (item: number) => {
+    let lo = 0;
+    let hi = itemIndex.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (itemIndex[mid]! < item) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  };
+  coverBuffer.update({ first: rowFor(range.first), last: rowFor(range.last) });
+}
+watch(virtualItems, () => coverBuffer.reset());
+
+const scheduleFetchSync = useDebounceFn(syncFetches, FETCH_DEBOUNCE_MS, {
+  // A long fling never pauses, so also fire every 250 ms while it lasts.
+  maxWait: 250,
+});
 
 // When the virtualItems list itself changes (gallery context switch,
 // search invalidate), drop the pending debounced sync. The store's
@@ -958,17 +1018,177 @@ const CURSOR_KEYS: ReadonlySet<string> = new Set([
   "End",
 ]);
 
-// Scroll just far enough that the cursor's row is on screen, with a row of margin.
-function revealCursor(position: number) {
+// The cursor's row stays inside the middle band of the visible area, and the
+// scroll follows at a constant speed (linear) rather than jumping. Row tops
+// come from a cached prefix sum of the item heights, so a key press is
+// arithmetic, not a DOM read.
+const FOLLOW_BAND_TOP = 0.35;
+const FOLLOW_BAND_BOTTOM = 0.65;
+// A jump this many viewports away (Home, End) snaps instead of gliding.
+const FOLLOW_SNAP_VIEWPORTS = 3;
+// A tap glides to the cursor row in a straight line (no easing); a retarget
+// mid-glide restarts from wherever the scroll is.
+const GLIDE_MS = 110;
+const itemOffsets = computed(() => {
+  const items = virtualItems.value;
+  const offsets = new Float64Array(items.length + 1);
+  for (let i = 0; i < items.length; i++) {
+    offsets[i + 1] = offsets[i]! + getItemHeight(items[i]);
+  }
+  return offsets;
+});
+const containerEl = () => scrollerRef.value?.containerEl ?? null;
+let glideFrom = 0;
+let glideTarget = 0;
+let glideStart = 0;
+let glideFrame = 0;
+
+function glideStep(now: number) {
+  const el = containerEl();
+  if (!el) {
+    glideFrame = 0;
+    return;
+  }
+  const t = Math.min(1, (now - glideStart) / GLIDE_MS);
+  el.scrollTop = glideFrom + (glideTarget - glideFrom) * t;
+  glideFrame = t < 1 ? requestAnimationFrame(glideStep) : 0;
+}
+function cancelGlide() {
+  if (glideFrame) cancelAnimationFrame(glideFrame);
+  glideFrame = 0;
+}
+function glideTo(top: number) {
+  const el = containerEl();
+  if (!el) return;
+  const max = el.scrollHeight - el.clientHeight;
+  const target = Math.min(Math.max(0, top), max);
+  const visible = el.clientHeight;
+  if (Math.abs(target - el.scrollTop) > visible * FOLLOW_SNAP_VIEWPORTS) {
+    cancelGlide();
+    el.scrollTop = target;
+    return;
+  }
+  glideFrom = el.scrollTop;
+  glideTarget = target;
+  glideStart = performance.now();
+  if (!glideFrame) glideFrame = requestAnimationFrame(glideStep);
+}
+
+// scrollTop that puts a row's card at the middle of the visible area (below the
+// sticky bars).
+function centeredTop(row: number): number {
+  const el = containerEl();
+  if (!el) return 0;
+  const sticky = navHeight.value + toolbarHeight.value;
+  const idx = cursorRows.value.itemIndex[row] ?? 0;
+  const rowTop =
+    (scrollerRef.value?.innerOffsetTop ?? 0) + itemOffsets.value[idx]!;
+  return (
+    rowTop + COMPACT_CARD_H_PX / 2 - sticky - (el.clientHeight - sticky) / 2
+  );
+}
+
+// The cursor row whose center is nearest the middle of the visible area at
+// `scrollTop`: a binary search over the real row tops, letter headers included.
+function rowAt(scrollTop: number): number {
+  const { rows, itemIndex } = cursorRows.value;
+  const el = containerEl();
+  if (!el || rows.length === 0) return 0;
+  const sticky = navHeight.value + toolbarHeight.value;
+  const mid = scrollTop + sticky + (el.clientHeight - sticky) / 2;
+  const base = scrollerRef.value?.innerOffsetTop ?? 0;
+  const centerOf = (r: number) =>
+    base + itemOffsets.value[itemIndex[r]!]! + COMPACT_CARD_H_PX / 2;
+  let lo = 0;
+  let hi = rows.length - 1;
+  while (lo < hi) {
+    const m = (lo + hi) >> 1;
+    if (centerOf(m) < mid) lo = m + 1;
+    else hi = m;
+  }
+  return lo > 0 && mid - centerOf(lo - 1) < centerOf(lo) - mid ? lo - 1 : lo;
+}
+
+// Hold Up or Down (keyboard or D-pad) and the grid scrolls at a constant,
+// ramping speed with the card at the middle of the screen as the selection.
+const cruise = useGridCruise({
+  scroller: containerEl,
+  rowHeight: () => COMPACT_ROW_H_PX,
+  scrollTopFor: centeredTop,
+  rowCount: () => cursorRows.value.rows.length,
+  rowAt,
+  onStart: cancelGlide,
+  onRow: (row) => selectRow(row),
+  onEnd: (row) => {
+    if (row === null) return;
+    selectRow(row);
+    glideTo(centeredTop(row));
+  },
+});
+
+// The card in `row` nearest the column the cursor has been holding.
+function selectRow(row: number) {
+  const { rows } = cursorRows.value;
+  const target = rows[row];
+  const here = compactCursor.value;
+  if (!target || here === null) return;
+  const x =
+    cursorPreferredX ??
+    centerX(
+      rows[rowOfIndex(rows, here)]!,
+      here,
+      () => COMPACT_CARD_W_PX,
+      COMPACT_GAP_PX,
+    );
+  cursorPreferredX = x;
+  compactCursor.value = nearestInRow(
+    target,
+    x,
+    () => COMPACT_CARD_W_PX,
+    COMPACT_GAP_PX,
+  );
+}
+
+function stopFollow() {
+  cancelGlide();
+  cruise.cancel();
+}
+
+// Keep the cursor's row inside the middle band of the visible area.
+function followCursor(position: number) {
+  const el = containerEl();
   const { rows, itemIndex } = cursorRows.value;
   const idx = itemIndex[rowOfIndex(rows, position)];
-  if (idx === undefined) return;
-  const range = viewportRange.value;
-  if (idx <= range.first) {
-    scrollToItem(Math.max(0, idx - 1), false);
-  } else if (idx >= range.last) {
-    scrollToItem(Math.max(0, idx - (range.last - range.first) + 2), false);
+  if (!el || idx === undefined) return;
+  const sticky = navHeight.value + toolbarHeight.value;
+  const visibleHeight = el.clientHeight - sticky;
+  const rowTop =
+    (scrollerRef.value?.innerOffsetTop ?? 0) + itemOffsets.value[idx]!;
+  const center = rowTop + COMPACT_CARD_H_PX / 2;
+  // Measure from where the glide is heading, so quick taps keep tracking.
+  const from = glideFrame ? glideTarget : el.scrollTop;
+  const bandTop = from + sticky + visibleHeight * FOLLOW_BAND_TOP;
+  const bandBottom = from + sticky + visibleHeight * FOLLOW_BAND_BOTTOM;
+  // Scroll only toward the cursor, and only as far as the scroller can go: at
+  // the very bottom or top the cursor sits outside the band and must be free to
+  // walk back toward it without the view jumping.
+  const max = el.scrollHeight - el.clientHeight;
+  if (center < bandTop) {
+    const to = Math.max(0, center - sticky - visibleHeight * FOLLOW_BAND_TOP);
+    if (to < from) glideTo(to);
+  } else if (center > bandBottom) {
+    const to = Math.min(
+      max,
+      center - sticky - visibleHeight * FOLLOW_BAND_BOTTOM,
+    );
+    if (to > from) glideTo(to);
   }
+}
+onBeforeUnmount(stopFollow);
+// The wheel or a touch takes the scroll back from the cursor and from a letter jump.
+function onManualScroll() {
+  stopFollow();
+  endLetterJump();
 }
 
 function onCompactKey(e: KeyboardEvent) {
@@ -1009,6 +1229,39 @@ function onCompactKey(e: KeyboardEvent) {
     );
     compactCursor.value = rows[top]!.start;
     cursorPreferredX = null;
+    followCursor(compactCursor.value);
+    return;
+  }
+  // The wheel, a drag or the scrollbar leave the cursor behind. Bring it onto
+  // the visible rows first, so a key moves from where you are looking and does
+  // not scroll back to where the cursor was.
+  const el = containerEl();
+  if (el && !glideFrame && !cruise.isActive()) {
+    const here = rowOfIndex(rows, compactCursor.value);
+    const sticky = navHeight.value + toolbarHeight.value;
+    const top =
+      (scrollerRef.value?.innerOffsetTop ?? 0) +
+      itemOffsets.value[itemIndex[here]!]!;
+    if (
+      top + COMPACT_CARD_H_PX < el.scrollTop + sticky ||
+      top > el.scrollTop + el.clientHeight
+    ) {
+      compactCursor.value = nearestInRow(
+        rows[rowAt(el.scrollTop)]!,
+        cursorPreferredX ?? COMPACT_CARD_W_PX / 2,
+        () => COMPACT_CARD_W_PX,
+        COMPACT_GAP_PX,
+      );
+    }
+  }
+  // A tap steps a row; the first repeat of a held Up/Down hands over to the
+  // cruise. A real keyboard event is trusted; the pad's synthetic ones are not.
+  if (
+    (e.key === "ArrowUp" || e.key === "ArrowDown") &&
+    cruise.feed(e.key, { via: e.isTrusted ? "key" : "pad", repeat: e.repeat })
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
     return;
   }
   const next = moveCursor(
@@ -1022,9 +1275,10 @@ function onCompactKey(e: KeyboardEvent) {
   );
   cursorPreferredX = next.preferredX;
   compactCursor.value = next.index;
-  revealCursor(next.index);
+  followCursor(next.index);
 }
 useEventListener(window, "keydown", onCompactKey, { capture: true });
+useEventListener(window, "keyup", (e: KeyboardEvent) => cruise.keyUp(e.key));
 // A new result set or a different card drops the old cursor.
 watch([() => galleryRoms.total, compact], () => {
   compactCursor.value = null;
@@ -1155,6 +1409,7 @@ defineExpose({
       'r-v2-shell--list': layout === 'list',
       'r-v2-shell--floating': toolbarPosition === 'floating',
       'r-v2-shell--no-strip': !stripVisible,
+      'r-v2-shell--flying': flying,
     }"
     :style="{
       '--r-v2-shell-toolbar-h': `${toolbarHeight}px`,
@@ -1177,7 +1432,8 @@ defineExpose({
       :body-attrs="gridAttrs"
       :tabindex="-1"
       @click="onCompactClick"
-      @wheel.passive="endLetterJump"
+      @wheel.passive="onManualScroll"
+      @touchstart.passive="stopFollow"
       @pointerdown.passive="endLetterJump"
       @keydown="endLetterJump"
       @scrollend="reanchorToJump"
@@ -1456,6 +1712,10 @@ defineExpose({
 </template>
 
 <style scoped>
+/* A flying scroll shows text only; covers come back when it settles. */
+.r-v2-shell--flying :deep(.r-v2-compact-card::before) {
+  background-image: none;
+}
 .r-v2-shell {
   /* AlphaStrip footprint = letter column (`--r-alpha-strip-w`, a global
      token) + gap to the viewport edge. */
