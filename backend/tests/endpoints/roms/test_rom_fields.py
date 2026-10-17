@@ -66,10 +66,10 @@ def test_a_requested_empty_field_is_null_not_absent(
 ) -> None:
     _add_rom(admin_user, platform, "empty")
 
-    item = _get(client, access_token, fields="ss_metadata")["items"][0]
+    item = _get(client, access_token, fields="igdb_id").json()["items"][0]
 
-    assert "ss_metadata" in item
-    assert item["ss_metadata"] is None
+    assert "igdb_id" in item
+    assert item["igdb_id"] is None
 
 
 def test_the_provider_metadata_group_expands(
@@ -77,7 +77,7 @@ def test_the_provider_metadata_group_expands(
 ) -> None:
     _add_rom(admin_user, platform, "grouped")
 
-    item = _get(client, access_token, fields="@provider_metadata")["items"][0]
+    item = _get(client, access_token, fields="@provider_metadata").json()["items"][0]
 
     assert set(item) == ROM_FIELD_GROUPS["provider_metadata"] | {"id"}
 
