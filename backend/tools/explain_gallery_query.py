@@ -21,6 +21,7 @@ import json
 import os
 import statistics
 import sys
+import time
 from typing import Any
 
 # Allow running as `python3 tools/explain_gallery_query.py` from backend/.
@@ -29,6 +30,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from sqlalchemy import Select, text  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
+from endpoints.roms import build_unscoped_sidecar_cache_key  # noqa: E402
 from handler.database import db_rom_handler  # noqa: E402
 from handler.database.base_handler import sync_session  # noqa: E402
 from handler.database.rom_filters import RomFilterParams  # noqa: E402
@@ -86,10 +88,37 @@ def _report(name: str, plans: list[dict[str, Any]], show_plan: bool) -> float:
     return float(statistics.median(times))
 
 
+def _time_peek(args: argparse.Namespace) -> int:
+    """Time reading the cached id list and slicing one window out of it (Redis only)."""
+    cache_key = build_unscoped_sidecar_cache_key(
+        args.user_id, args.order_by, args.order_dir, not args.ungrouped, True
+    )
+    times: list[float] = []
+    cached: list[int] | None = None
+    for _ in range(args.repeat):
+        start = time.perf_counter()
+        cached = db_rom_handler.peek_rom_id_index(cache_key)
+        window = None if cached is None else cached[args.offset :][: args.limit]
+        times.append((time.perf_counter() - start) * 1000)
+    if cached is None or window is None:
+        print(
+            f"No cached id list for {cache_key}: open /search once, then run this again.",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"cache key {cache_key}: {len(cached):,} ids, window of {len(window)}")
+    print(
+        f"  peek + slice  min {min(times):.1f} ms   median {statistics.median(times):.1f} ms"
+        f"   ({len(times)} runs)"
+    )
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--user-id", type=int, default=1)
-    parser.add_argument("--order-by", default="name")
+    # Empty is what the gallery sends by default; it orders by name but keys its caches apart.
+    parser.add_argument("--order-by", default="")
     parser.add_argument("--order-dir", default="asc")
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--limit", type=int, default=72)
@@ -103,7 +132,14 @@ def main() -> int:
         "--work-mem", help="Session work_mem for the run, e.g. 32MB (an experiment)."
     )
     parser.add_argument("--plan", action="store_true", help="Print the last full plan.")
+    parser.add_argument(
+        "--peek",
+        action="store_true",
+        help="Time reading the cached id list instead of running EXPLAIN.",
+    )
     args = parser.parse_args()
+    if args.peek:
+        return _time_peek(args)
 
     filters = RomFilterParams(group_by_meta_id=not args.ungrouped)
     unfiltered_query, sort_key = db_rom_handler.get_roms_query(
