@@ -414,3 +414,70 @@ def test_hidden_write_still_bumps_the_global_version(
 
     assert int(_filter_values_cache_version()) == int(old_version) + 1
     assert sync_cache.get(redis_key) is None
+
+
+def _page_ids(body: dict[str, Any]) -> list[int]:
+    return [item["id"] for item in body["items"]]
+
+
+def test_a_window_reads_the_cached_id_index(
+    client: TestClient,
+    access_token: str,
+    admin_user: User,
+    rom: Rom,
+    second_rom: Rom,
+):
+    """A window fetch (no id index asked for) pages out of the list the bootstrap
+    cached, rather than ranking the library again to find the same ids."""
+    live = _page_ids(_get_roms(client, access_token, with_rom_id_index=False, limit=2))
+    assert sorted(live) == sorted([rom.id, second_rom.id])
+    _seed_rom_id_index(_unscoped_key(admin_user.id), list(reversed(live)))
+
+    window = _get_roms(client, access_token, with_rom_id_index=False, limit=2)
+
+    assert _page_ids(window) == list(reversed(live))
+
+
+def test_a_window_slices_the_cached_id_index_by_offset(
+    client: TestClient,
+    access_token: str,
+    admin_user: User,
+    rom: Rom,
+    second_rom: Rom,
+):
+    _seed_rom_id_index(_unscoped_key(admin_user.id), [second_rom.id, rom.id])
+
+    window = _get_roms(client, access_token, with_rom_id_index=False, limit=1, offset=1)
+
+    assert _page_ids(window) == [rom.id]
+
+
+def test_a_window_without_a_cached_id_index_still_answers(
+    client: TestClient, access_token: str, rom: Rom
+):
+    """No bootstrap ran, so nothing is cached: the window runs its own query."""
+    window = _get_roms(client, access_token, with_rom_id_index=False, limit=1)
+
+    assert _page_ids(window) == [rom.id]
+
+
+def test_a_scoped_window_ignores_the_unscoped_id_index(
+    client: TestClient,
+    access_token: str,
+    admin_user: User,
+    rom: Rom,
+    second_rom: Rom,
+):
+    """A search narrows the set, so the shared "all" list must not answer it."""
+    _seed_rom_id_index(_unscoped_key(admin_user.id), [424242])
+
+    window = _get_roms(
+        client,
+        access_token,
+        with_rom_id_index=False,
+        platform_ids=[rom.platform_id],
+        limit=2,
+    )
+
+    assert 424242 not in _page_ids(window)
+    assert sorted(_page_ids(window)) == sorted([rom.id, second_rom.id])

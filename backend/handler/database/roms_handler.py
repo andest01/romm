@@ -563,23 +563,23 @@ def _region_rank() -> ColumnElement[Any]:
     )
 
 
+# "(" then any tag, so "(Demo)", "(Beta 2)" and "(Prototype)" match and a title that
+# merely contains "demo" does not. The group keeps the alternation after the "(".
+_PRERELEASE_PATTERN = (
+    rf"\(({'|'.join(re.escape(tag) for tag in PRERELEASE_FILENAME_TAGS)})"
+)
+
+
 def _prerelease_rank() -> ColumnElement[Any]:
     """Rank pre-release dumps after full releases within a sibling group.
 
-    Matched with a case-insensitive LIKE over the filename rather than against
-    the parsed `tags` column, which keeps whatever casing the dumper used, and
-    which the dedup window's covering index does not carry.
+    Matched case-insensitively over the filename rather than against the parsed
+    `tags` column, which keeps whatever casing the dumper used, and which the
+    dedup window's covering index does not carry. One regex reads each name once;
+    a LIKE per tag read it once per tag, for every rom in the window.
     """
     return case(
-        (
-            or_(
-                *[
-                    Rom.fs_name_no_ext.ilike(f"%({tag}%")
-                    for tag in PRERELEASE_FILENAME_TAGS
-                ]
-            ),
-            1,
-        ),
+        (Rom.fs_name_no_ext.regexp_match(_PRERELEASE_PATTERN, flags="i"), 1),
         else_=0,
     )
 
@@ -1999,6 +1999,39 @@ class DBRomsHandler(DBBaseHandler):
 
         return query.order_by(*order_clauses), sort_key
 
+    def get_page_rows_query(
+        self,
+        unfiltered_query: RomSelect,
+        page_ids: Sequence[int],
+        *,
+        sort_key: _GallerySortKey,
+        order_by: str,
+        order_dir: str,
+        user_id: int | None,
+        visibility: RomVisibilityFilter = UNRESTRICTED,
+        include_file_stats: bool = False,
+    ) -> RomSelect:
+        # gotta do something here.
+
+        """The rows of one page, loaded by id.
+
+        The ids already passed every filter and the sibling grouping when the
+        page was picked, so none of that runs again. Re-ranking the whole library
+        to confirm a page's ids costs as much as picking them.
+        """
+        query = self.filter_roms(
+            query=unfiltered_query,
+            sort_key=sort_key,
+            order_by=order_by,
+            order_dir=order_dir,
+            user_id=user_id,
+            visibility=visibility,
+            include_file_stats=include_file_stats,
+            include_siblings=False,
+            include_notes=False,
+        )
+        return query.where(Rom.id.in_(page_ids)).order_by(None)
+
     def _scoped_roms_query(
         self,
         *,
@@ -2136,6 +2169,25 @@ class DBRomsHandler(DBBaseHandler):
         if redis_key is not None and version is not None:
             _store_versioned_cache(redis_key, version, result)
         return result
+
+    def peek_rom_id_index(self, cache_key: str | None) -> list[int] | None:
+        """The cached ordered id list for an unscoped set, or None if it is not cached.
+
+        Unlike `get_rom_id_index` this never computes the list: a window fetch only
+        wants it when the bootstrap already built it, and falls back to its own
+        query when not.
+        """
+        redis_key: str | None = None
+        version: str | None = None
+        if cache_key:
+            version = _filter_values_cache_version()
+            redis_key = _rom_id_index_redis_key(cache_key, version)
+            cached = sync_cache.get(redis_key)
+            if cached is not None:
+                rom_ids: list[int] = json.loads(cached)
+                return rom_ids
+
+        return None
 
     @begin_session
     def get_rom_id_index(
