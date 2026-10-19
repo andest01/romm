@@ -1,0 +1,4539 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search designs v4 · feature parity pass</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --paper: #eef0ee;
+        --card: #ffffff;
+        --ink: #23252b;
+        --muted: #667085;
+        --rule: rgba(35, 37, 43, 0.12);
+        --brand: #5b3fa6;
+        --brand-tint: rgba(91, 63, 166, 0.1);
+        --chip: #e7e9ee;
+        --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      body {
+        font-family: var(--font);
+        background: var(--paper);
+        color: var(--ink);
+        padding: 24px;
+      }
+      h1 {
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .lede {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 6px 0 16px;
+        max-width: 78ch;
+        line-height: 1.5;
+      }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .tab {
+        border: 1px solid var(--rule);
+        background: var(--card);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .tab[aria-selected="true"] {
+        background: var(--brand);
+        color: #fff;
+        border-color: var(--brand);
+      }
+      .note {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 10px 0 0;
+        max-width: 100ch;
+        line-height: 1.5;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 25% 1fr;
+        width: 1210px;
+        max-width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--paper);
+        height: 760px;
+      }
+      /* sidebar: the filter drawer, docked */
+      .side {
+        border-right: 1px solid var(--rule);
+        overflow-y: auto;
+        background: #f6f7f6;
+        min-width: 0;
+      }
+      .side-head {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: #f6f7f6;
+        border-bottom: 1px solid var(--rule);
+        font-weight: 650;
+        font-size: 13px;
+      }
+      .tag {
+        background: var(--brand);
+        color: #fff;
+        border-radius: 999px;
+        font-size: 10.5px;
+        padding: 1px 7px;
+        font-weight: 600;
+      }
+      .btn {
+        border: 1px solid var(--brand);
+        color: var(--brand);
+        background: transparent;
+        border-radius: 999px;
+        font-size: 11px;
+        padding: 4px 9px;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .btn[disabled] {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .btn--flat {
+        background: var(--brand);
+        color: #fff;
+      }
+      section.sec {
+        padding: 10px 12px 6px;
+        border-bottom: 1px solid var(--rule);
+      }
+      h3 {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+      .bool {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        height: 28px;
+        font-size: 12px;
+      }
+      .bool.on .lbl {
+        color: var(--brand);
+        font-weight: 600;
+      }
+      .lbl {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ic {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        background: var(--chip);
+        color: var(--muted);
+        font-size: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        flex: none;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--card);
+        flex: none;
+      }
+      .seg button {
+        border: 0;
+        background: transparent;
+        padding: 2px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        color: var(--muted);
+        font-family: inherit;
+      }
+      .seg button.on {
+        background: var(--brand);
+        color: #fff;
+      }
+      .seg--sm button {
+        padding: 2px 6px;
+        font-size: 10.5px;
+      }
+      .seg button.on[data-v="all"],
+      .multi.idle .seg button.on {
+        background: var(--chip);
+        color: var(--ink);
+      }
+      .multi {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
+        align-items: center;
+        margin-bottom: 5px;
+        position: relative;
+      }
+      .sel {
+        text-align: left;
+        border: 1px solid var(--rule);
+        background: var(--card);
+        border-radius: 8px;
+        padding: 3px 8px;
+        min-height: 36px;
+        font-family: inherit;
+        cursor: pointer;
+        display: grid;
+        gap: 1px;
+        min-width: 0;
+      }
+      .sel small {
+        font-size: 9.5px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .sel span {
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--ink);
+      }
+      .sel span.ph {
+        color: var(--muted);
+      }
+      .pop {
+        position: absolute;
+        left: 0;
+        top: 40px;
+        z-index: 5;
+        width: 100%;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+        padding: 6px;
+      }
+      .pop input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font: inherit;
+        font-size: 12px;
+        margin-bottom: 4px;
+        outline: 0;
+      }
+      .pop label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        padding: 3px 4px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .pop label:hover {
+        background: var(--brand-tint);
+      }
+      .pop .list {
+        max-height: 170px;
+        overflow: auto;
+      }
+      .pop .foot {
+        display: flex;
+        justify-content: space-between;
+        padding-top: 4px;
+        font-size: 11px;
+      }
+      .len {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .len label {
+        border: 1px solid var(--rule);
+        background: var(--card);
+        border-radius: 8px;
+        padding: 3px 8px;
+        display: grid;
+        gap: 1px;
+        font-size: 9.5px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .len input {
+        border: 0;
+        outline: 0;
+        font: inherit;
+        font-size: 12px;
+        color: var(--ink);
+        width: 100%;
+        background: transparent;
+      }
+      .hint {
+        font-size: 10.5px;
+        color: var(--muted);
+        margin: 5px 0 6px;
+        line-height: 1.4;
+      }
+      .side-foot {
+        position: sticky;
+        bottom: 0;
+        background: #f6f7f6;
+        border-top: 1px solid var(--rule);
+        padding: 8px 12px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      /* main pane */
+      .main {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+      .pinned {
+        padding: 10px 14px 8px;
+        border-bottom: 1px solid var(--rule);
+        background: var(--paper);
+      }
+      .field {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        height: 40px;
+        padding: 0 14px;
+      }
+      .field input {
+        flex: 1;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 14px;
+        color: var(--ink);
+        min-width: 0;
+      }
+      .subline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        flex-wrap: wrap;
+      }
+      .count {
+        font-family: var(--mono);
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .pill {
+        background: var(--chip);
+        border-radius: 999px;
+        padding: 2px 9px;
+        font-size: 11px;
+        color: var(--ink);
+      }
+      .pill--brand {
+        background: var(--brand-tint);
+        color: var(--brand);
+      }
+      .view {
+        margin-left: auto;
+      }
+      .body {
+        overflow: auto;
+        flex: 1;
+        min-height: 0;
+      }
+      .art {
+        flex: none;
+        border-radius: 3px;
+        background: linear-gradient(160deg, #3b2a73, #6a4cc0 55%, #e0836a);
+      }
+      .dots {
+        display: inline-flex;
+        gap: 3px;
+      }
+      .dots i {
+        width: 9px;
+        height: 9px;
+        border-radius: 2px;
+        display: block;
+      }
+      .more {
+        color: var(--muted);
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+      mark {
+        background: rgba(255, 196, 0, 0.45);
+        color: inherit;
+        border-radius: 2px;
+      }
+      .fn {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .facts {
+        font-size: 11.5px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .name {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding: 10px 14px 14px;
+      }
+      .tile {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        height: 64px;
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 0 10px;
+      }
+      .stack {
+        min-width: 0;
+        display: grid;
+        gap: 1px;
+      }
+      .ledger {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+        table-layout: fixed;
+      }
+      .ledger th {
+        text-align: left;
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--rule);
+        position: sticky;
+        top: 0;
+        background: var(--paper);
+      }
+      .ledger td {
+        height: 34px;
+        padding: 0 10px;
+        border-bottom: 1px solid var(--rule);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ledger td.num {
+        font-family: var(--mono);
+        text-align: right;
+      }
+      .cell-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .swarm-wrap {
+        position: relative;
+        background: #fbfbfc;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+      }
+      .tip {
+        position: absolute;
+        pointer-events: none;
+        background: var(--ink);
+        color: #fff;
+        font-size: 11.5px;
+        padding: 6px 9px;
+        border-radius: 6px;
+        max-width: 280px;
+        line-height: 1.4;
+        display: none;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        padding: 8px 14px 12px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .legend b {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+      .empty {
+        padding: 40px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      /* The layout contract: one grid, four named areas, the dock decides where the sidebar sits. */
+      .shell {
+        grid-template-columns: unset;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+      /* the panel slides on the compositor (transform only); the grid columns change once, they are never animated */
+      .shell.enter[data-dock="left"] .side {
+        animation: sidein 0.22s ease-out;
+      }
+      @keyframes sidein {
+        from {
+          transform: translateX(-100%);
+        }
+      }
+      .side {
+        will-change: transform;
+      }
+      /* the virtual list: a tall empty host, rows absolutely positioned at known offsets */
+      .area-content,
+      .p-body {
+        position: relative;
+      }
+      .vl {
+        position: relative;
+      }
+      .vl-t {
+        margin: 8px 12px 12px;
+      }
+      .vl-g {
+        margin: 3px;
+      }
+      .vl-r,
+      .vl-tb {
+        margin: 0;
+      }
+      .vrow {
+        position: absolute;
+        left: 0;
+        right: 0;
+      }
+      .vrow.menu-open {
+        z-index: 7;
+      }
+      .vl-t .vrow {
+        gap: 0 6px !important;
+      }
+      .vl-t .tile {
+        height: 56px;
+      }
+      .vl-g .gtile {
+        min-width: 0;
+      }
+      .has-rail .vl,
+      .phone.has-alpha .vl {
+        margin-right: calc(var(--rail-w, 26px) + 6px);
+      }
+      .vthead {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: var(--paper);
+        border-bottom: 1px solid var(--rule);
+      }
+      .trow {
+        display: grid;
+        grid-template-columns: 3fr 24fr 10fr 7fr 9fr 8fr 7fr 6fr 8fr 7fr 11fr;
+        align-items: center;
+        height: 30px;
+        font-size: 12.5px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .vthead.trow {
+        height: 30px;
+      }
+      .trow .tc,
+      .trow .th {
+        padding: 0 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .trow .th {
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .trow .th.th-sort {
+        cursor: pointer;
+      }
+      .trow .th.th-sort:hover,
+      .trow .th.on {
+        color: var(--brand);
+      }
+      .trow .num {
+        font-family: var(--mono);
+        text-align: right;
+      }
+      .trow:hover {
+        background: var(--brand-tint);
+      }
+      .trow.is-sel {
+        background: var(--brand-tint);
+      }
+      .tdetail {
+        height: 46px;
+        padding: 8px 12px 8px 48px;
+        background: #fafbfa;
+        font-size: 11.5px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--rule);
+        overflow: hidden;
+      }
+      .has-rail .vthead {
+        margin-right: calc(var(--rail-w, 0px) + 6px);
+      }
+      /* placeholders: the colour of the cover and a few bars, no motion */
+      .ph .bar,
+      .ph.gtile .gline .bar {
+        display: block;
+        height: 7px;
+        border-radius: 4px;
+        background: rgba(35, 37, 43, 0.11);
+        margin: 4px 0;
+      }
+      .ph .phart {
+        opacity: 1;
+      }
+      .ph .gart {
+        opacity: 1;
+        border-radius: 4px;
+      }
+      .ph .stack {
+        gap: 0;
+      }
+      .phico {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        color: rgba(35, 37, 43, 0.22);
+        font-size: 15px;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+      .ph .gov .phico {
+        width: 17px;
+        height: 17px;
+        font-size: 11px;
+        color: rgba(35, 37, 43, 0.3);
+      }
+      .ph .tc .phart {
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      .ph .tc .bar {
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .settle .vrow {
+        animation: vfade 0.14s ease-out;
+      }
+      @keyframes vfade {
+        from {
+          opacity: 0.55;
+        }
+      }
+      .shell[data-dock="left"] {
+        grid-template-columns: 25% minmax(0, 1fr);
+        grid-template-areas: "sidebar header" "sidebar content" "sidebar footer";
+      }
+      .advlink {
+        font-size: 12px;
+        color: var(--brand);
+        text-decoration: underline dotted;
+        text-underline-offset: 3px;
+        white-space: nowrap;
+        margin-left: 2px;
+      }
+      .shell[data-dock="right"] {
+        grid-template-columns: minmax(0, 1fr) 25%;
+        grid-template-areas: "header sidebar" "content sidebar" "footer sidebar";
+      }
+      .shell[data-dock="none"] {
+        grid-template-columns: 0px minmax(0, 1fr);
+        grid-template-areas: "sidebar header" "sidebar content" "sidebar footer";
+      }
+      /* v3 tightening */
+      .pinned {
+        padding: 8px 12px 6px;
+      }
+      .hrow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .hrow .field {
+        flex: 0 1 300px;
+        height: 34px;
+        padding: 0 12px;
+      }
+      .hrow .seg.view {
+        height: 34px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+      .hrow .view button {
+        padding: 0 14px;
+        font-size: 12.5px;
+        font-weight: 550;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .hrow .view .vi {
+        font-size: 13px;
+      }
+      .field .mag {
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1;
+      }
+      .fcount {
+        font-size: 11.5px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .fcount b {
+        font-family: var(--mono);
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .row2 {
+        display: grid;
+        grid-template-columns: 26px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        height: 52px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .phone {
+        position: relative;
+        width: 320px;
+        height: 568px;
+        border: 1px solid var(--rule);
+        border-radius: 22px;
+        overflow: hidden;
+        background: var(--paper);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+      .p-head {
+        padding: 8px 10px 6px;
+        border-bottom: 1px solid var(--rule);
+        display: grid;
+        gap: 6px;
+      }
+      .phone .field {
+        height: 34px;
+        padding: 0 10px;
+      }
+      .p-row1 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .p-head {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .p-row1 .field {
+        flex: 1;
+        min-width: 0;
+      }
+      .p-row1 .field input {
+        width: 0;
+      }
+      .p-row1 .seg.view {
+        height: 34px;
+        flex: none;
+      }
+      .p-row1 .view button {
+        padding: 0 11px;
+        font-size: 14px;
+      }
+      .p-row2 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .phone .pillwrap {
+        position: static;
+      }
+      .phone .plus {
+        height: 30px;
+        padding: 0 10px 0 8px;
+        font-size: 12px;
+        width: auto;
+        border-radius: 999px;
+        gap: 5px;
+        white-space: nowrap;
+      }
+      .phone .plusmenu {
+        left: 8px;
+        right: 8px;
+        top: 100px;
+        width: auto;
+      }
+      .phone .pop--pill {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: auto;
+        border-radius: 14px 14px 0 0;
+        z-index: 25;
+        max-height: 60%;
+      }
+      .p-pills {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .p-pills .fpill {
+        flex: none;
+      }
+      .p-count {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .p-body {
+        flex: 1;
+        overflow: auto;
+        min-height: 0;
+      }
+      .icons button {
+        padding: 3px 9px;
+      }
+      .sheet {
+        position: absolute;
+        inset: 0;
+        background: #f6f7f6;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+      }
+      .sheet-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .sheet-top a {
+        color: var(--brand);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .sheet .side {
+        display: block;
+        visibility: visible;
+        width: 100%;
+        border: 0;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+      }
+      .hrow .view {
+        margin-left: auto;
+      }
+      .hrow .plus {
+        width: auto;
+        height: 32px;
+        padding: 0 13px 0 10px;
+        gap: 6px;
+        font-size: 12.5px;
+        font-weight: 550;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .plus .pl {
+        font-size: 16px;
+        line-height: 1;
+      }
+      .hrow .plus:not(.on) {
+        background: var(--brand-tint);
+      }
+      .subline {
+        align-items: center;
+      }
+      .seg.view button {
+        padding: 4px 11px;
+      }
+      .subline {
+        margin-top: 6px;
+        gap: 6px;
+      }
+      .clearall {
+        font-size: 11px;
+        color: var(--muted);
+        margin-left: 4px;
+        text-decoration: none;
+      }
+      .fpill {
+        padding: 1px 3px 1px 9px;
+      }
+      .plus {
+        width: 28px;
+        height: 28px;
+        flex: none;
+      }
+      .plusmenu {
+        top: 34px;
+      }
+      .tiles {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 8px 12px 12px;
+      }
+      .shell[data-dock="left"] .tiles {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .tile {
+        height: 56px;
+        grid-template-columns: 28px 1fr auto;
+        gap: 8px;
+        padding: 0 8px;
+        border-radius: 6px;
+      }
+      .tile .name {
+        font-size: 12.5px;
+      }
+      .ledger td {
+        height: 30px;
+      }
+      .area-header {
+        grid-area: header;
+      }
+      .content-wrap {
+        grid-area: content;
+        position: relative;
+        min-height: 0;
+        min-width: 0;
+        display: flex;
+      }
+      .area-content {
+        flex: 1;
+        min-width: 0;
+        overflow: auto;
+        min-height: 0;
+      }
+      .area-footer {
+        grid-area: footer;
+        border-top: 1px solid var(--rule);
+        padding: 6px 14px;
+        font-size: 11.5px;
+        color: var(--muted);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        background: var(--paper);
+      }
+      .area-footer a {
+        color: var(--brand);
+        text-decoration: none;
+      }
+      .side {
+        grid-area: sidebar;
+        container: side / inline-size;
+      }
+      .btn--ghost {
+        border-color: transparent;
+        color: var(--muted);
+        padding: 4px 6px;
+      }
+      .btn--ghost:hover:not([disabled]) {
+        color: var(--brand);
+      }
+      @container side (max-width: 339px) {
+        .lbl-full {
+          display: none;
+        }
+      }
+      @container side (min-width: 340px) {
+        .lbl-short {
+          display: none;
+        }
+      }
+      .shell[data-dock="right"] .side {
+        border-right: 0;
+        border-left: 1px solid var(--rule);
+      }
+      .shell[data-dock="none"] .side {
+        visibility: hidden;
+        border-right: 0;
+        transition: visibility 0s linear 0.28s;
+      }
+      .side {
+        overflow-x: hidden;
+      }
+      .pillwrap {
+        position: relative;
+        display: inline-block;
+      }
+      .fpill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--brand-tint);
+        color: var(--brand);
+        border: 1px solid rgba(91, 63, 166, 0.25);
+        border-radius: 999px;
+        padding: 2px 4px 2px 10px;
+        font-size: 11.5px;
+        cursor: pointer;
+        white-space: nowrap;
+        max-width: 380px;
+      }
+      .fpill .t {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .fpill b {
+        font-weight: 600;
+        opacity: 0.7;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .fpill b:hover {
+        background: rgba(91, 63, 166, 0.18);
+        opacity: 1;
+      }
+      .fpill--no {
+        background: rgba(185, 28, 28, 0.08);
+        color: #b91c1c;
+        border-color: rgba(185, 28, 28, 0.25);
+      }
+      .plus {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px dashed var(--brand);
+        color: var(--brand);
+        background: transparent;
+        font-size: 15px;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .plus:hover,
+      .plus.on {
+        background: var(--brand);
+        color: #fff;
+        border-style: solid;
+      }
+      .plusmenu {
+        position: absolute;
+        left: 0;
+        top: 30px;
+        z-index: 6;
+        width: 290px;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+        padding: 8px;
+      }
+      .plusmenu input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 5px 8px;
+        font: inherit;
+        font-size: 12px;
+        outline: 0;
+        margin-bottom: 4px;
+      }
+      .plusmenu .list {
+        max-height: 300px;
+        overflow: auto;
+      }
+      .plusmenu h4 {
+        font-size: 9.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 8px 4px 2px;
+        font-weight: 600;
+      }
+      .plusmenu button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 12px;
+        padding: 4px 6px;
+        border-radius: 5px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .plusmenu button:hover {
+        background: var(--brand-tint);
+      }
+      .plusmenu button[disabled] {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .pop--pill {
+        width: 270px;
+        top: 30px;
+      }
+      .pophead {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .pophead input[type="text"] {
+        flex: 0 1 130px;
+        width: auto;
+        min-width: 0;
+        margin-bottom: 0;
+      }
+      .pclear {
+        font-size: 11.5px;
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .pclear:hover {
+        color: var(--brand);
+      }
+      .pdone {
+        margin-left: auto;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #fff !important;
+        background: var(--brand);
+        padding: 4px 12px;
+        border-radius: 999px;
+        text-decoration: none;
+      }
+      .pop--plat {
+        width: 320px;
+      }
+      .pop--plat .list {
+        max-height: 250px;
+      }
+      .platrow {
+        display: grid !important;
+        grid-template-columns: auto 10px 1fr auto;
+        gap: 9px;
+        align-items: center;
+        padding: 6px 4px !important;
+      }
+      .platrow i,
+      .chipx i,
+      .pd {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+        flex: none;
+      }
+      .pd {
+        margin-right: 3px;
+        box-shadow: 0 0 0 1.5px #fff;
+      }
+      .pc {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .selchips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 6px;
+      }
+      .chipx {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 5px;
+        background: var(--brand-tint);
+        color: var(--brand);
+        border-radius: 999px;
+        padding: 2px 9px !important;
+        font-size: 11px !important;
+        cursor: pointer;
+      }
+      .platbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: var(--muted);
+        margin: 2px 2px 4px;
+      }
+      .phone .pop--plat {
+        width: auto;
+        max-height: 82%;
+      }
+      .phone .pop--plat .list {
+        max-height: 300px;
+      }
+      .phone .platrow {
+        padding: 10px 6px !important;
+      }
+
+      /* v4: features restored from the real gallery */
+      .shell {
+        position: relative;
+      }
+      .hrow .view {
+        margin-left: 0;
+      }
+      .sortwrap {
+        margin-left: auto;
+      }
+      .sortbtn {
+        height: 34px;
+        border: 1px solid var(--rule);
+        background: var(--card);
+        border-radius: 999px;
+        padding: 0 12px;
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 550;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        color: var(--ink);
+      }
+      .sortbtn:hover,
+      .sortbtn.on {
+        border-color: var(--brand);
+        color: var(--brand);
+      }
+      .sortmenu {
+        position: absolute;
+        right: 0;
+        top: 38px;
+        z-index: 8;
+        width: 250px;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+        padding: 8px;
+      }
+      .sortmenu h4 {
+        font-size: 9.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 6px 4px 3px;
+        font-weight: 600;
+      }
+      .sortmenu button.si {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 12.5px;
+        padding: 5px 7px;
+        border-radius: 5px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .sortmenu button.si:hover {
+        background: var(--brand-tint);
+      }
+      .sortmenu button.si.on {
+        color: var(--brand);
+        font-weight: 600;
+      }
+      .sortmenu .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 3px 4px;
+        font-size: 12.5px;
+        gap: 8px;
+      }
+      .phone .sortmenu {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: 0;
+        width: auto;
+        border-radius: 14px 14px 0 0;
+        z-index: 26;
+      }
+      .th-sort {
+        cursor: pointer;
+        user-select: none;
+      }
+      .th-sort:hover,
+      .th-sort.on {
+        color: var(--brand);
+      }
+      .lh {
+        grid-column: 1 / -1;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        font-weight: 700;
+        padding: 8px 2px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      tr.lhr td {
+        background: var(--paper);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        font-weight: 700;
+        height: 26px;
+      }
+      .alpha {
+        position: absolute;
+        right: calc(var(--sb, 0px) + 4px);
+        top: 96px;
+        bottom: 44px;
+        width: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 9.5px;
+        font-weight: 600;
+        z-index: 4;
+      }
+      .alpha a {
+        color: var(--brand);
+        text-decoration: none;
+        padding: 0 3px;
+        line-height: 1;
+        border-radius: 3px;
+      }
+      .alpha a:hover {
+        background: var(--brand-tint);
+      }
+      .alpha a.off {
+        color: rgba(102, 112, 133, 0.4);
+        pointer-events: none;
+      }
+      .has-alpha .tiles {
+        padding-right: 30px;
+      }
+      .has-alpha .ledger {
+        width: calc(100% - 26px);
+      }
+      .tile {
+        position: relative;
+      }
+      .tile.is-sel,
+      tr.is-sel td {
+        background: var(--brand-tint);
+        border-color: var(--brand);
+      }
+      .tile.is-missing {
+        opacity: 0.6;
+      }
+      .selbox {
+        position: absolute;
+        left: -5px;
+        top: -5px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--card);
+        border: 1.5px solid var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 2;
+      }
+      .selbox input {
+        display: none;
+      }
+      .selbox::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: transparent;
+      }
+      .selbox.on {
+        opacity: 1;
+        background: var(--brand);
+        border-color: var(--brand);
+      }
+      .selbox.on::after {
+        background: #fff;
+      }
+      .tile:hover .selbox,
+      .selmode .selbox,
+      tr:hover .selbox {
+        opacity: 1;
+      }
+      .nrow {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+      }
+      .vb {
+        flex: none;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--brand);
+        background: var(--brand-tint);
+        border-radius: 4px;
+        padding: 0 4px;
+        line-height: 15px;
+      }
+      .sdot {
+        flex: none;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+      }
+      .flag {
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        background: var(--chip);
+        color: var(--muted);
+        border-radius: 3px;
+        padding: 0 4px;
+        margin-left: 4px;
+        line-height: 14px;
+      }
+      .tact {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+      .ib {
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        font: inherit;
+        color: var(--muted);
+        font-size: 15px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        line-height: 1;
+        padding: 0;
+      }
+      .ib:hover {
+        background: var(--brand-tint);
+        color: var(--brand);
+      }
+      .ib.fav {
+        color: #d6336c;
+      }
+      .rowmenu {
+        position: absolute;
+        right: 4px;
+        top: 100%;
+        z-index: 9;
+        width: 210px;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+        padding: 5px;
+      }
+      .rowmenu button {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 12.5px;
+        padding: 5px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .rowmenu button:hover {
+        background: var(--brand-tint);
+      }
+      .rowmenu button.danger {
+        color: #b91c1c;
+      }
+      .rowmenu hr {
+        border: 0;
+        border-top: 1px solid var(--rule);
+        margin: 4px 0;
+      }
+      .phone .rowmenu {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: auto;
+        border-radius: 14px 14px 0 0;
+        z-index: 27;
+        padding: 8px;
+      }
+      .phone .rowmenu button {
+        padding: 10px 10px;
+        font-size: 14px;
+      }
+      .tilewrap {
+        position: relative;
+      }
+      tr.detail td {
+        background: #fafbfa;
+        height: auto;
+        padding: 8px 12px 10px 48px;
+        white-space: normal;
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+      .chev {
+        display: inline-block;
+        transition: transform 0.15s;
+      }
+      .chev.open {
+        transform: rotate(180deg);
+      }
+      .btt {
+        position: absolute;
+        right: calc(var(--sb, 0px) + var(--rail-w, 0px) + 18px);
+        bottom: 14px;
+        z-index: 6;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1px solid var(--rule);
+        background: var(--card);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+        cursor: pointer;
+        font-size: 15px;
+        color: var(--brand);
+        display: none;
+      }
+      .btt.show {
+        display: block;
+      }
+      .area-footer.sbar {
+        background: var(--brand);
+        color: #fff;
+        gap: 6px;
+        padding: 6px 10px;
+        border-top: 0;
+      }
+      .sbar b {
+        font-weight: 650;
+        margin-right: 6px;
+      }
+      .sbar button {
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        background: transparent;
+        color: #fff;
+        font: inherit;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .sbar button:hover {
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .sbar button.danger {
+        border-color: #ffb4b4;
+      }
+      .sbar .sp {
+        margin-left: auto;
+      }
+      .phone .sbar {
+        flex-wrap: nowrap;
+        border-radius: 0;
+      }
+      .gtiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+        gap: 12px 8px;
+        padding: 10px 12px 14px;
+      }
+      .shell[data-dock="left"] .gtiles {
+        grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+      }
+      .gtile {
+        position: relative;
+        min-width: 0;
+      }
+      .gart {
+        position: relative;
+        aspect-ratio: 2 / 3;
+        border-radius: 7px;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+      .gtile.is-sel .gart {
+        outline: 3px solid var(--brand);
+        outline-offset: -3px;
+      }
+      .gtile.is-missing {
+        opacity: 0.55;
+      }
+      .gov {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .gov.tl {
+        left: 7px;
+        top: 7px;
+      }
+      .gov.bl {
+        left: 6px;
+        bottom: 6px;
+      }
+      .gov.br {
+        right: 7px;
+        bottom: 5px;
+        font-size: 14px;
+      }
+      .gov.tr {
+        right: 4px;
+        top: 4px;
+        opacity: 0;
+        transition: opacity 0.12s;
+      }
+      .gtile:hover .gov.tr,
+      .selmode .gov.tr {
+        opacity: 1;
+      }
+      .gov .vb {
+        background: rgba(255, 255, 255, 0.92);
+      }
+      .gov .sdot {
+        width: 9px;
+        height: 9px;
+        box-shadow: 0 0 0 1.5px #fff;
+      }
+      .ib.gh {
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--ink);
+        width: 24px;
+        height: 24px;
+      }
+      .ib.gh.fav {
+        color: #d6336c;
+      }
+      .gline {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .gline .dim {
+        opacity: 0.5;
+      }
+      .psys {
+        width: 17px;
+        height: 17px;
+        border-radius: 5px;
+        color: #fff;
+        font-size: 8px;
+        font-weight: 700;
+        font-style: normal;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        letter-spacing: -0.02em;
+      }
+      /* the rail: a named grid area beside the scroller, labelled by whatever the sort is */
+      /* top and bottom are inset by the scrollbar's arrow buttons so the rail spans exactly the scrollbar's track */
+      .rail {
+        position: absolute;
+        top: var(--sb, 0px);
+        bottom: var(--sb, 0px);
+        right: var(--sb, 0px);
+        min-width: 38px;
+        padding: 0 2px 0 2px;
+        z-index: 4;
+        user-select: none;
+        cursor: pointer;
+      }
+      .rail-in {
+        position: relative;
+        height: 100%;
+      }
+      .has-rail .tiles,
+      .has-rail .gtiles {
+        padding-right: calc(var(--rail-w, 0px) + 10px);
+      }
+      .has-rail .ledger {
+        width: calc(100% - var(--rail-w, 0px) - 4px);
+      }
+      /* each button is a bar: its height is the share of games in that bucket, so the rail doubles as a histogram */
+      .rail a {
+        position: absolute;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        font-size: 10px;
+        font-weight: 650;
+        color: var(--brand);
+        text-decoration: none;
+        padding: 1px 4px 0;
+        line-height: 12px;
+        white-space: nowrap;
+        border-radius: 3px;
+        z-index: 1;
+        background: rgba(91, 63, 166, 0.09);
+        box-shadow: inset -3px 0 0 rgba(91, 63, 166, 0.3);
+        overflow: visible;
+      }
+      .rail a:nth-child(even) {
+        background: rgba(91, 63, 166, 0.17);
+      }
+      .rail a:hover {
+        background: rgba(91, 63, 166, 0.3);
+      }
+      .rail a.cur {
+        background: var(--brand);
+        color: #fff;
+        box-shadow: none;
+      }
+      .rail a.thin {
+        font-size: 0;
+        padding: 0;
+      }
+      .rail a.thin:hover::after {
+        content: attr(data-label);
+        position: absolute;
+        right: calc(100% + 4px);
+        top: -3px;
+        font-size: 10px;
+        line-height: 14px;
+        background: var(--ink);
+        color: #fff;
+        padding: 0 6px;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+      .rail.drag {
+        cursor: grabbing;
+      }
+      .rail.drag .thumb {
+        background: rgba(91, 63, 166, 0.28);
+      }
+      /* phone waypoint: one full-width line that sticks to the top of the list and follows the rail's buckets */
+      .p-sect {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 12px;
+        background: var(--paper);
+        border-bottom: 1px solid var(--rule);
+        font-size: 12px;
+        line-height: 18px;
+      }
+      .p-sect b {
+        color: var(--brand);
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        max-width: 46%;
+      }
+      .p-sect #psc {
+        white-space: nowrap;
+      }
+      .p-sect #psc {
+        color: var(--muted);
+      }
+      .p-sect .sp {
+        flex: 1;
+      }
+      .p-sect a {
+        color: var(--brand);
+        text-decoration: underline dotted;
+        text-underline-offset: 3px;
+        white-space: nowrap;
+      }
+      .phone.has-alpha .p-sect {
+        padding-right: calc(var(--rail-w, 26px) + 4px);
+      }
+      .phone .lh {
+        display: none;
+      }
+      .abubble {
+        display: none;
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        margin-top: -24px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: var(--brand);
+        color: #fff;
+        font-size: 24px;
+        font-weight: 700;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+      }
+      .rail .thumb {
+        position: absolute;
+        left: 0;
+        right: 0;
+        background: rgba(91, 63, 166, 0.13);
+        border-radius: 3px;
+        pointer-events: none;
+      }
+      .has-alpha .gtiles {
+        padding-right: 30px;
+      }
+      /* skip layout and paint for everything off screen: the lists render every result so the rail can jump anywhere */
+      .tile {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 56px;
+      }
+      .gtile {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 190px;
+      }
+      .row2 {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 52px;
+      }
+      .p-wrap {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+      }
+      .p-wrap .p-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .phone .rail {
+        width: 26px !important;
+        min-width: 26px;
+        padding: 0 1px;
+        z-index: 8;
+      }
+      .phone .rail a {
+        font-size: 8.5px;
+        padding: 0 2px;
+        justify-content: center;
+      }
+      .phone .rail a.thin {
+        font-size: 0;
+      }
+      .phone .rail a.thin:hover::after {
+        display: none;
+      }
+      .abubble .psys.big {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+        border-radius: 8px;
+      }
+      .abubble .flag.big {
+        font-size: 18px;
+        padding: 2px 8px;
+        line-height: 22px;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+      .abubble b {
+        font-size: 18px;
+        text-align: center;
+      }
+      .rail a .psys {
+        width: 18px;
+        height: 18px;
+        font-size: 7px;
+      }
+      .rail a[data-icon="1"] {
+        align-items: center;
+        padding: 0;
+      }
+      .rail ~ .abubble.wide {
+        right: calc(var(--sb, 0px) + var(--rail-w, 38px) + 12px);
+      }
+      .abubble.wide {
+        width: auto;
+        min-width: 96px;
+        height: auto;
+        padding: 8px 14px;
+        flex-direction: column;
+        gap: 2px;
+        right: 38px;
+        top: 40%;
+        font-size: 24px;
+      }
+      .abubble.wide small {
+        font-size: 11px;
+        font-weight: 500;
+        opacity: 0.85;
+      }
+      .phone .alpha {
+        right: calc(var(--sb, 0px) + 2px);
+        top: 124px;
+        bottom: 34px;
+        width: 14px;
+        font-size: 8px;
+      }
+      .phone .alpha a {
+        padding: 0 2px;
+      }
+      .phone.has-alpha .gtiles {
+        padding-right: calc(var(--rail-w, 26px) + 4px);
+      }
+      .phone.has-alpha .row2 {
+        padding-right: calc(var(--rail-w, 26px) + 4px);
+      }
+      .phone .gtiles {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px 3px;
+        padding: 3px;
+      }
+      .phone .gart {
+        border-radius: 4px;
+      }
+      .phone .gtile .gov.tr {
+        opacity: 1;
+        right: 1px;
+        top: 1px;
+      }
+      .phone .gtile .gh {
+        width: 17px;
+        height: 17px;
+        font-size: 11px;
+      }
+      .phone .gov.tl {
+        left: 3px;
+        top: 3px;
+      }
+      .phone .gov.bl {
+        left: 2px;
+        bottom: 2px;
+      }
+      .phone .gov.br {
+        right: 3px;
+        bottom: 1px;
+        font-size: 11px;
+      }
+      .gtitle {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 16px 3px 3px;
+        border-radius: 0 0 4px 4px;
+        background: linear-gradient(transparent, rgba(10, 8, 25, 0.85) 55%);
+        pointer-events: none;
+      }
+      .gtitle span {
+        display: -webkit-box;
+        line-clamp: 3;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 7.5px;
+        line-height: 1.12;
+        font-weight: 700;
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        word-break: break-word;
+      }
+      .phone .gov .sdot {
+        width: 7px;
+        height: 7px;
+      }
+      .phone .gov .vb {
+        font-size: 8px;
+        line-height: 11px;
+        padding: 0 3px;
+      }
+      .phone .gline {
+        font-size: 9px;
+        gap: 3px;
+        margin-top: 2px;
+      }
+      .phone .gline .psys {
+        width: 13px;
+        height: 13px;
+        font-size: 6.5px;
+        border-radius: 4px;
+      }
+      .phone .gtile .rowmenu {
+        position: fixed;
+      }
+      .phone .sbar .t {
+        display: none;
+      }
+      .phone .area-footer:not(.sbar) {
+        font-size: 11.5px;
+        gap: 12px;
+      }
+      .phone .area-footer [data-smart] {
+        display: none;
+      }
+      .phone .sbar {
+        gap: 4px;
+      }
+      .phone .sbar button {
+        padding: 5px 9px;
+      }
+      .phone .gart .selbox {
+        display: none;
+      }
+      .phone .gtile.is-sel .gart::after {
+        content: "✓";
+        position: absolute;
+        right: 3px;
+        top: 21px;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: var(--brand);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .empty {
+        text-align: center;
+      }
+      .empty .big {
+        font-size: 28px;
+        margin-bottom: 6px;
+      }
+      .empty .btn {
+        margin-top: 10px;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 22, 30, 0.35);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .dlg {
+        width: 340px;
+        max-width: 92vw;
+        background: var(--card);
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        padding: 14px;
+      }
+      .dlg h2 {
+        font-size: 15px;
+        margin-bottom: 8px;
+      }
+      .dlg label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        padding: 6px 4px;
+      }
+      .dlg .newc {
+        width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        padding: 6px 9px;
+        font: inherit;
+        font-size: 12.5px;
+        margin: 6px 0 10px;
+      }
+      .dlg .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      #toast {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: #fff;
+        font-size: 12.5px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        z-index: 60;
+        display: none;
+      }
+      #toast.show {
+        display: block;
+      }
+      details.audit {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        margin-bottom: 14px;
+        max-width: 1210px;
+      }
+      details.audit summary {
+        cursor: pointer;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .audit table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12px;
+      }
+      .audit th {
+        text-align: left;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 6px 12px;
+        border-top: 1px solid var(--rule);
+      }
+      .audit td {
+        padding: 6px 12px;
+        border-top: 1px solid var(--rule);
+        vertical-align: top;
+        line-height: 1.4;
+      }
+      .audit td:first-child {
+        font-weight: 600;
+        width: 22%;
+      }
+      .audit .ok {
+        color: #16794c;
+        font-weight: 600;
+      }
+      .audit .no {
+        color: #b45309;
+        font-weight: 600;
+      }
+      .phone .p-body .row2 {
+        position: relative;
+      }
+      .phone .sortbtn .sl {
+        display: none;
+      }
+      .phone .sortbtn {
+        padding: 0 11px;
+      }
+      .phone .row2 .ib {
+        width: 28px;
+        height: 28px;
+      }
+      .row2 [data-selart] {
+        display: block;
+        width: 26px;
+        height: 38px;
+        line-height: 0;
+      }
+      .row2 .art {
+        display: block;
+      }
+      .ledger th {
+        white-space: nowrap;
+      }
+      .advlink.on {
+        font-weight: 650;
+        text-decoration-style: solid;
+      }
+      .xclose {
+        flex: none;
+        font-size: 14px;
+        color: var(--ink);
+        background: var(--chip);
+      }
+      .xclose:hover {
+        background: var(--brand);
+        color: #fff;
+      }
+      .sheet .xclose {
+        display: none;
+      }
+      .row2 .art {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>/search v4: the v3 header, with the features it dropped put back</h1>
+    <details class="audit" open>
+      <summary>
+        Parity audit: what v1 to v3 dropped from the real gallery, and where it
+        is now
+      </summary>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>In the real app today</th>
+            <th>Dropped in</th>
+            <th>v4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Sort axis and direction</td>
+            <td>
+              Toolbar sort menu with direction toggle (GalleryToolbar),
+              clickable column headers in the list
+            </td>
+            <td>v1 to v3 (no sort at all)</td>
+            <td class="ok">
+              Sort menu in the header, clickable table headers, direction
+            </td>
+          </tr>
+          <tr>
+            <td>Relevance order for searches</td>
+            <td>
+              "Relevance" is the order while a term is typed, with no direction
+              (unsortedLabel)
+            </td>
+            <td>v1 to v3</td>
+            <td class="ok">
+              First entry once you type; direction hides under it
+            </td>
+          </tr>
+          <tr>
+            <td>Group by flat / A to Z</td>
+            <td>Letter headings in grid and list</td>
+            <td>v1 to v3</td>
+            <td class="ok">Group seg in the sort menu, letter headings</td>
+          </tr>
+          <tr>
+            <td>A-Z strip and jump</td>
+            <td>AlphaStrip on desktop, AlphaJumpMenu on phones</td>
+            <td>v1 to v3</td>
+            <td class="ok">
+              Generalised into a sort-aware rail: letters for Name, years for
+              Released, months for Added, size and length bands, stars for
+              Rating. Its own grid area beside the scrollbar, a draggable thumb,
+              click a label to jump.
+              <span class="no"
+                >Phone: letters only, and only when sorted by Name (the real
+                phone uses a jump menu)</span
+              >
+            </td>
+          </tr>
+          <tr>
+            <td>Group versions</td>
+            <td>
+              Siblings collapse under one card with a count badge (user setting
+              groupRoms)
+            </td>
+            <td>v1 to v3</td>
+            <td class="ok">
+              "Group versions" switch, ⧉N badge, duplicates shown when off
+            </td>
+          </tr>
+          <tr>
+            <td>Multi-select</td>
+            <td>
+              Checkbox, shift-range, ctrl/cmd, long-press, drag, Select all,
+              Esc, Ctrl+A
+            </td>
+            <td>v1 to v3 (only a footer link)</td>
+            <td class="ok">
+              Checkbox, shift-range, ctrl/cmd-click, Esc, Ctrl/Cmd+A, Select
+              all. <span class="no">Long-press and drag not drawn</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Bulk bar</td>
+            <td>
+              SelectionBar: favorite, collections, download, refresh, delete,
+              status
+            </td>
+            <td>v1 to v3</td>
+            <td class="ok">
+              Bar with favorite, collection dialog, download, refresh, delete.
+              <span class="no">Bulk status not drawn</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Per-game action menu</td>
+            <td>
+              Play, download, favorite, collections, copy link, status, refresh,
+              edit, match, delete (bottom sheet on phones)
+            </td>
+            <td>v1 to v3 (inert "...")</td>
+            <td class="ok">
+              Menu on tiles and rows, sheet on the phone, permissions not drawn
+            </td>
+          </tr>
+          <tr>
+            <td>Favorite toggle</td>
+            <td>Heart on the card overlay</td>
+            <td>v1 to v3</td>
+            <td class="ok">♡ on every tile and row</td>
+          </tr>
+          <tr>
+            <td>Card badges</td>
+            <td>
+              Versions count, play status, region and language flags, rating
+            </td>
+            <td>v1 to v3</td>
+            <td class="ok">
+              ⧉N, status dot, region and language chips; rating in the table
+            </td>
+          </tr>
+          <tr>
+            <td>Table columns</td>
+            <td>
+              Title, Platform, Size, Added, Released, Rating, Length, Languages,
+              Regions, actions
+            </td>
+            <td>v1 to v3 (Rating, Length, Languages, Regions missing)</td>
+            <td class="ok">
+              All ten, plus select and expand.
+              <span class="no"
+                >Tweak: Regions is sortable here (a display-only column in the
+                real list); it gets a rail of region codes</span
+              >
+            </td>
+          </tr>
+          <tr>
+            <td>Row details</td>
+            <td>Chevron expands metadata sources and file info</td>
+            <td>v1 to v3</td>
+            <td class="ok">Chevron detail row</td>
+          </tr>
+          <tr>
+            <td>Back to top</td>
+            <td>Floating button</td>
+            <td>v1 to v3</td>
+            <td class="ok">Appears after scrolling</td>
+          </tr>
+          <tr>
+            <td>Empty state</td>
+            <td>Icon, message that says why, clear action</td>
+            <td>v3 (plain line)</td>
+            <td class="ok">Message plus "Clear search and filters"</td>
+          </tr>
+          <tr>
+            <td>Keyboard</td>
+            <td>/ focuses search, Esc, Ctrl+A</td>
+            <td>v1 to v3</td>
+            <td class="ok">
+              /, Esc (closes, then clears selection, then search), Ctrl/Cmd+A
+            </td>
+          </tr>
+          <tr>
+            <td>Open a game</td>
+            <td>Click goes to the game page</td>
+            <td>mock only</td>
+            <td class="no">Toast stands in</td>
+          </tr>
+          <tr>
+            <td>Loading, scroll restore, URL sync, reduced motion</td>
+            <td>
+              Sparse windowed fetch with skeletons, saved scroll, every control
+              in the URL
+            </td>
+            <td>mock only</td>
+            <td class="no">Not mockable here: carry them into the build</td>
+          </tr>
+          <tr>
+            <td>Toolbar floating position</td>
+            <td>User preference: header or floating pill</td>
+            <td>v1 to v3</td>
+            <td class="no">Decision needed: drop it or keep it as a setting</td>
+          </tr>
+          <tr>
+            <td>Filter drawer</td>
+            <td>Every control, logic, length, smart collection, reset</td>
+            <td>never dropped</td>
+            <td class="ok">Advanced mode, unchanged</td>
+          </tr>
+        </tbody>
+      </table>
+    </details>
+    <p class="lede">
+      v4 is the v3 header with every dropped feature that could be drawn put
+      back (table above). Try it: type "astral" (relevance order appears), open
+      Sort, group A to Z, tick a checkbox then shift-click another, press
+      Ctrl/Cmd+A, Esc, or / ; open a ⋯ menu; Manage collections; flip "Group
+      versions". Illustrative, made-up data (about 600 roms). The 25% sidebar is
+      today's FilterDrawer, docked instead of hidden behind a button, with the
+      same sections, labels, controls and behavior: 11 tri-state properties, the
+      platform multi-select, 13 searchable multi-selects each with its
+      any/all/none logic, the game-length range, active-count tag, Save as smart
+      collection and Reset. Every control filters the results live. Icons are
+      letter badges here; the real component uses its mdi icons.
+    </p>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="app"></div>
+    <div id="toast"></div>
+
+    <script>
+      // ---------- data (fixed seed) ----------
+      let seed = 11;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const pick = (a) => a[Math.floor(rnd() * a.length)];
+      const some = (a, max) => {
+        const n = 1 + Math.floor(rnd() * max);
+        const out = new Set();
+        for (let i = 0; i < n; i++) out.add(pick(a));
+        return [...out];
+      };
+      const PLATFORMS = [
+        ["Meta Quest 3", "#5b3fa6", 9],
+        ["LeapTV", "#e0836a", 7],
+        ["Polymega", "#2e7d9a", 8],
+        ["Google Stadia", "#d9534f", 5],
+        ["Plug & Play", "#6aa84f", 6],
+        ["Imlac PDS-1", "#b8860b", 3],
+        ["ScummVM", "#2f6f5e", 6],
+        ["V.Smile", "#c2569e", 5],
+        ["Windows Mixed Reality", "#4a5fc1", 4],
+        ["PlayStation VR2", "#1f2937", 5],
+        ["Mega Duck", "#9aa5b1", 2],
+        ["Game.com", "#e1a100", 4],
+      ];
+      const A = [
+        "Astral",
+        "Shadow",
+        "Crimson",
+        "Eternal",
+        "Silent",
+        "Ultimate",
+        "Super",
+        "Mega",
+        "Radiant",
+        "Legend of",
+        "Iron",
+        "Neon",
+        "Frozen",
+        "Lunar",
+        "Hollow",
+        "Golden",
+      ];
+      const B = [
+        "Adventure",
+        "Rampage",
+        "Hunters",
+        "Force",
+        "Paradise",
+        "Horizon",
+        "Odyssey",
+        "Heroes",
+        "Strike",
+        "Chronicles",
+        "Inferno",
+        "Drift",
+        "Kingdom",
+        "Protocol",
+        "Rally",
+        "Quest",
+      ];
+      const C = [
+        "II",
+        "III",
+        "64",
+        "Advance",
+        "Deluxe",
+        "Reloaded",
+        "DX",
+        "Zero",
+        "Evolution",
+        "Last Stand",
+        "Broken Seal",
+        "Ascension",
+        "",
+      ];
+      const REG = [
+        "USA",
+        "Europe",
+        "Japan",
+        "Brazil",
+        "Asia",
+        "Korea",
+        "World",
+        "Australia",
+      ];
+      const EXT = ["zip", "bin", "iso", "rom", "7z"];
+      const PROVC = [
+        "#7c5cff",
+        "#2b9348",
+        "#d97706",
+        "#2563eb",
+        "#db2777",
+        "#0f766e",
+      ];
+      // filter vocabulary, 1:1 with FilterDrawer.vue
+      const BOOLS = [
+        ["matched", "Matched", 0.98, "M"],
+        ["favorite", "Favorite", 0.06, "★"],
+        ["duplicate", "Has versions", 0.2, "V"],
+        ["playable", "Playable in browser", 0.3, "P"],
+        ["missing", "Missing from disk", 0.02, "?"],
+        ["physical", "Physical game", 0.03, "B"],
+        ["verified", "Hash verified", 0.25, "✓"],
+        ["ra", "Has RetroAchievements", 0.1, "T"],
+        ["saves", "Has saves", 0.08, "S"],
+        ["states", "Has save states", 0.06, "s"],
+        ["soundtrack", "Has soundtrack", 0.05, "♪"],
+      ];
+      const GROUPS = [
+        [
+          "genre",
+          "Genre",
+          "G",
+          [
+            "Action",
+            "Adventure",
+            "RPG",
+            "Puzzle",
+            "Sport",
+            "Racing",
+            "Platformer",
+            "Shooter",
+            "Strategy",
+            "Simulation",
+          ],
+        ],
+        [
+          "franchise",
+          "Franchise",
+          "F",
+          ["Astral", "Shadow", "Crimson", "Eternal", "Silent", "Neon", "Lunar"],
+        ],
+        [
+          "collection",
+          "Collection",
+          "C",
+          ["Co-op night", "Long road trip", "Shelf A", "Shelf B"],
+        ],
+        [
+          "company",
+          "Company",
+          "Co",
+          ["Nova Works", "Pixel Harbor", "Kite Games", "Ember Labs"],
+        ],
+        ["publisher", "Publisher", "Pu", ["Brightline", "Orbit", "Kestrel"]],
+        [
+          "developer",
+          "Developer",
+          "D",
+          ["Studio Nine", "Tallow", "Wren Interactive"],
+        ],
+        ["age", "Age rating", "A", ["E", "E10+", "T", "M"]],
+        ["region", "Region", "R", REG],
+        ["language", "Language", "L", ["en", "ja", "fr", "de", "es", "pt"]],
+        ["tag", "Tag", "#", ["Beta", "Demo", "Rev A", "Hack"]],
+        ["players", "Player count", "1+", ["1", "2", "3-4", "5+"]],
+        [
+          "provider",
+          "Metadata provider",
+          "Mp",
+          [
+            "IGDB",
+            "Screenscraper",
+            "MobyGames",
+            "RetroAchievements",
+            "Hasheous",
+            "LaunchBox",
+          ],
+        ],
+        [
+          "status",
+          "Status",
+          "St",
+          ["Playing", "Backlogged", "Finished", "Hidden", "Incomplete"],
+        ],
+      ];
+      const ROMS = [];
+      const totalW = PLATFORMS.reduce((s, p) => s + p[2], 0);
+      PLATFORMS.forEach((p, pi) => {
+        const n = Math.round((600 * p[2]) / totalW);
+        for (let i = 0; i < n; i++) {
+          const name =
+            `${pick(A)} ${pick(B)}${pick(C) ? " " + pick(C) : ""}`.trim();
+          const region = pick(REG);
+          const r = {
+            name,
+            plat: pi,
+            year: 1984 + Math.floor(rnd() * 42),
+            gb: Math.round((0.02 + rnd() * rnd() * 9) * 100) / 100,
+            added: `2026-${String(1 + Math.floor(rnd() * 10)).padStart(2, "0")}-${String(1 + Math.floor(rnd() * 28)).padStart(2, "0")}`,
+            file: `${name} (${region}).${pick(EXT)}`,
+            rating: rnd() < 0.6 ? Math.round((2 + rnd() * 3) * 10) / 10 : null,
+            grp: ROMS.length,
+            b: {},
+            a: {},
+            hours:
+              rnd() < 0.55
+                ? Math.round((2 + rnd() * rnd() * 60) * 10) / 10
+                : null,
+          };
+          BOOLS.forEach(([k, , p]) => (r.b[k] = rnd() < p));
+          GROUPS.forEach(
+            ([k, , , vals]) =>
+              (r.a[k] =
+                k === "region"
+                  ? [region]
+                  : k === "provider"
+                    ? some(vals, 3)
+                    : k === "status"
+                      ? rnd() < 0.5
+                        ? [pick(vals)]
+                        : []
+                      : rnd() < 0.8
+                        ? some(vals, k === "genre" ? 3 : 2)
+                        : []),
+          );
+          r.prov = r.a.provider.map((v) =>
+            GROUPS.find((g) => g[0] === "provider")[3].indexOf(v),
+          );
+          ROMS.push(r);
+          // versions of the same game: same group, another region and file (the real "siblings")
+          if (rnd() < 0.18)
+            for (let k = 0, n = 1 + Math.floor(rnd() * 2); k < n; k++) {
+              const reg2 = pick(REG);
+              ROMS.push({
+                ...r,
+                sib: true,
+                file: `${name} (${reg2}).${pick(EXT)}`,
+                gb: Math.round(r.gb * (0.7 + rnd() * 0.6) * 100) / 100,
+                b: { ...r.b },
+                a: { ...r.a, region: [reg2] },
+              });
+            }
+        }
+      });
+      ROMS.sort((a, b) => a.name.localeCompare(b.name));
+      ROMS.forEach((r, i) => (r.id = i));
+      const LANGS = ["en", "ja", "fr", "de", "es", "pt"];
+      ROMS.forEach((r) => {
+        r.lang = r.a.language.length ? r.a.language.slice(0, 2) : ["en"];
+        r.reg = r.a.region[0];
+        r.st = r.a.status[0] || "";
+      });
+      const REGCODE = {
+        USA: "US",
+        Europe: "EU",
+        Japan: "JP",
+        Brazil: "BR",
+        Asia: "AS",
+        Korea: "KR",
+        World: "WW",
+        Australia: "AU",
+      };
+      const STCOL = {
+        Playing: "#16a34a",
+        Backlogged: "#d97706",
+        Finished: "#2563eb",
+        Hidden: "#9aa5b1",
+        Incomplete: "#dc2626",
+      };
+      const COLLECTIONS = [
+        "Favorites",
+        "Co-op night",
+        "Long road trip",
+        "Shelf A",
+        "Shelf B",
+      ];
+
+      // ---------- state ----------
+      const fresh = () => ({
+        tri: Object.fromEntries(BOOLS.map((b) => [b[0], null])),
+        plats: new Set(),
+        groups: Object.fromEntries(
+          GROUPS.map((g) => [g[0], { sel: new Set(), logic: "any" }]),
+        ),
+        lmin: "",
+        lmax: "",
+      });
+      let sideAnim = false,
+        sort = { key: "relevance", dir: "asc" },
+        group = "none",
+        gv = true,
+        sel = new Set(),
+        lastSel = null,
+        expanded = new Set(),
+        menuId = null,
+        sortOpen = false,
+        dlg = null,
+        curVC = {},
+        platSort = "count",
+        phone = false,
+        phoneAdv = false,
+        dock = "none",
+        sopen = null,
+        S = fresh(),
+        query = "",
+        open = null,
+        popQ = "",
+        active = 0,
+        bar = false,
+        pending = new Set(),
+        plusOpen = false,
+        plusQ = "";
+      const activeCount = () =>
+        Object.values(S.tri).filter((v) => v !== null).length +
+        (S.plats.size ? 1 : 0) +
+        Object.values(S.groups).filter((g) => g.sel.size).length +
+        (S.lmin !== "" || S.lmax !== "" ? 1 : 0);
+      function passes(r) {
+        for (const [k, v] of Object.entries(S.tri))
+          if (v !== null && r.b[k] !== v) return false;
+        if (S.plats.size && !S.plats.has(r.plat)) return false;
+        for (const [k, g] of Object.entries(S.groups)) {
+          if (!g.sel.size) continue;
+          const have = r.a[k],
+            sel = [...g.sel];
+          if (g.logic === "any" && !sel.some((v) => have.includes(v)))
+            return false;
+          if (g.logic === "all" && !sel.every((v) => have.includes(v)))
+            return false;
+          if (g.logic === "none" && sel.some((v) => have.includes(v)))
+            return false;
+        }
+        if (S.lmin !== "" || S.lmax !== "") {
+          if (r.hours === null) return false;
+          if (S.lmin !== "" && r.hours < +S.lmin) return false;
+          if (S.lmax !== "" && r.hours > +S.lmax) return false;
+        }
+        const q = query.trim().toLowerCase();
+        return (
+          !q ||
+          (r.name + " " + r.file + " " + PLATFORMS[r.plat][0])
+            .toLowerCase()
+            .includes(q)
+        );
+      }
+      // ---------- sort, group versions (siblings), group by letter ----------
+      const SORTS = [
+        ["relevance", "Relevance"],
+        ["name", "Name"],
+        ["plat", "Platform"],
+        ["gb", "Size"],
+        ["added", "Added"],
+        ["year", "Released"],
+        ["rating", "Rating"],
+        ["hours", "Length"],
+        ["reg", "Region"],
+      ];
+      const effKey = () =>
+        sort.key === "relevance" && !query.trim() ? "name" : sort.key;
+      function sortList(list) {
+        const k = effKey(),
+          dir = sort.dir === "asc" ? 1 : -1,
+          q = query.trim().toLowerCase();
+        const rel = (r) => {
+          const n = r.name.toLowerCase();
+          return n === q
+            ? 0
+            : n.startsWith(q)
+              ? 1
+              : n.includes(q)
+                ? 2
+                : r.file.toLowerCase().includes(q)
+                  ? 3
+                  : 4;
+        };
+        const val = {
+          name: (r) => r.name,
+          plat: (r) => PLATFORMS[r.plat][0],
+          gb: (r) => r.gb,
+          added: (r) => r.added,
+          year: (r) => r.year,
+          rating: (r) => r.rating,
+          hours: (r) => r.hours,
+          reg: (r) => r.reg,
+        }[k];
+        return [...list].sort((a, b) => {
+          if (k === "relevance")
+            return rel(a) - rel(b) || a.name.localeCompare(b.name);
+          const x = val(a),
+            y = val(b);
+          if (x == null && y == null) return a.name.localeCompare(b.name);
+          if (x == null) return 1;
+          if (y == null) return -1;
+          return (
+            (typeof x === "string" ? x.localeCompare(y) : x - y) * dir ||
+            a.name.localeCompare(b.name)
+          );
+        });
+      }
+      function matches() {
+        let list = ROMS.filter(passes);
+        curVC = {};
+        list.forEach((r) => (curVC[r.grp] = (curVC[r.grp] || 0) + 1));
+        if (gv) {
+          const seen = new Map();
+          list.forEach((r) => {
+            const c = seen.get(r.grp);
+            if (!c || (c.sib && !r.sib)) seen.set(r.grp, r);
+          });
+          const keep = new Set([...seen.values()].map((r) => r.id));
+          list = list.filter((r) => keep.has(r.id));
+        }
+        return sortList(list);
+      }
+      const letterOf = (r) => {
+        const c = r.name[0].toUpperCase();
+        return /[A-Z]/.test(c) ? c : "#";
+      };
+      // the rail: buckets follow the sort (letters, decades, months, size bands...), positioned like a labelled scrollbar
+      const MON = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const BUCKETS = {
+        name: (r) => [letterOf(r), letterOf(r)],
+        plat: (r) => [r.plat, initials(PLATFORMS[r.plat][0]), { p: r.plat }],
+        gb: (r) =>
+          r.gb < 0.1
+            ? [0, "<100 MB"]
+            : r.gb < 0.5
+              ? [1, "<500 MB"]
+              : r.gb < 1
+                ? [2, "<1 GB"]
+                : r.gb < 2
+                  ? [3, "<2 GB"]
+                  : r.gb < 5
+                    ? [4, "<5 GB"]
+                    : [5, "5 GB+"],
+        added: (r) => [
+          r.added.slice(0, 7),
+          MON[+r.added.slice(5, 7) - 1] + " " + r.added.slice(2, 4),
+        ],
+        year: (r) => [r.year, String(r.year)],
+        reg: (r) => [r.reg, REGCODE[r.reg] || r.reg],
+        rating: (r) =>
+          r.rating == null
+            ? ["x", "—"]
+            : [Math.floor(r.rating), Math.floor(r.rating) + "★"],
+        hours: (r) =>
+          r.hours == null
+            ? ["x", "—"]
+            : r.hours < 5
+              ? [0, "<5h"]
+              : r.hours < 10
+                ? [1, "5–10h"]
+                : r.hours < 25
+                  ? [2, "10–25h"]
+                  : [3, "25h+"],
+      };
+      // rail renderers: how one bucket looks on the rail (bar), in the bubble while scrubbing (bubble) and in the phone header (sect).
+      // A sort key without an entry here falls back to plain text, so a new axis only needs a renderer if it has something better to show.
+      const sysBadge = (p, big) =>
+        `<i class="psys${big ? " big" : ""}" style="background:${PLATFORMS[p][1]}">${initials(PLATFORMS[p][0])}</i>`;
+      const RAILR = {
+        plat: {
+          icon: true,
+          bar: (b) => sysBadge(b.meta.p),
+          title: (b) => PLATFORMS[b.meta.p][0],
+          bubble: (b) =>
+            `${sysBadge(b.meta.p, true)}<b>${PLATFORMS[b.meta.p][0]}</b>`,
+          sect: (b) => `${sysBadge(b.meta.p)} ${PLATFORMS[b.meta.p][0]}`,
+        },
+        reg: {
+          bar: (b) => `<span class="flag" style="margin:0">${b.label}</span>`,
+          title: (b) => b.key,
+          bubble: (b) =>
+            `<span class="flag big">${b.label}</span><b>${b.key}</b>`,
+        },
+        rating: {
+          bar: (b) => (b.label === "—" ? "—" : "★".repeat(+b.key)),
+          title: (b) => (b.label === "—" ? "No rating" : b.key + " stars"),
+          bubble: (b) =>
+            `<b>${b.label === "—" ? "No rating" : "★".repeat(+b.key)}</b>`,
+        },
+      };
+      const railR = (k) =>
+        Object.assign(
+          {
+            bar: (b) => b.label,
+            title: (b) => b.label,
+            bubble: (b) => `<b>${b.label}</b>`,
+            sect: (b) => b.label,
+          },
+          RAILR[k] || {},
+        );
+      let RAIL = null;
+      function buildRail(list) {
+        const k = effKey();
+        RAIL = null;
+        if (k === "relevance" || !BUCKETS[k] || !list.length) return;
+        const buckets = [],
+          idx = {},
+          firstIds = new Set();
+        list.forEach((r, i) => {
+          const [key, label, meta] = BUCKETS[k](r);
+          let b = buckets[buckets.length - 1];
+          if (!b || b.key !== key) {
+            b = { key, label, meta, n: buckets.length, start: i, count: 0 };
+            buckets.push(b);
+            firstIds.add(r.id);
+          }
+          b.count++;
+          idx[r.id] = b.n;
+        });
+        RAIL = { k, buckets, idx, firstIds, total: list.length };
+      }
+      const alphaOn = () => !!RAIL && active < 2;
+      const bid = (r) =>
+        RAIL && RAIL.firstIds.has(r.id) ? RAIL.idx[r.id] : -1;
+      const toast = (m) => {
+        const t = document.getElementById("toast");
+        t.textContent = m;
+        t.classList.add("show");
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+      };
+      const hl = (s) => {
+        const q = query.trim();
+        if (!q) return s;
+        const i = s.toLowerCase().indexOf(q.toLowerCase());
+        return i < 0
+          ? s
+          : s.slice(0, i) +
+              "<mark>" +
+              s.slice(i, i + q.length) +
+              "</mark>" +
+              s.slice(i + q.length);
+      };
+      const size = (gb) =>
+        gb >= 1 ? `${gb.toFixed(2)} GB` : `${Math.round(gb * 1024)} MB`;
+      const dots = (r) =>
+        `<span class="dots">${r.prov.map((p) => `<i style="background:${PROVC[p]}"></i>`).join("")}</span>`;
+      const art = (w, h) =>
+        `<span class="art" style="width:${w}px;height:${h}px"></span>`;
+      const esc = (s) => String(s).replace(/"/g, "&quot;");
+
+      // ---------- sidebar (the drawer, docked) ----------
+      function sidebar() {
+        const n = activeCount();
+        const bools = BOOLS.map(
+          ([
+            k,
+            label,
+            ,
+            ic,
+          ]) => `<div class="bool ${S.tri[k] !== null ? "on" : ""}"><span class="lbl"><span class="ic">${ic}</span>${label}</span>
+    <span class="seg seg--sm" data-tri="${k}"><button class="${S.tri[k] === null ? "on" : ""}" data-v="all" title="Show all">○</button><button class="${S.tri[k] === true ? "on" : ""}" data-v="yes" title="Only: ${label}">✓</button><button class="${S.tri[k] === false ? "on" : ""}" data-v="no" title="Exclude: ${label}">✕</button></span></div>`,
+        ).join("");
+        const popFor = (key, items, selSet, counts) => {
+          const q = popQ.trim().toLowerCase();
+          const shown = items.filter(
+            (v) =>
+              !q ||
+              String(v.label ?? v)
+                .toLowerCase()
+                .includes(q),
+          );
+          return `<div class="pop"><div class="pophead"><input type="text" data-fid="p" placeholder="Search" value="${esc(popQ)}"><a href="#" data-clear="${key}" class="pclear">Clear</a><a href="#" data-closepop class="pdone">Done</a></div>
+      <div class="list">${
+        shown
+          .map((v) => {
+            const val = v.value ?? v,
+              lab = v.label ?? v;
+            return `<label><input type="checkbox" data-pick="${key}" data-val="${esc(val)}" ${selSet.has(val) ? "checked" : ""}>${lab}${counts ? ` <span style="margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:10.5px">${counts(val)}</span>` : ""}</label>`;
+          })
+          .join("") || '<div class="hint">No match</div>'
+      }</div></div>`;
+        };
+        const platItems = PLATFORMS.map((p, i) => ({ value: i, label: p[0] }));
+        const platCount = (i) => ROMS.filter((r) => r.plat === i).length;
+        const platVal = S.plats.size
+          ? [...S.plats].map((i) => PLATFORMS[i][0]).join(", ")
+          : "";
+        const multis = GROUPS.map(([k, label, ic, vals]) => {
+          const g = S.groups[k];
+          const v = [...g.sel].join(", ");
+          return `<div class="multi ${g.sel.size ? "" : "idle"}"><button class="sel" data-open="${k}"><small><span class="ic">${ic}</span>${label}</small><span class="${v ? "" : "ph"}">${v || "Any"}</span></button>
+      <span class="seg seg--sm" data-logic="${k}">${["any", "all", "none"].map((l, i) => `<button class="${g.logic === l ? "on" : ""}" data-v="${l}" title="Match ${l.toUpperCase()} of the selected values">${["∪", "∩", "∅"][i]}</button>`).join("")}</span>
+      ${sopen === k ? popFor(k, vals, g.sel) : ""}</div>`;
+        }).join("");
+        return `<aside class="side">
+    <div class="side-head"><span>Filters</span>${n ? `<span class="tag">${n}</span>` : ""}<span style="flex:1"></span><button class="btn btn--ghost" ${n ? "" : "disabled"} id="reset" title="Reset filters">↺ Reset</button><button class="btn" ${n ? "" : "disabled"} id="smart" title="Save as smart collection"><span class="lbl-full">Save smart collection</span><span class="lbl-short">Save</span></button><button class="ib xclose" data-adv title="Close advanced mode" aria-label="Close advanced mode">✕</button></div>
+    <section class="sec"><h3>Properties</h3>${bools}</section>
+    <section class="sec"><h3>Platforms</h3><div class="multi" style="grid-template-columns:1fr"><button class="sel" data-open="plats"><small><span class="ic">▣</span>Platforms</small><span class="${platVal ? "" : "ph"}">${platVal || "All platforms"}</span></button>${sopen === "plats" ? popFor("plats", platItems, S.plats, platCount) : ""}</div></section>
+    <section class="sec"><h3>Tags</h3>${multis}</section>
+    <section class="sec"><h3>Game length</h3><div class="len"><label>From (hours)<input type="number" data-fid="lmin" placeholder="Any" value="${esc(S.lmin)}"></label><label>To (hours)<input type="number" data-fid="lmax" placeholder="Any" value="${esc(S.lmax)}"></label></div>
+      ${S.lmin !== "" || S.lmax !== "" ? '<p class="hint">Games without a HowLongToBeat time are hidden while a length range is set.</p>' : ""}</section>
+</aside>`;
+      }
+
+      // ---------- pill bar: the panel's fields as pills + a (+) button ----------
+      const FIELDS = [
+        ...BOOLS.map((b) => ({
+          k: "b:" + b[0],
+          label: b[1],
+          head: "Properties",
+          ic: b[3],
+        })),
+        { k: "plats", label: "Platforms", head: "Platforms", ic: "▣" },
+        ...GROUPS.map((g) => ({
+          k: "g:" + g[0],
+          label: g[1],
+          head: "Tags",
+          ic: g[2],
+        })),
+        { k: "len", label: "Game length", head: "Game length", ic: "h" },
+      ];
+      const platItemsTop = PLATFORMS.map((p, i) => ({ value: i, label: p[0] }));
+      const platCountTop = (i) => ROMS.filter((r) => r.plat === i).length;
+      function popup(key) {
+        if (key === "plats") {
+          // a long list: find it fast, selected first, counts, big touch rows
+          const q = popQ.trim().toLowerCase();
+          const all = PLATFORMS.map((p, i) => ({
+            i,
+            name: p[0],
+            color: p[1],
+            n: platCountTop(i),
+          }));
+          const list = all
+            .filter((p) => !q || p.name.toLowerCase().includes(q))
+            .sort(
+              (a, b) =>
+                S.plats.has(b.i) - S.plats.has(a.i) ||
+                (platSort === "az" ? a.name.localeCompare(b.name) : b.n - a.n),
+            );
+          const sel = all.filter((p) => S.plats.has(p.i));
+          return `<div class="pop pop--pill pop--plat"><div class="pophead"><input type="text" data-fid="p" placeholder="Find a platform" value="${esc(popQ)}"><a href="#" data-clear="plats" class="pclear">Clear</a><a href="#" data-closepop class="pdone">Done</a></div>
+      ${sel.length ? `<div class="selchips">${sel.map((p) => `<label class="chipx"><input type="checkbox" data-pick="plats" data-val="${p.i}" checked hidden><i style="background:${p.color}"></i>${p.name} ×</label>`).join("")}</div>` : ""}
+      <div class="platbar"><span>${list.length} of ${all.length} platforms</span><span class="seg seg--sm">${[
+        ["count", "Most games"],
+        ["az", "A to Z"],
+      ]
+        .map(
+          ([k, l]) =>
+            `<button class="${platSort === k ? "on" : ""}" data-ps="${k}">${l}</button>`,
+        )
+        .join("")}</span></div>
+      <div class="list">${list.map((p) => `<label class="platrow"><input type="checkbox" data-pick="plats" data-val="${p.i}" ${S.plats.has(p.i) ? "checked" : ""}><i style="background:${p.color}"></i><span class="pn">${p.name}</span><span class="pc">${p.n}</span></label>`).join("") || '<div class="hint">No platform matches</div>'}</div>
+      </div>`;
+        }
+        if (key === "len")
+          return `<div class="pop pop--pill"><div class="pophead"><b style="font-size:12px;flex:1">Game length</b><a href="#" data-clear="len" class="pclear">Clear</a><a href="#" data-closepop class="pdone">Done</a></div><div class="len"><label>From (hours)<input type="number" data-fid="lmin" placeholder="Any" value="${esc(S.lmin)}"></label><label>To (hours)<input type="number" data-fid="lmax" placeholder="Any" value="${esc(S.lmax)}"></label></div>
+    <p class="hint">Games without a HowLongToBeat time are hidden while a length range is set.</p></div>`;
+        const isP = key === "plats",
+          g = isP ? null : GROUPS.find((x) => x[0] === key);
+        const items = isP ? platItemsTop : g[3],
+          set = isP ? S.plats : S.groups[key].sel,
+          q = popQ.trim().toLowerCase();
+        const shown = items.filter(
+          (v) =>
+            !q ||
+            String(v.label ?? v)
+              .toLowerCase()
+              .includes(q),
+        );
+        return `<div class="pop pop--pill"><div class="pophead"><input type="text" data-fid="p" placeholder="Search" value="${esc(popQ)}"><a href="#" data-clear="${key}" class="pclear">Clear</a><a href="#" data-closepop class="pdone">Done</a></div><div class="list">${
+          shown
+            .map((v) => {
+              const val = v.value ?? v,
+                lab = v.label ?? v;
+              return `<label><input type="checkbox" data-pick="${key}" data-val="${esc(val)}" ${set.has(val) ? "checked" : ""}>${lab}${isP ? ` <span style="margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:10.5px">${platCountTop(val)}</span>` : ""}</label>`;
+            })
+            .join("") || '<div class="hint">No match</div>'
+        }</div>
+    </div>`;
+      }
+      function pillsHTML() {
+        const out = [];
+        BOOLS.forEach(([k, label]) => {
+          const v = S.tri[k];
+          if (v === null) return;
+          out.push(
+            `<span class="pillwrap"><span class="fpill ${v ? "" : "fpill--no"}" data-flip="${k}" title="Click to switch between only and exclude"><span class="t">${v ? label : "not " + label}</span><b data-rm="b:${k}">×</b></span></span>`,
+          );
+        });
+        if (S.plats.size || pending.has("plats")) {
+          const names = [...S.plats].map((i) => PLATFORMS[i][0]);
+          out.push(
+            `<span class="pillwrap"><span class="fpill" data-pill="plats"><span class="t">${[
+              ...S.plats,
+            ]
+              .slice(0, 3)
+              .map(
+                (i) =>
+                  `<i class="pd" style="background:${PLATFORMS[i][1]}"></i>`,
+              )
+              .join(
+                "",
+              )}${names.length > 1 ? "Platforms" : "Platform"}: ${names.length ? (names.length > 2 ? names[0] + ` +${names.length - 1}` : names.join(", ")) : "choose..."}</span><b data-rm="plats">×</b></span>${open === "plats" ? popup("plats") : ""}</span>`,
+          );
+        }
+        GROUPS.forEach(([k, label]) => {
+          const g = S.groups[k];
+          if (!g.sel.size && !pending.has(k)) return;
+          const vals = [...g.sel];
+          const word = { any: "", all: "all of ", none: "not " }[g.logic];
+          out.push(
+            `<span class="pillwrap"><span class="fpill" data-pill="${k}"><span class="t">${label}: ${vals.length ? word + vals.slice(0, 2).join(", ") + (vals.length > 2 ? ` +${vals.length - 2}` : "") : "choose..."}</span><b data-rm="g:${k}">×</b></span>${open === k ? popup(k) : ""}</span>`,
+          );
+        });
+        if (S.lmin !== "" || S.lmax !== "" || pending.has("len"))
+          out.push(
+            `<span class="pillwrap"><span class="fpill" data-pill="len"><span class="t">Length ${S.lmin || "0"} to ${S.lmax || "any"} h</span><b data-rm="len">×</b></span>${open === "len" ? popup("len") : ""}</span>`,
+          );
+        return out.join("");
+      }
+      function plusHTML() {
+        const q = plusQ.trim().toLowerCase();
+        let head = "";
+        const rows = FIELDS.filter(
+          (f) => !q || f.label.toLowerCase().includes(q),
+        )
+          .map((f) => {
+            const h = f.head !== head ? `<h4>${f.head}</h4>` : "";
+            head = f.head;
+            return (
+              h +
+              `<button data-field="${f.k}"><span class="ic">${f.ic}</span>${f.label}</button>`
+            );
+          })
+          .join("");
+        return `<span class="pillwrap"><button class="plus ${plusOpen ? "on" : ""}" id="plus" title="Narrow your search" aria-label="Add a filter"><span class="pl">+</span> Add a filter</button>${plusOpen ? `<div class="plusmenu"><input type="text" data-fid="pq" placeholder="Narrow by genre, region, status..." value="${esc(plusQ)}"><div class="list">${rows || '<div class="hint">No such field</div>'}</div></div>` : ""}</span>`;
+      }
+      function closeOpen() {
+        if (open && open !== "len") {
+          const empty =
+            open === "plats" ? !S.plats.size : !S.groups[open].sel.size;
+          if (empty) pending.delete(open);
+        }
+        if (open === "len" && S.lmin === "" && S.lmax === "")
+          pending.delete("len");
+        open = null;
+        sopen = null;
+        popQ = "";
+      }
+
+      // ---------- main pane ----------
+      const VIEWS = ["Tiles", "Table", "Swarm"];
+      function mainPane(list) {
+        const pills = pillsHTML();
+        return `<div class="area-header pinned"><div class="hrow">
+      <div class="field"><span class="mag">⌕</span><input data-fid="s" placeholder="Name, filename, hash..." value="${esc(query)}" aria-label="Search"><span class="fcount"><b>${list.length.toLocaleString()}</b> results</span></div>
+      ${plusHTML()}
+      <a href="#" class="advlink ${dock === "left" ? "on" : ""}" data-adv>Advanced mode</a>
+      ${sortHTML()}
+      <span class="seg view" id="viewseg">${VIEWS.map((v, i) => `<button class="${i === active ? "on" : ""}" data-i="${i}"><span class="vi">${["▦", "≡", "✺"][i]}</span> ${v}</button>`).join("")}</span></div>
+    ${pills ? `<div class="subline">${pills}<a href="#" class="clearall" id="clearall">Clear all</a></div>` : ""}</div>
+    <div class="content-wrap"><div class="area-content body ${sel.size ? "selmode" : ""}" id="content">${active === 0 ? tiles(list) : active === 1 ? table(list) : swarm()}</div>${alphaOn() ? railHTML() : ""}<button class="btt" id="btt" title="Back to top">↑</button></div>${footerHTML(list)}`;
+      }
+      function sortHTML() {
+        const k = effKey(),
+          lab = SORTS.find((s) => s[0] === k)[1],
+          arrow = k === "relevance" ? "" : sort.dir === "asc" ? " ↑" : " ↓";
+        const menu = sortOpen
+          ? `<div class="sortmenu"><h4>Sort by</h4>${SORTS.filter(
+              (s) => s[0] !== "relevance" || query.trim(),
+            )
+              .map(
+                ([key, l]) =>
+                  `<button class="si ${k === key ? "on" : ""}" data-sk="${key}">${l}${k === key ? "<span>✓</span>" : ""}</button>`,
+              )
+              .join("")}
+    ${k === "relevance" ? "" : `<h4>Direction</h4><div class="row"><span class="seg seg--sm"><button class="${sort.dir === "asc" ? "on" : ""}" data-sd="asc">Ascending</button><button class="${sort.dir === "desc" ? "on" : ""}" data-sd="desc">Descending</button></span></div>`}
+    <h4>Group by</h4><div class="row"><span class="seg seg--sm"><button class="${group === "none" ? "on" : ""}" data-grp="none">Flat</button><button class="${group === "letter" ? "on" : ""}" data-grp="letter">A to Z</button></span></div>
+    <h4>Versions</h4><div class="row"><label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-gv ${gv ? "checked" : ""}> Group versions of a game</label></div></div>`
+          : "";
+        return `<span class="pillwrap sortwrap"><button class="sortbtn ${sortOpen ? "on" : ""}" id="sortbtn" title="Sort and group"><span>⇅</span><span class="sl"> <span style="font-weight:400;color:var(--muted)">Sort by</span> ${lab}${arrow}</span></button>${menu}</span>`;
+      }
+      // desktop: a labelled axis in its own grid area, beside the scrollbar
+      const railHTML = () =>
+        `<aside class="rail" id="rail" style="width:${Math.max(38, Math.max(...RAIL.buckets.map((b) => b.label.length)) * 6.6 + 20)}px"><div class="rail-in">${RAIL.buckets
+          .map((b) => {
+            const R = railR(RAIL.k);
+            return `<a href="#" data-rb="${b.n}" data-start="${b.start}" data-count="${b.count}" data-label="${R.title(b)}" data-icon="${R.icon ? 1 : 0}" title="${R.title(b)} · ${b.count} game${b.count > 1 ? "s" : ""}">${R.bar(b)}</a>`;
+          })
+          .join("")}<div class="thumb" id="thumb"></div></div></aside>`;
+      // phone: only the letters, only when sorted by name; other sorts get no rail on a phone
+      const phoneRailOn = () => phone && !!RAIL && active < 2;
+      const alphaHTML = () => {
+        const have = new Map(RAIL.buckets.map((b) => [b.label, b.n]));
+        return `<div class="alpha">${["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].map((L) => `<a href="#" data-al="${have.has(L) ? have.get(L) : -1}" class="${have.has(L) ? "" : "off"}">${L}</a>`).join("")}</div>`;
+      };
+      // taps glide (unless the user prefers reduced motion); drags and slides jump instantly so the content keeps up with the finger
+      const jumpTo = (n, smooth = false) => {
+        const c = document.getElementById("content"),
+          b = RAIL && RAIL.buckets[n];
+        if (!b || !c || !VL) return;
+        const top = VL.base + b.y - VL.stick;
+        c.scrollTo({
+          top,
+          behavior:
+            smooth && !matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "smooth"
+              : "auto",
+        });
+      };
+      const footerHTML = (list) =>
+        sel.size
+          ? `<footer class="area-footer sbar"><b>${sel.size}<span class="t"> selected</span></b><button data-bulk="fav" title="Favorite">♥<span class="t"> Favorite</span></button><button data-bulk="coll" title="Add to collection">+<span class="t"> Collection</span></button><button data-bulk="dl" title="Download">⬇<span class="t"> Download</span></button><button data-bulk="refresh" title="Refresh metadata">⟳<span class="t"> Refresh</span></button><button data-bulk="del" class="danger" title="Delete">✕<span class="t"> Delete</span></button><span class="sp"></span><button data-selclear>Clear</button></footer>`
+          : `<footer class="area-footer"><span>${list.length.toLocaleString()} games</span><a href="#" data-selall>Select all ${list.length.toLocaleString()} results</a><a href="#" data-smart>Save search as smart collection</a></footer>`;
+      // ---------- game pieces shared by tiles, table rows and phone rows ----------
+      const lettered = () => group === "letter" && effKey() === "name";
+      const flagsOf = (r) =>
+        `<span class="flag">${REGCODE[r.reg] || r.reg}</span>${r.lang
+          .slice(0, 1)
+          .map((l) => `<span class="flag">${l}</span>`)
+          .join("")}`;
+      const vbadge = (r) =>
+        gv && curVC[r.grp] > 1
+          ? `<span class="vb" title="${curVC[r.grp]} versions of this game">⧉${curVC[r.grp]}</span>`
+          : "";
+      const sdot = (r) =>
+        r.st
+          ? `<i class="sdot" title="${r.st}" style="background:${STCOL[r.st]}"></i>`
+          : "";
+      const selbox = (r, style = "") =>
+        `<label class="selbox ${sel.has(r.id) ? "on" : ""}" data-selbox="${r.id}" style="${style}"><input type="checkbox" ${sel.has(r.id) ? "checked" : ""}></label>`;
+      const menuHTML = (r) =>
+        `<div class="rowmenu" data-menuof="${r.id}"><button data-act="select">☐ Select</button><button data-act="play">▶ Play</button><button data-act="download">⬇ Download</button><button data-act="fav">${r.b.favorite ? "♥ Remove from favorites" : "♡ Add to favorites"}</button><button data-act="coll">+ Manage collections...</button><button data-act="link">⧉ Copy download link</button><hr><button data-act="status">◔ Set status...</button><button data-act="refresh">⟳ Refresh metadata</button><button data-act="edit">✎ Edit</button><button data-act="match">⌕ Match...</button><hr><button data-act="delete" class="danger">Delete...</button></div>`;
+      const favBtn = (r) =>
+        `<button class="ib ${r.b.favorite ? "fav" : ""}" data-fav="${r.id}" title="${r.b.favorite ? "Remove from favorites" : "Add to favorites"}">${r.b.favorite ? "♥" : "♡"}</button>`;
+      const emptyHTML = () =>
+        `<div class="empty"><div class="big">⌕</div><b>No games match${query.trim() ? ` "${esc(query.trim())}"` : ""}</b><div style="margin-top:4px">${activeCount() ? "Try removing a filter." : "Try a different spelling, a filename or a hash."}</div>${activeCount() || query.trim() ? `<button class="btn" data-clearfilters>Clear ${query.trim() ? "search and " : ""}filters</button>` : ""}</div>`;
+      const lid = (L) => `L-${L === "#" ? "num" : L}`;
+      // desktop and tablet tiles: text first, a small cover at the back
+      function tileHTML(r, idA = "") {
+        return `<div${idA} class="tile ${sel.has(r.id) ? "is-sel" : ""} ${r.b.missing ? "is-missing" : ""}" data-tile="${r.id}">${selbox(r)}${art(28, 42)}<div class="stack"><span class="nrow"><span class="name">${hl(r.name)}</span>${vbadge(r)}${sdot(r)}</span><span class="facts">${PLATFORMS[r.plat][0]} · ${r.year} · ${size(r.gb)}${flagsOf(r)}</span><span class="fn">${hl(r.file)}</span></div><div class="tact">${favBtn(r)}<button class="ib" data-menu="${r.id}" title="More">⋯</button></div>${menuId === r.id ? menuHTML(r) : ""}</div>`;
+      }
+      // phone grid: the cover and one line, like a photo feed. The title lives in the tooltip and the rows view.
+      // the one line under a cover is always the release year: it is what identifies a game at a glance
+      const metric = (r) => String(r.year);
+      const initials = (name) =>
+        name
+          .split(/[ .&]+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase();
+      function gtileHTML(r, idA = "") {
+        const p = PLATFORMS[r.plat];
+        return `<div${idA} class="gtile ${sel.has(r.id) ? "is-sel" : ""} ${r.b.missing ? "is-missing" : ""}" data-tile="${r.id}" title="${esc(r.name)} · ${esc(p[0])} · ${r.year}">
+    <div class="gart" style="background:linear-gradient(160deg, ${p[1]}dd, #2a2150 85%)">${selbox(r)}<span class="gov tl">${sdot(r)}${vbadge(r)}${r.b.favorite ? '<span style="color:#ff8fb3;font-size:11px;line-height:1">♥</span>' : ""}</span><span class="gtitle"><span>${hl(r.name)}</span></span><span class="gov tr"><button class="ib gh" data-menu="${r.id}" title="More">⋯</button></span></div>
+    <div class="gline"><i class="psys" style="background:${p[1]}" title="${esc(p[0])}">${initials(p[0])}</i><span>${metric(r)}</span></div>${menuId === r.id && !phone ? menuHTML(r) : ""}</div>`;
+      }
+      // the lists are virtualized: this only emits the empty host, mountVL() fills in the rows that are on screen
+      const tiles = (list) =>
+        list.length
+          ? `<div class="vl ${phone ? "vl-g" : "vl-t"}" id="vl"></div>`
+          : emptyHTML();
+      const COLS = [
+        ["", 3],
+        ["name", 24, "Title"],
+        ["plat", 10, "Platform"],
+        ["gb", 7, "Size", "r"],
+        ["added", 9, "Added"],
+        ["year", 8, "Released"],
+        ["rating", 7, "Rating", "r"],
+        ["hours", 6, "Length", "r"],
+        ["", 8, "Languages"],
+        ["reg", 7, "Regions"],
+        ["", 11, ""],
+      ];
+      function table(list) {
+        if (!list.length) return emptyHTML();
+        const k = effKey();
+        const head = COLS.map(
+          ([key, w, label = "", al]) =>
+            `<div class="th ${key ? "th-sort" : ""} ${k === key ? "on" : ""}" style="${al === "r" ? "text-align:right" : ""}" ${key ? `data-th="${key}"` : ""}>${label}${k === key ? (sort.dir === "asc" ? " ↑" : " ↓") : ""}</div>`,
+        ).join("");
+        return `<div class="vthead trow">${head}</div><div class="vl vl-tb" id="vl"></div>`;
+      }
+      const TCOLS = COLS.map((c) => c[1] + "fr").join(" ");
+      const tableRowHTML = (
+        r,
+      ) => `<div class="trow ${sel.has(r.id) ? "is-sel" : ""}" data-tile="${r.id}"><div class="tc" style="position:relative;overflow:visible">${selbox(r, "left:10px;top:50%;margin-top:-9px")}</div>
+  <div class="tc"><div class="cell-title">${art(18, 26)}<span class="name">${hl(r.name)}</span>${vbadge(r)}${sdot(r)}</div></div><div class="tc">${PLATFORMS[r.plat][0]}</div><div class="tc num">${size(r.gb)}</div><div class="tc">${r.added}</div><div class="tc">${r.year}</div>
+  <div class="tc num">${r.rating ? "★ " + r.rating.toFixed(1) : "—"}</div><div class="tc num">${r.hours ? r.hours + " h" : "—"}</div><div class="tc">${r.lang.map((l) => `<span class="flag" style="margin-left:0;margin-right:3px">${l}</span>`).join("")}</div><div class="tc"><span class="flag" style="margin-left:0">${REGCODE[r.reg] || r.reg}</span></div>
+  <div class="tc" style="position:relative;overflow:visible;text-align:right">${favBtn(r)}<button class="ib" data-menu="${r.id}" title="More">⋯</button><button class="ib" data-exp="${r.id}" title="Details"><span class="chev ${expanded.has(r.id) ? "open" : ""}">⌄</span></button>${menuId === r.id ? menuHTML(r) : ""}</div></div>${expanded.has(r.id) ? `<div class="tdetail">Metadata sources ${dots(r)} &nbsp;·&nbsp; ${r.a.provider.join(", ")} &nbsp;·&nbsp; File <span class="fn">${hl(r.file)}</span> &nbsp;·&nbsp; ${r.hours ? "About " + r.hours + " h to beat" : "No length data"}</div>` : ""}`;
+      const phoneRowHTML = (r) =>
+        `<div class="row2" data-tile="${r.id}" style="${sel.has(r.id) ? "background:var(--brand-tint)" : ""}"><span data-selart="${r.id}">${sel.has(r.id) ? `<span class="art" style="width:26px;height:38px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">✓</span>` : art(26, 38)}</span><div class="stack"><span class="nrow"><span class="name">${hl(r.name)}</span>${vbadge(r)}${sdot(r)}</span><span class="facts">${PLATFORMS[r.plat][0]} · ${r.year} · ${size(r.gb)}${flagsOf(r)}</span></div><div class="tact">${favBtn(r)}<button class="ib" data-menu="${r.id}" title="More">⋯</button></div></div>`;
+
+      // ---------- the virtual list ----------
+      // every item has a known height, so the whole list is laid out as numbers; only the rows near the viewport become DOM.
+      // while you scrub fast, those rows are drawn as simple placeholders (the colour of the cover and a few bars) and settle once you stop.
+      let VL = null;
+      const bar_ = (id, i, w) =>
+        `<i class="bar" style="width:${w[(id + i) % w.length]}%"></i>`;
+      function phHTML(r) {
+        const col = "rgba(35,37,43,.13)"; // flat gray, like any skeleton
+        const heart = `<span class="phico">♡</span>`,
+          dots = `<span class="phico">⋯</span>`;
+        if (phone && active === 0)
+          return `<div class="gtile ph"><div class="gart" style="background:${col}"><span class="gov tr">${dots}</span></div><div class="gline"><i class="bar" style="width:55%"></i></div></div>`;
+        if (phone)
+          return `<div class="row2 ph"><span class="art phart" style="width:26px;height:38px;background:${col}"></span><div class="stack">${bar_(r.id, 0, [62, 48, 72])}${bar_(r.id, 1, [40, 55, 34])}</div><div class="tact">${heart}${dots}</div></div>`;
+        if (active === 0)
+          return `<div class="tile ph"><span class="art phart" style="width:28px;height:42px;background:${col}"></span><div class="stack">${bar_(r.id, 0, [68, 52, 76])}${bar_(r.id, 1, [44, 58, 36])}${bar_(r.id, 2, [60, 40, 52])}</div><div class="tact">${heart}${dots}</div></div>`;
+        return `<div class="trow ph"><div class="tc"></div><div class="tc"><span class="art phart" style="width:18px;height:26px;background:${col}"></span>${bar_(r.id, 0, [70, 55, 80])}</div><div class="tc">${bar_(r.id, 1, [70, 50, 60])}</div><div class="tc">${bar_(r.id, 2, [60, 80, 50])}</div><div class="tc">${bar_(r.id, 0, [70, 55])}</div><div class="tc">${bar_(r.id, 1, [60, 80])}</div><div class="tc"></div><div class="tc"></div><div class="tc"></div><div class="tc"></div><div class="tc" style="text-align:right">${heart}${dots}</div></div>`;
+      }
+      const realHTML = (r) =>
+        phone
+          ? active === 0
+            ? gtileHTML(r)
+            : phoneRowHTML(r)
+          : active === 0
+            ? tileHTML(r)
+            : tableRowHTML(r);
+      function planVL(list, width) {
+        const cols = phone
+          ? active === 0
+            ? 5
+            : 1
+          : active === 0
+            ? dock === "left"
+              ? 3
+              : 4
+            : 1;
+        const gap = 3,
+          tw = (width - (cols - 1) * gap) / cols,
+          gtH = Math.round(tw * 1.5) + 17 + 4;
+        const itemH = (r) =>
+          phone
+            ? active === 0
+              ? gtH
+              : 52
+            : active === 0
+              ? 62
+              : 30 + (expanded.has(r.id) ? 46 : 0);
+        const headH = phone ? 26 : 28,
+          rows = [],
+          bucketY = [];
+        let y = 0,
+          cur = [];
+        const flush = () => {
+          if (!cur.length) return;
+          const h = Math.max(...cur.map(itemH));
+          rows.push({ y, h, items: cur });
+          y += h;
+          cur = [];
+        };
+        list.forEach((r) => {
+          const b = bid(r);
+          if (lettered() && b >= 0) {
+            flush();
+            rows.push({ y, h: headH, head: RAIL.buckets[b].label });
+            bucketY[b] = y;
+            y += headH;
+          } else if (b >= 0) {
+            flush();
+            bucketY[b] = y;
+          }
+          cur.push(r);
+          if (cur.length === cols) flush();
+        });
+        flush();
+        return { rows, total: y, bucketY, cols };
+      }
+      const rowIdx = (rows, t) => {
+        let lo = 0,
+          hi = rows.length - 1;
+        while (lo < hi) {
+          const m = (lo + hi) >> 1;
+          if (rows[m].y + rows[m].h <= t) lo = m + 1;
+          else hi = m;
+        }
+        return lo;
+      };
+      function paintVL(force) {
+        if (!VL) return;
+        const { c, host, plan } = VL,
+          st = c.scrollTop - VL.base,
+          over = 520;
+        const lo = rowIdx(plan.rows, st - over),
+          hi = rowIdx(plan.rows, st + c.clientHeight + over);
+        const key = lo + ":" + hi + ":" + (VL.fast ? 1 : 0) + ":" + VL.rev;
+        if (!force && key === VL.key) return;
+        VL.key = key;
+        let out = "";
+        for (let i = lo; i <= hi && i < plan.rows.length; i++) {
+          const row = plan.rows[i];
+          if (row.head != null) {
+            out += `<div class="vrow" style="top:${row.y}px;height:${row.h}px"><div class="lh">${row.head}</div></div>`;
+            continue;
+          }
+          const inner = row.items
+            .map((r) => (VL.fast ? phHTML(r) : realHTML(r)))
+            .join("");
+          const grid =
+            plan.cols > 1
+              ? `display:grid;grid-template-columns:repeat(${plan.cols},1fr);gap:0 3px;`
+              : "";
+          out += `<div class="vrow ${row.items.some((r) => r.id === menuId) ? "menu-open" : ""}" style="top:${row.y}px;height:${row.h}px;${grid}">${inner}</div>`;
+        }
+        host.innerHTML = out;
+      }
+      function mountVL(list, restore) {
+        VL = null;
+        const host = document.getElementById("vl"),
+          c = document.getElementById("content");
+        if (!host || !c) return;
+        const plan = planVL(list, host.clientWidth || 300);
+        host.style.height = plan.total + "px";
+        VL = {
+          c,
+          host,
+          plan,
+          base: host.offsetTop,
+          key: "",
+          fast: false,
+          rev: 0,
+          lastS: 0,
+          timer: 0,
+          raf: 0,
+        };
+        VL.stick =
+          (c.querySelector(".vthead") ? 30 : 0) +
+          (document.getElementById("psect") ? 27 : 0);
+        if (RAIL) RAIL.buckets.forEach((b) => (b.y = plan.bucketY[b.n] || 0));
+        c.scrollTop = restore;
+        VL.lastS = c.scrollTop;
+        paintVL(true);
+        c.addEventListener("scroll", () => {
+          if (VL.raf) return;
+          VL.raf = requestAnimationFrame(() => {
+            VL.raf = 0;
+            const d = Math.abs(c.scrollTop - VL.lastS);
+            VL.lastS = c.scrollTop;
+            if (d > 110 || VL.drag) {
+              VL.fast = true;
+              clearTimeout(VL.timer);
+              VL.timer = setTimeout(() => {
+                VL.fast = false;
+                host.classList.add("settle");
+                paintVL(true);
+                setTimeout(() => host.classList.remove("settle"), 180);
+              }, 140);
+            }
+            paintVL(false);
+          });
+        });
+      }
+      const curBucket = (off) => {
+        if (!RAIL || !VL) return 0;
+        const s = VL.c.scrollTop + off;
+        let cur = 0;
+        RAIL.buckets.forEach((b) => {
+          if (VL.base + b.y - VL.stick <= s) cur = b.n;
+        });
+        return cur;
+      };
+      const swarm = () =>
+        `<div class="swarm-wrap"><canvas id="swarm" height="560"></canvas><div class="tip" id="tip"></div></div><div class="legend">${PLATFORMS.map((p) => `<span><b style="background:${p[1]}"></b>${p[0]}</span>`).join("")}</div>`;
+      let pts = [];
+      function layout(W, H) {
+        const counts = PLATFORMS.map(
+            (_, i) => ROMS.filter((r) => r.plat === i).length,
+          ),
+          k = Math.min(12, W / 80);
+        const cs = counts.map((n, i) => ({
+          i,
+          r: k * Math.sqrt(n) * 0.62 + 10,
+          x: W / 2 + Math.cos(i * 2.4) * 200,
+          y: H / 2 + Math.sin(i * 2.4) * 150,
+        }));
+        for (let it = 0; it < 400; it++)
+          cs.forEach((a) => {
+            a.x += (W / 2 - a.x) * 0.01;
+            a.y += (H / 2 - a.y) * 0.014;
+            cs.forEach((b) => {
+              if (a === b) return;
+              const dx = a.x - b.x,
+                dy = a.y - b.y,
+                d = Math.hypot(dx, dy) || 0.01,
+                m = a.r + b.r + 6;
+              if (d < m) {
+                const p = (m - d) / 2;
+                a.x += (dx / d) * p;
+                a.y += (dy / d) * p;
+                b.x -= (dx / d) * p;
+                b.y -= (dy / d) * p;
+              }
+            });
+            a.x = Math.min(W - a.r, Math.max(a.r, a.x));
+            a.y = Math.min(H - a.r, Math.max(a.r, a.y));
+          });
+        pts = [];
+        cs.forEach((c) => {
+          let j = 0;
+          ROMS.forEach((r) => {
+            if (r.plat !== c.i) return;
+            const ang = j * 2.39996,
+              rad = k * 0.62 * Math.sqrt(j);
+            pts.push({
+              r,
+              x: c.x + Math.cos(ang) * rad,
+              y: c.y + Math.sin(ang) * rad,
+            });
+            j++;
+          });
+        });
+      }
+      function draw(list) {
+        const cv = document.getElementById("swarm");
+        if (!cv) return;
+        const dpr = window.devicePixelRatio || 1,
+          W = cv.clientWidth,
+          H = 560;
+        cv.width = W * dpr;
+        cv.height = H * dpr;
+        const g = cv.getContext("2d");
+        g.scale(dpr, dpr);
+        if (!pts.length || cv._w !== W) {
+          layout(W, H);
+          cv._w = W;
+        }
+        const hit = new Set(list.map((r) => r.id)),
+          all = hit.size === ROMS.length;
+        pts.forEach((p) => {
+          const on = hit.has(p.r.id);
+          g.beginPath();
+          g.fillStyle = on ? PLATFORMS[p.r.plat][1] : "rgba(120,125,140,.16)";
+          g.arc(p.x, p.y, on && !all ? 3.8 : 3, 0, 7);
+          g.fill();
+        });
+        cv.onmousemove = (e) => {
+          const b = cv.getBoundingClientRect(),
+            mx = e.clientX - b.left,
+            my = e.clientY - b.top;
+          let best = null,
+            bd = 64;
+          pts.forEach((p) => {
+            const d = (p.x - mx) ** 2 + (p.y - my) ** 2;
+            if (d < bd && hit.has(p.r.id)) {
+              bd = d;
+              best = p;
+            }
+          });
+          const tip = document.getElementById("tip");
+          if (!best) {
+            tip.style.display = "none";
+            return;
+          }
+          tip.style.display = "block";
+          tip.style.left = mx + 12 + "px";
+          tip.style.top = my + 12 + "px";
+          tip.innerHTML = `<b>${best.r.name}</b><br>${PLATFORMS[best.r.plat][0]} · ${best.r.year} · ${size(best.r.gb)}`;
+        };
+      }
+
+      // ---------- render + events ----------
+      const app = document.getElementById("app"),
+        tabsEl = document.getElementById("tabs");
+      function phoneHTML(list) {
+        const pills = pillsHTML();
+        const rows = list.length ? `<div class="vl vl-r" id="vl"></div>` : "";
+        return `<div class="phone ${phoneRailOn() ? "has-alpha" : ""}">
+    <div class="p-head">
+      <div class="p-row1"><div class="field"><span class="mag">⌕</span><input data-fid="s" placeholder="Name, file, hash..." value="${esc(query)}" aria-label="Search"></div>
+        <span class="seg view icons" id="viewseg">${["▦", "≡", "✺"].map((v, i) => `<button class="${i === active ? "on" : ""}" data-i="${i}" aria-label="${VIEWS[i]}">${v}</button>`).join("")}</span></div>
+      <div class="p-row2">${plusHTML()}<a href="#" class="advlink" data-adv>Advanced mode</a>${sortHTML()}</div>
+      ${pills ? `<div class="p-pills">${pills}</div>` : ""}
+    </div>
+    <div class="p-wrap"><div class="p-body ${sel.size ? "selmode" : ""}" id="content">${RAIL && active < 2 ? `<div class="p-sect" id="psect"><b id="psl"></b><span id="psc"></span><span class="sp"></span><a href="#" id="pss">Select</a><a href="#" id="psp">‹ Prev</a><a href="#" id="psn">Next ›</a></div>` : ""}${active === 2 ? swarm() : active === 0 ? tiles(list) : rows || emptyHTML()}</div>${phoneRailOn() ? railHTML() : ""}</div>
+    ${footerHTML(list)}${menuId != null && ROMS[menuId] ? menuHTML(ROMS[menuId]) : ""}
+    ${phoneAdv ? `<div class="sheet"><div class="sheet-top"><b>Advanced mode</b><a href="#" data-adv>Done</a></div>${sidebar()}</div>` : ""}
+  </div>`;
+      }
+      const dlgHTML = () =>
+        !dlg
+          ? ""
+          : `<div class="modal" data-modal><div class="dlg"><h2>Manage collections</h2><div style="font-size:12px;color:var(--muted);margin-bottom:6px">${dlg.ids.length === 1 ? esc(ROMS[dlg.ids[0]].name) : dlg.ids.length + " games"}</div>${COLLECTIONS.map((c) => `<label><input type="checkbox" data-dc="${esc(c)}" ${dlg.checked.has(c) ? "checked" : ""}>${c}</label>`).join("")}<input class="newc" data-fid="nc" placeholder="New collection name" value="${esc(dlg.name || "")}"><div class="actions"><button class="btn" data-dcancel>Cancel</button><button class="btn btn--flat" data-dok>Apply</button></div></div></div>`;
+      const HDR =
+        "The header band is the whole control surface: one top row (short search field with the live count, a '+ Add a filter' button, the view toggle at the upper right) and a bottom row that is collapsed until a filter exists, then holds only the summary pills. Pills: click to edit, x to remove, a property pill flips between only and exclude. Tiles are text first on desktop and tablet (cover art at the back). Only on a phone does the grid become a photo feed: cover art and one line under it (system icon, month added, size), the title in the tooltip.";
+      const TABS = [
+        ["Header + tiles", HDR],
+        ["Header + table", HDR + " Fixed 30 px rows."],
+        [
+          "Header + swarm",
+          HDR + " Filters and search light the matching dots in place.",
+        ],
+        [
+          "Advanced mode open",
+          "Advanced mode swings the full filter panel out beside the results (all logic, tri-state properties, every field). The pills stay simple and share the same state: change either and the other follows.",
+        ],
+        [
+          "iPhone SE (320 px)",
+          "The same header on a 320 px screen: search first, then Add a filter and Advanced mode on one line, view toggle as three icons, pills on a single scrolling line. Pills are simple (tap for a checkbox list); anything with logic lives in Advanced mode, which opens as a full-screen sheet.",
+        ],
+      ];
+      function render() {
+        const fid =
+          document.activeElement && document.activeElement.dataset
+            ? document.activeElement.dataset.fid
+            : null;
+        const pos =
+          fid && document.activeElement.selectionStart != null
+            ? document.activeElement.selectionStart
+            : null;
+        const sideScroll = (app.querySelector(".side") || {}).scrollTop || 0;
+        const contentScroll =
+          (document.getElementById("content") || {}).scrollTop || 0;
+        const list = matches();
+        buildRail(list);
+        const tabNow = phone ? 4 : dock === "left" ? 3 : active;
+        tabsEl.innerHTML = TABS.map(
+          (t, i) =>
+            `<button class="tab" role="tab" aria-selected="${i === tabNow}" data-i="${i}">${t[0]}</button>`,
+        ).join("");
+        if (phone)
+          app.innerHTML = `${phoneHTML(list)}<p class="note">${TABS[4][1]}</p>${dlgHTML()}`;
+        else
+          app.innerHTML = `${dlgHTML()}<div class="shell ${alphaOn() ? "has-rail" : ""} ${sideAnim && dock === "left" ? "enter" : ""}" data-dock="${dock}">${sidebar()}${mainPane(list)}</div><p class="note">${TABS[tabNow][1]}${bar ? "" : " Clicking a field opens its searchable list; the ∪ ∩ ∅ toggle is the any / all / none logic."}</p>`;
+        sideAnim = false; // the panel slides in once, when it opens; later re-renders must not replay it
+        const sideEl = app.querySelector(".side");
+        if (sideEl) sideEl.scrollTop = sideScroll;
+        tabsEl.querySelectorAll(".tab").forEach(
+          (b) =>
+            (b.onclick = () => {
+              const i = +b.dataset.i;
+              phone = i === 4;
+              phoneAdv = false;
+              if (i === 3) {
+                dock = "left";
+                active = 0;
+              } else if (i < 3) {
+                dock = "none";
+                active = i;
+              }
+              bar = dock === "none";
+              open = null;
+              sopen = null;
+              plusOpen = false;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-adv]").forEach(
+          (a) =>
+            (a.onclick = (e) => {
+              e.preventDefault();
+              open = null;
+              sopen = null;
+              plusOpen = false;
+              if (phone) {
+                phoneAdv = !phoneAdv;
+                render();
+                return;
+              }
+              dock = dock === "left" ? "none" : "left";
+              bar = dock === "none";
+              sideAnim = dock === "left";
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-ps]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              platSort = b.dataset.ps;
+              render();
+            }),
+        );
+        const clearAll = document.getElementById("clearall");
+        if (clearAll)
+          clearAll.onclick = (e) => {
+            e.preventDefault();
+            S = fresh();
+            pending = new Set();
+            open = null;
+            sopen = null;
+            render();
+          };
+        app.querySelectorAll("[data-flip]").forEach(
+          (el) =>
+            (el.onclick = (e) => {
+              if (e.target.dataset.rm) return;
+              S.tri[el.dataset.flip] = !S.tri[el.dataset.flip];
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-pill]").forEach(
+          (el) =>
+            (el.onclick = (e) => {
+              if (e.target.dataset.rm) return;
+              const k = el.dataset.pill;
+              if (open === k) closeOpen();
+              else {
+                closeOpen();
+                open = k;
+              }
+              plusOpen = false;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-rm]").forEach(
+          (el) =>
+            (el.onclick = (e) => {
+              e.stopPropagation();
+              const k = el.dataset.rm;
+              if (k.startsWith("b:")) S.tri[k.slice(2)] = null;
+              else if (k === "plats") {
+                S.plats.clear();
+                pending.delete("plats");
+              } else if (k === "len") {
+                S.lmin = S.lmax = "";
+                pending.delete("len");
+              } else {
+                const g = k.slice(2);
+                S.groups[g].sel.clear();
+                pending.delete(g);
+              }
+              if (open) open = null;
+              render();
+            }),
+        );
+        const plus = document.getElementById("plus");
+        if (plus)
+          plus.onclick = () => {
+            plusOpen = !plusOpen;
+            plusQ = "";
+            closeOpen();
+            render();
+          };
+        app.querySelectorAll("[data-field]").forEach(
+          (el) =>
+            (el.onclick = () => {
+              const f = el.dataset.field;
+              plusOpen = false;
+              plusQ = "";
+              if (f.startsWith("b:")) S.tri[f.slice(2)] = true;
+              else if (f === "plats") {
+                pending.add("plats");
+                open = "plats";
+              } else if (f === "len") {
+                pending.add("len");
+                open = "len";
+              } else {
+                const g = f.slice(2);
+                pending.add(g);
+                open = g;
+              }
+              popQ = "";
+              render();
+            }),
+        );
+        app.querySelectorAll("#viewseg button").forEach(
+          (b) =>
+            (b.onclick = () => {
+              active = +b.dataset.i;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-tri]").forEach((el) =>
+          el.querySelectorAll("button").forEach(
+            (b) =>
+              (b.onclick = () => {
+                S.tri[el.dataset.tri] = { all: null, yes: true, no: false }[
+                  b.dataset.v
+                ];
+                render();
+              }),
+          ),
+        );
+        app.querySelectorAll("[data-logic]").forEach((el) =>
+          el.querySelectorAll("button").forEach(
+            (b) =>
+              (b.onclick = () => {
+                S.groups[el.dataset.logic].logic = b.dataset.v;
+                render();
+              }),
+          ),
+        );
+        app.querySelectorAll("[data-open]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              open = null;
+              sopen = sopen === b.dataset.open ? null : b.dataset.open;
+              popQ = "";
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-pick]").forEach(
+          (c) =>
+            (c.onchange = () => {
+              const k = c.dataset.pick,
+                v = k === "plats" ? +c.dataset.val : c.dataset.val,
+                set = k === "plats" ? S.plats : S.groups[k].sel;
+              set.has(v) ? set.delete(v) : set.add(v);
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-clear]").forEach(
+          (a) =>
+            (a.onclick = (e) => {
+              e.preventDefault();
+              const k = a.dataset.clear;
+              if (k === "len") {
+                S.lmin = S.lmax = "";
+              } else (k === "plats" ? S.plats : S.groups[k].sel).clear();
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-closepop]").forEach(
+          (a) =>
+            (a.onclick = (e) => {
+              e.preventDefault();
+              closeOpen();
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-fid]").forEach(
+          (el) =>
+            (el.oninput = () => {
+              const f = el.dataset.fid;
+              if (f === "s") query = el.value;
+              else if (f === "p") popQ = el.value;
+              else if (f === "pq") plusQ = el.value;
+              else if (f === "nc") dlg.name = el.value;
+              else if (f === "lmin") S.lmin = el.value;
+              else S.lmax = el.value;
+              render();
+            }),
+        );
+        const reset = document.getElementById("reset");
+        if (reset)
+          reset.onclick = () => {
+            S = fresh();
+            open = null;
+            sopen = null;
+            pending = new Set();
+            render();
+          };
+        if (fid) {
+          const el = app.querySelector(`[data-fid="${fid}"]`);
+          if (el) {
+            el.focus();
+            if (pos != null && el.setSelectionRange && el.type === "text")
+              el.setSelectionRange(pos, pos);
+          }
+        }
+        // ---- v4: sort, group, selection, actions ----
+        const ids = list.map((r) => r.id);
+        const sb = document.getElementById("sortbtn");
+        if (sb)
+          sb.onclick = (e) => {
+            e.stopPropagation();
+            sortOpen = !sortOpen;
+            closeOpen();
+            plusOpen = false;
+            menuId = null;
+            render();
+          };
+        app.querySelectorAll("[data-sk]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              sort.key = b.dataset.sk;
+              sortOpen = false;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-sd]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              sort.key = effKey();
+              sort.dir = b.dataset.sd;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-grp]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              group = b.dataset.grp;
+              if (group === "letter") {
+                sort.key = "name";
+                sort.dir = "asc";
+              }
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-gv]").forEach(
+          (c) =>
+            (c.onchange = () => {
+              gv = c.checked;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-th]").forEach(
+          (th) =>
+            (th.onclick = () => {
+              const k = th.dataset.th;
+              if (effKey() === k)
+                sort.dir = sort.dir === "asc" ? "desc" : "asc";
+              else sort.dir = k === "added" || k === "rating" ? "desc" : "asc";
+              sort.key = k;
+              render();
+            }),
+        );
+        const toggleSel = (id, shift) => {
+          if (
+            shift &&
+            lastSel != null &&
+            ids.includes(lastSel) &&
+            ids.includes(id)
+          ) {
+            const a = ids.indexOf(lastSel),
+              b = ids.indexOf(id);
+            ids
+              .slice(Math.min(a, b), Math.max(a, b) + 1)
+              .forEach((i) => sel.add(i));
+          } else sel.has(id) ? sel.delete(id) : sel.add(id);
+          lastSel = id;
+          render();
+        };
+        // rows come and go as you scroll, so their clicks are handled once, on the scroller, by delegation
+        const rowClicks = (e) => {
+          const t = e.target;
+          const g = (s) => t.closest(s);
+          let n;
+          if ((n = g("[data-selbox]"))) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSel(+n.dataset.selbox, e.shiftKey);
+          } else if ((n = g("[data-selart]"))) {
+            e.stopPropagation();
+            toggleSel(+n.dataset.selart, e.shiftKey);
+          } else if ((n = g("[data-fav]"))) {
+            e.stopPropagation();
+            const r = ROMS[+n.dataset.fav];
+            r.b.favorite = !r.b.favorite;
+            render();
+          } else if ((n = g("[data-menu]"))) {
+            e.stopPropagation();
+            menuId = menuId === +n.dataset.menu ? null : +n.dataset.menu;
+            sortOpen = false;
+            plusOpen = false;
+            closeOpen();
+            render();
+          } else if ((n = g("[data-act]"))) {
+            e.stopPropagation();
+            const r = ROMS[menuId],
+              a = n.dataset.act;
+            menuId = null;
+            if (a === "fav") {
+              r.b.favorite = !r.b.favorite;
+              toast(
+                r.b.favorite ? "Added to favorites" : "Removed from favorites",
+              );
+            } else if (a === "select") {
+              sel.add(r.id);
+              lastSel = r.id;
+            } else if (a === "coll")
+              dlg = { ids: [r.id], checked: new Set(), name: "" };
+            else
+              toast(
+                {
+                  play: "Starts the player",
+                  download: "Downloads " + r.file,
+                  link: "Link copied",
+                  status: "Opens the status picker",
+                  refresh: "Refreshing metadata...",
+                  edit: "Opens the editor",
+                  match: "Opens the match dialog",
+                  delete: "Asks to confirm, then deletes",
+                }[a],
+              );
+            render();
+          } else if ((n = g("[data-exp]"))) {
+            e.stopPropagation();
+            const id = +n.dataset.exp;
+            expanded.has(id) ? expanded.delete(id) : expanded.add(id);
+            render();
+          } else if (
+            (n = g("[data-tile]")) &&
+            !g("button,label,a,input,.rowmenu")
+          ) {
+            if (sel.size || e.ctrlKey || e.metaKey)
+              toggleSel(+n.dataset.tile, e.shiftKey);
+            else toast("Opens the game page (not drawn)");
+          }
+        };
+        app.querySelectorAll("[data-selall]").forEach(
+          (a) =>
+            (a.onclick = (e) => {
+              e.preventDefault();
+              list.forEach((r) => sel.add(r.id));
+              render();
+              toast(`Selected all ${list.length.toLocaleString()} results`);
+            }),
+        );
+        app.querySelectorAll("[data-selclear]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              sel.clear();
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-bulk]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              const a = b.dataset.bulk,
+                bi = [...sel];
+              if (a === "fav") {
+                const all = bi.every((i) => ROMS[i].b.favorite);
+                bi.forEach((i) => (ROMS[i].b.favorite = !all));
+                toast(
+                  all
+                    ? "Removed from favorites"
+                    : `Added ${bi.length} to favorites`,
+                );
+              } else if (a === "coll")
+                dlg = { ids: bi, checked: new Set(), name: "" };
+              else
+                toast(
+                  {
+                    dl: `Downloads ${bi.length} games as a zip`,
+                    refresh: `Refreshing ${bi.length} games`,
+                    del: `Asks to confirm deleting ${bi.length} games`,
+                  }[a],
+                );
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-smart]").forEach(
+          (a) =>
+            (a.onclick = (e) => {
+              e.preventDefault();
+              toast("Opens Save as smart collection");
+            }),
+        );
+        const smart = document.getElementById("smart");
+        if (smart)
+          smart.onclick = () => toast("Opens Save as smart collection");
+        app.querySelectorAll("[data-clearfilters]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              S = fresh();
+              query = "";
+              pending = new Set();
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-dc]").forEach(
+          (c) =>
+            (c.onchange = () => {
+              c.checked
+                ? dlg.checked.add(c.dataset.dc)
+                : dlg.checked.delete(c.dataset.dc);
+            }),
+        );
+        app.querySelectorAll("[data-dcancel]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              dlg = null;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-dok]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              const names = [
+                  ...dlg.checked,
+                  ...(dlg.name.trim() ? [dlg.name.trim()] : []),
+                ],
+                n = dlg.ids.length;
+              dlg = null;
+              toast(
+                names.length
+                  ? `Added ${n} game${n > 1 ? "s" : ""} to ${names.join(", ")}`
+                  : "No collection chosen",
+              );
+              render();
+            }),
+        );
+        const content = document.getElementById("content"),
+          btt = document.getElementById("btt");
+        if (content) {
+          const host = content.closest(".shell, .phone");
+          if (host)
+            host.style.setProperty(
+              "--sb",
+              content.offsetWidth - content.clientWidth + "px",
+            );
+          content.addEventListener("click", rowClicks);
+          mountVL(list, contentScroll);
+          if (btt) {
+            btt.classList.toggle("show", contentScroll > 240);
+            content.onscroll = () =>
+              btt.classList.toggle("show", content.scrollTop > 240);
+            btt.onclick = () =>
+              content.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }
+        // ---- the rail: positioned like a labelled scrollbar, with a thumb you can drag ----
+        const rail = document.getElementById("rail");
+        if (rail && content && RAIL) {
+          const host = content.closest(".shell, .phone");
+          host.style.setProperty("--rail-w", rail.offsetWidth + "px");
+          const inner = rail.querySelector(".rail-in"),
+            thumb = document.getElementById("thumb"),
+            links = [...inner.querySelectorAll("a")],
+            H = inner.clientHeight;
+          links.forEach((a) => {
+            const y = (+a.dataset.start / RAIL.total) * H,
+              h = Math.max(2, (+a.dataset.count / RAIL.total) * H - 1);
+            a.style.top = y + "px";
+            a.style.height = h + "px";
+            if (h < 13) a.classList.add("thin");
+          });
+          const sync = () => {
+            const sh = content.scrollHeight,
+              ch = content.clientHeight;
+            thumb.style.top = (content.scrollTop / sh) * H + "px";
+            thumb.style.height = Math.max(14, (ch / sh) * H) + "px";
+            const cur = curBucket(44);
+            let hit = null;
+            links.forEach((a) => {
+              if (+a.dataset.rb <= cur) hit = a;
+            });
+            links.forEach((a) => a.classList.toggle("cur", a === hit));
+            const btt2 = document.getElementById("btt");
+            if (btt2) btt2.classList.toggle("show", content.scrollTop > 240);
+          };
+          content.onscroll = sync;
+          sync();
+          // one gesture for mouse, touch and pen: press and drag scrubs, a tap or click jumps to the bucket under the finger
+          links.forEach((a) => (a.onclick = (e) => e.preventDefault()));
+          const scrub = (y) => {
+            const r = inner.getBoundingClientRect();
+            content.scrollTop =
+              Math.min(1, Math.max(0, (y - r.top) / r.height)) *
+              (content.scrollHeight - content.clientHeight);
+          };
+          const bucketAt = (y) => {
+            const r = inner.getBoundingClientRect(),
+              f = ((y - r.top) / r.height) * RAIL.total;
+            let hit = 0;
+            RAIL.buckets.forEach((b) => {
+              if (b.start <= f) hit = b.n;
+            });
+            return hit;
+          };
+          let down = null;
+          // phone: a bubble names the section under the finger while scrubbing; the whole height maps to the whole list
+          let bubble = null;
+          bubble = document.createElement("div");
+          bubble.className = "abubble wide";
+          rail.parentNode.appendChild(bubble);
+          if (phone)
+            links.forEach((a) => {
+              if (a.dataset.label.length > 2 && a.dataset.icon !== "1")
+                a.classList.add("thin");
+            });
+          const tell = (y) => {
+            if (!bubble) return;
+            const b = RAIL.buckets[bucketAt(y)];
+            bubble.innerHTML = `${railR(RAIL.k).bubble(b)}<small>${b.count.toLocaleString()} games · ${Math.round(((b.start + b.count / 2) / RAIL.total) * 100)}%</small>`;
+            bubble.style.display = "flex";
+          };
+          rail.style.touchAction = "none";
+          rail.onpointerdown = (e) => {
+            rail.setPointerCapture(e.pointerId);
+            if (VL) VL.drag = true;
+            down = { y: e.clientY, moved: false };
+            rail.classList.add("drag");
+            scrub(e.clientY);
+            tell(e.clientY);
+            e.preventDefault();
+          };
+          rail.onpointermove = (e) => {
+            if (!down) return;
+            down.moved = true;
+            scrub(e.clientY);
+            tell(e.clientY);
+          };
+          const end = (e) => {
+            if (!down) return;
+            if (VL) VL.drag = false;
+            down = null;
+            rail.classList.remove("drag");
+            if (bubble) bubble.style.display = "none";
+          };
+          rail.onpointerup = end;
+          rail.onpointercancel = () => {
+            down = null;
+            if (VL) VL.drag = false;
+            rail.classList.remove("drag");
+            if (bubble) bubble.style.display = "none";
+          };
+        }
+        // phone waypoint header, fed by the same buckets as the rail
+        const ps = document.getElementById("psect");
+        if (ps && content && RAIL) {
+          const lab = document.getElementById("psl"),
+            cnt = document.getElementById("psc"),
+            curRef = { n: 0 };
+          const upd = () => {
+            const cur = curBucket(28);
+            curRef.n = cur;
+            const b = RAIL.buckets[cur];
+            lab.innerHTML = railR(RAIL.k).sect(b);
+            cnt.textContent =
+              b.count.toLocaleString() + (b.count === 1 ? " game" : " games");
+            const all = list
+              .slice(b.start, b.start + b.count)
+              .every((r) => sel.has(r.id));
+            document.getElementById("pss").textContent = all
+              ? "Deselect"
+              : "Select";
+          };
+          const prevScroll = content.onscroll;
+          content.onscroll = () => {
+            upd();
+            if (prevScroll) prevScroll();
+          };
+          upd();
+          document.getElementById("psn").onclick = (e) => {
+            e.preventDefault();
+            const nx = RAIL.buckets[curRef.n + 1];
+            if (nx) jumpTo(nx.n, true);
+          };
+          document.getElementById("psp").onclick = (e) => {
+            e.preventDefault();
+            const pv = RAIL.buckets[curRef.n - 1];
+            if (pv) jumpTo(pv.n, true);
+            else content.scrollTo({ top: 0, behavior: "smooth" });
+          };
+          document.getElementById("pss").onclick = (e) => {
+            e.preventDefault();
+            const b = RAIL.buckets[curRef.n],
+              rs = list.slice(b.start, b.start + b.count),
+              all = rs.every((r) => sel.has(r.id));
+            rs.forEach((r) => (all ? sel.delete(r.id) : sel.add(r.id)));
+            toast(
+              all
+                ? `Deselected ${b.count} in ${b.label}`
+                : `Selected ${b.count} in ${b.label}`,
+            );
+            const keep = content.scrollTop;
+            render();
+            const c2 = document.getElementById("content");
+            if (c2) c2.scrollTop = keep;
+          };
+        }
+        // phone letter strip: same gesture, but it jumps letter to letter as you slide and shows a bubble
+        const al = app.querySelector(".alpha");
+        if (al && content) {
+          al.style.touchAction = "none";
+          const bubble = document.createElement("div");
+          bubble.className = "abubble";
+          al.parentNode.appendChild(bubble);
+          const letters = [...al.querySelectorAll("a")];
+          const at = (y) => {
+            const r = al.getBoundingClientRect();
+            return letters[
+              Math.min(
+                letters.length - 1,
+                Math.max(
+                  0,
+                  Math.floor(((y - r.top) / r.height) * letters.length),
+                ),
+              )
+            ];
+          };
+          const go = (y, smooth) => {
+            const a = at(y);
+            bubble.textContent = a.textContent;
+            bubble.style.display = "flex";
+            if (+a.dataset.al >= 0) jumpTo(+a.dataset.al, smooth);
+          };
+          al.onpointerdown = (e) => {
+            al.setPointerCapture(e.pointerId);
+            al.dataset.on = "1";
+            go(e.clientY, true);
+            e.preventDefault();
+          };
+          al.onpointermove = (e) => {
+            if (al.dataset.on) go(e.clientY, false);
+          };
+          al.onpointerup = al.onpointercancel = () => {
+            delete al.dataset.on;
+            bubble.style.display = "none";
+          };
+          letters.forEach((a) => (a.onclick = (e) => e.preventDefault()));
+        }
+        draw(list);
+      }
+      document.addEventListener("mousemove", (e) => {
+        if (window.__drag) window.__drag(e);
+      });
+      document.addEventListener("mouseup", () => {
+        window.__drag = null;
+      });
+      document.addEventListener("click", (e) => {
+        if (
+          e.target.closest(
+            ".rowmenu,.sortmenu,.plusmenu,.pop,[data-menu],#sortbtn,#plus,[data-pill],.modal",
+          )
+        )
+          return;
+        let ch = false;
+        if (menuId != null) {
+          menuId = null;
+          ch = true;
+        }
+        if (sortOpen) {
+          sortOpen = false;
+          ch = true;
+        }
+        if (plusOpen) {
+          plusOpen = false;
+          ch = true;
+        }
+        if (ch) render();
+      });
+      document.addEventListener("keydown", (e) => {
+        const inField = /INPUT|TEXTAREA/.test(
+          (document.activeElement || {}).tagName,
+        );
+        if (e.key === "/" && !inField) {
+          e.preventDefault();
+          const el = app.querySelector('[data-fid="s"]');
+          if (el) el.focus();
+        } else if (e.key === "Escape") {
+          if (dlg) dlg = null;
+          else if (menuId != null || sortOpen || plusOpen || open || sopen) {
+            menuId = null;
+            sortOpen = false;
+            plusOpen = false;
+            closeOpen();
+          } else if (sel.size) sel.clear();
+          else if (query) query = "";
+          else return;
+          render();
+        } else if (
+          (e.ctrlKey || e.metaKey) &&
+          e.key.toLowerCase() === "a" &&
+          !inField
+        ) {
+          e.preventDefault();
+          matches().forEach((r) => sel.add(r.id));
+          render();
+        }
+      });
+      window.__reset = () => {
+        S = fresh();
+        pending = new Set();
+        query = "";
+        sel = new Set();
+        dlg = null;
+        menuId = null;
+        sortOpen = false;
+        plusOpen = false;
+        open = null;
+        sopen = null;
+        group = "none";
+        sort = { key: "relevance", dir: "asc" };
+        expanded = new Set();
+        gv = true;
+        phone = false;
+        phoneAdv = false;
+        dock = "none";
+        active = 0;
+        bar = false;
+        render();
+      };
+      window.__sortBy = (k, d) => {
+        sort = { key: k, dir: d || "asc" };
+        render();
+      };
+      window.__demoSel = () => {
+        window.__demoBar();
+        S = fresh();
+        pending = new Set();
+        query = "";
+        sel = new Set([3, 4, 5]);
+        render();
+      };
+      window.__demoLetters = () => {
+        S = fresh();
+        pending = new Set();
+        query = "";
+        group = "letter";
+        sort = { key: "name", dir: "asc" };
+        render();
+      };
+      window.__demoMenu = () => {
+        S = fresh();
+        pending = new Set();
+        query = "";
+        menuId = 2;
+        render();
+      };
+      window.__demoSort = () => {
+        S = fresh();
+        pending = new Set();
+        query = "astral";
+        sortOpen = true;
+        render();
+      };
+      window.__demoDlg = () => {
+        sel = new Set([3, 4]);
+        dlg = { ids: [3, 4], checked: new Set(["Favorites"]), name: "" };
+        render();
+      };
+      window.__demo = () => {
+        S = fresh();
+        query = "";
+        open = null;
+        S.tri.verified = true;
+        S.tri.missing = false;
+        S.plats = new Set([0, 2, 7]);
+        S.groups.genre.sel = new Set(["Action", "RPG"]);
+        S.groups.region.sel = new Set(["USA", "Europe"]);
+        S.groups.status.sel = new Set(["Hidden"]);
+        S.groups.status.logic = "none";
+        render();
+      };
+      window.__demoBar = () => {
+        S = fresh();
+        query = "";
+        open = null;
+        sopen = null;
+        plusOpen = false;
+        pending = new Set();
+        bar = true;
+        dock = "none";
+        active = 0;
+        S.tri.verified = true;
+        S.tri.missing = false;
+        S.plats = new Set([0, 2, 7]);
+        S.groups.genre.sel = new Set(["Action", "RPG"]);
+        S.groups.status.sel = new Set(["Hidden"]);
+        S.groups.status.logic = "none";
+        render();
+      };
+      render();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2084 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search designs v3 · a header band with pills</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --paper: #eef0ee;
+        --card: #ffffff;
+        --ink: #23252b;
+        --muted: #667085;
+        --rule: rgba(35, 37, 43, 0.12);
+        --brand: #5b3fa6;
+        --brand-tint: rgba(91, 63, 166, 0.1);
+        --chip: #e7e9ee;
+        --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      body {
+        font-family: var(--font);
+        background: var(--paper);
+        color: var(--ink);
+        padding: 24px;
+      }
+      h1 {
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .lede {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 6px 0 16px;
+        max-width: 78ch;
+        line-height: 1.5;
+      }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .tab {
+        border: 1px solid var(--rule);
+        background: var(--card);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .tab[aria-selected="true"] {
+        background: var(--brand);
+        color: #fff;
+        border-color: var(--brand);
+      }
+      .note {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 10px 0 0;
+        max-width: 100ch;
+        line-height: 1.5;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 25% 1fr;
+        width: 1210px;
+        max-width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--paper);
+        height: 760px;
+      }
+      /* sidebar: the filter drawer, docked */
+      .side {
+        border-right: 1px solid var(--rule);
+        overflow-y: auto;
+        background: #f6f7f6;
+        min-width: 0;
+      }
+      .side-head {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: #f6f7f6;
+        border-bottom: 1px solid var(--rule);
+        font-weight: 650;
+        font-size: 13px;
+      }
+      .tag {
+        background: var(--brand);
+        color: #fff;
+        border-radius: 999px;
+        font-size: 10.5px;
+        padding: 1px 7px;
+        font-weight: 600;
+      }
+      .btn {
+        border: 1px solid var(--brand);
+        color: var(--brand);
+        background: transparent;
+        border-radius: 999px;
+        font-size: 11px;
+        padding: 4px 9px;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .btn[disabled] {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .btn--flat {
+        background: var(--brand);
+        color: #fff;
+      }
+      section.sec {
+        padding: 10px 12px 6px;
+        border-bottom: 1px solid var(--rule);
+      }
+      h3 {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+      .bool {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        height: 28px;
+        font-size: 12px;
+      }
+      .bool.on .lbl {
+        color: var(--brand);
+        font-weight: 600;
+      }
+      .lbl {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ic {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        background: var(--chip);
+        color: var(--muted);
+        font-size: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        flex: none;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--card);
+        flex: none;
+      }
+      .seg button {
+        border: 0;
+        background: transparent;
+        padding: 2px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        color: var(--muted);
+        font-family: inherit;
+      }
+      .seg button.on {
+        background: var(--brand);
+        color: #fff;
+      }
+      .seg--sm button {
+        padding: 2px 6px;
+        font-size: 10.5px;
+      }
+      .seg button.on[data-v="all"],
+      .multi.idle .seg button.on {
+        background: var(--chip);
+        color: var(--ink);
+      }
+      .multi {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
+        align-items: center;
+        margin-bottom: 5px;
+        position: relative;
+      }
+      .sel {
+        text-align: left;
+        border: 1px solid var(--rule);
+        background: var(--card);
+        border-radius: 8px;
+        padding: 3px 8px;
+        min-height: 36px;
+        font-family: inherit;
+        cursor: pointer;
+        display: grid;
+        gap: 1px;
+        min-width: 0;
+      }
+      .sel small {
+        font-size: 9.5px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .sel span {
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--ink);
+      }
+      .sel span.ph {
+        color: var(--muted);
+      }
+      .pop {
+        position: absolute;
+        left: 0;
+        top: 40px;
+        z-index: 5;
+        width: 100%;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+        padding: 6px;
+      }
+      .pop input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font: inherit;
+        font-size: 12px;
+        margin-bottom: 4px;
+        outline: 0;
+      }
+      .pop label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        padding: 3px 4px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .pop label:hover {
+        background: var(--brand-tint);
+      }
+      .pop .list {
+        max-height: 170px;
+        overflow: auto;
+      }
+      .pop .foot {
+        display: flex;
+        justify-content: space-between;
+        padding-top: 4px;
+        font-size: 11px;
+      }
+      .len {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .len label {
+        border: 1px solid var(--rule);
+        background: var(--card);
+        border-radius: 8px;
+        padding: 3px 8px;
+        display: grid;
+        gap: 1px;
+        font-size: 9.5px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .len input {
+        border: 0;
+        outline: 0;
+        font: inherit;
+        font-size: 12px;
+        color: var(--ink);
+        width: 100%;
+        background: transparent;
+      }
+      .hint {
+        font-size: 10.5px;
+        color: var(--muted);
+        margin: 5px 0 6px;
+        line-height: 1.4;
+      }
+      .side-foot {
+        position: sticky;
+        bottom: 0;
+        background: #f6f7f6;
+        border-top: 1px solid var(--rule);
+        padding: 8px 12px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      /* main pane */
+      .main {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+      .pinned {
+        padding: 10px 14px 8px;
+        border-bottom: 1px solid var(--rule);
+        background: var(--paper);
+      }
+      .field {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        height: 40px;
+        padding: 0 14px;
+      }
+      .field input {
+        flex: 1;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 14px;
+        color: var(--ink);
+        min-width: 0;
+      }
+      .subline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        flex-wrap: wrap;
+      }
+      .count {
+        font-family: var(--mono);
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .pill {
+        background: var(--chip);
+        border-radius: 999px;
+        padding: 2px 9px;
+        font-size: 11px;
+        color: var(--ink);
+      }
+      .pill--brand {
+        background: var(--brand-tint);
+        color: var(--brand);
+      }
+      .view {
+        margin-left: auto;
+      }
+      .body {
+        overflow: auto;
+        flex: 1;
+        min-height: 0;
+      }
+      .art {
+        flex: none;
+        border-radius: 3px;
+        background: linear-gradient(160deg, #3b2a73, #6a4cc0 55%, #e0836a);
+      }
+      .dots {
+        display: inline-flex;
+        gap: 3px;
+      }
+      .dots i {
+        width: 9px;
+        height: 9px;
+        border-radius: 2px;
+        display: block;
+      }
+      .more {
+        color: var(--muted);
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+      mark {
+        background: rgba(255, 196, 0, 0.45);
+        color: inherit;
+        border-radius: 2px;
+      }
+      .fn {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .facts {
+        font-size: 11.5px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .name {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding: 10px 14px 14px;
+      }
+      .tile {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        height: 64px;
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 0 10px;
+      }
+      .stack {
+        min-width: 0;
+        display: grid;
+        gap: 1px;
+      }
+      .ledger {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+        table-layout: fixed;
+      }
+      .ledger th {
+        text-align: left;
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--rule);
+        position: sticky;
+        top: 0;
+        background: var(--paper);
+      }
+      .ledger td {
+        height: 34px;
+        padding: 0 10px;
+        border-bottom: 1px solid var(--rule);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ledger td.num {
+        font-family: var(--mono);
+        text-align: right;
+      }
+      .cell-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .swarm-wrap {
+        position: relative;
+        background: #fbfbfc;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+      }
+      .tip {
+        position: absolute;
+        pointer-events: none;
+        background: var(--ink);
+        color: #fff;
+        font-size: 11.5px;
+        padding: 6px 9px;
+        border-radius: 6px;
+        max-width: 280px;
+        line-height: 1.4;
+        display: none;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        padding: 8px 14px 12px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .legend b {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+      .empty {
+        padding: 40px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      /* The layout contract: one grid, four named areas, the dock decides where the sidebar sits. */
+      .shell {
+        grid-template-columns: unset;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+      .shell {
+        transition: grid-template-columns 0.28s ease;
+      }
+      .shell[data-dock="left"] {
+        grid-template-columns: 25% minmax(0, 1fr);
+        grid-template-areas: "sidebar header" "sidebar content" "sidebar footer";
+      }
+      .advlink {
+        font-size: 12px;
+        color: var(--brand);
+        text-decoration: underline dotted;
+        text-underline-offset: 3px;
+        white-space: nowrap;
+        margin-left: 2px;
+      }
+      .shell[data-dock="right"] {
+        grid-template-columns: minmax(0, 1fr) 25%;
+        grid-template-areas: "header sidebar" "content sidebar" "footer sidebar";
+      }
+      .shell[data-dock="none"] {
+        grid-template-columns: 0px minmax(0, 1fr);
+        grid-template-areas: "sidebar header" "sidebar content" "sidebar footer";
+      }
+      /* v3 tightening */
+      .pinned {
+        padding: 8px 12px 6px;
+      }
+      .hrow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .hrow .field {
+        flex: 0 1 300px;
+        height: 34px;
+        padding: 0 12px;
+      }
+      .hrow .seg.view {
+        height: 34px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+      .hrow .view button {
+        padding: 0 14px;
+        font-size: 12.5px;
+        font-weight: 550;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .hrow .view .vi {
+        font-size: 13px;
+      }
+      .field .mag {
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1;
+      }
+      .fcount {
+        font-size: 11.5px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .fcount b {
+        font-family: var(--mono);
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .row2 {
+        display: grid;
+        grid-template-columns: 26px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        height: 52px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .phone {
+        position: relative;
+        width: 320px;
+        height: 568px;
+        border: 1px solid var(--rule);
+        border-radius: 22px;
+        overflow: hidden;
+        background: var(--paper);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+      .p-head {
+        padding: 8px 10px 6px;
+        border-bottom: 1px solid var(--rule);
+        display: grid;
+        gap: 6px;
+      }
+      .phone .field {
+        height: 34px;
+        padding: 0 10px;
+      }
+      .p-row1 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .p-head {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .p-row1 .field {
+        flex: 1;
+        min-width: 0;
+      }
+      .p-row1 .field input {
+        width: 0;
+      }
+      .p-row1 .seg.view {
+        height: 34px;
+        flex: none;
+      }
+      .p-row1 .view button {
+        padding: 0 11px;
+        font-size: 14px;
+      }
+      .p-row2 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .phone .pillwrap {
+        position: static;
+      }
+      .phone .plus {
+        height: 30px;
+        padding: 0 10px 0 8px;
+        font-size: 12px;
+        width: auto;
+        border-radius: 999px;
+        gap: 5px;
+        white-space: nowrap;
+      }
+      .phone .plusmenu {
+        left: 8px;
+        right: 8px;
+        top: 100px;
+        width: auto;
+      }
+      .phone .pop--pill {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: auto;
+        border-radius: 14px 14px 0 0;
+        z-index: 25;
+        max-height: 60%;
+      }
+      .p-pills {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .p-pills .fpill {
+        flex: none;
+      }
+      .p-count {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .p-body {
+        flex: 1;
+        overflow: auto;
+        min-height: 0;
+      }
+      .icons button {
+        padding: 3px 9px;
+      }
+      .sheet {
+        position: absolute;
+        inset: 0;
+        background: #f6f7f6;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+      }
+      .sheet-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .sheet-top a {
+        color: var(--brand);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .sheet .side {
+        display: block;
+        visibility: visible;
+        width: 100%;
+        border: 0;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+      }
+      .hrow .view {
+        margin-left: auto;
+      }
+      .hrow .plus {
+        width: auto;
+        height: 32px;
+        padding: 0 13px 0 10px;
+        gap: 6px;
+        font-size: 12.5px;
+        font-weight: 550;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .plus .pl {
+        font-size: 16px;
+        line-height: 1;
+      }
+      .hrow .plus:not(.on) {
+        background: var(--brand-tint);
+      }
+      .subline {
+        align-items: center;
+      }
+      .seg.view button {
+        padding: 4px 11px;
+      }
+      .subline {
+        margin-top: 6px;
+        gap: 6px;
+      }
+      .clearall {
+        font-size: 11px;
+        color: var(--muted);
+        margin-left: 4px;
+        text-decoration: none;
+      }
+      .fpill {
+        padding: 1px 3px 1px 9px;
+      }
+      .plus {
+        width: 28px;
+        height: 28px;
+        flex: none;
+      }
+      .plusmenu {
+        top: 34px;
+      }
+      .tiles {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 8px 12px 12px;
+      }
+      .shell[data-dock="left"] .tiles {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .tile {
+        height: 56px;
+        grid-template-columns: 28px 1fr auto;
+        gap: 8px;
+        padding: 0 8px;
+        border-radius: 6px;
+      }
+      .tile .name {
+        font-size: 12.5px;
+      }
+      .ledger td {
+        height: 30px;
+      }
+      .area-header {
+        grid-area: header;
+      }
+      .area-content {
+        grid-area: content;
+        overflow: auto;
+        min-height: 0;
+      }
+      .area-footer {
+        grid-area: footer;
+        border-top: 1px solid var(--rule);
+        padding: 6px 14px;
+        font-size: 11.5px;
+        color: var(--muted);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        background: var(--paper);
+      }
+      .area-footer a {
+        color: var(--brand);
+        text-decoration: none;
+      }
+      .side {
+        grid-area: sidebar;
+        container: side / inline-size;
+      }
+      .btn--ghost {
+        border-color: transparent;
+        color: var(--muted);
+        padding: 4px 6px;
+      }
+      .btn--ghost:hover:not([disabled]) {
+        color: var(--brand);
+      }
+      @container side (max-width: 339px) {
+        .lbl-full {
+          display: none;
+        }
+      }
+      @container side (min-width: 340px) {
+        .lbl-short {
+          display: none;
+        }
+      }
+      .shell[data-dock="right"] .side {
+        border-right: 0;
+        border-left: 1px solid var(--rule);
+      }
+      .shell[data-dock="none"] .side {
+        visibility: hidden;
+        border-right: 0;
+        transition: visibility 0s linear 0.28s;
+      }
+      .side {
+        overflow-x: hidden;
+      }
+      .pillwrap {
+        position: relative;
+        display: inline-block;
+      }
+      .fpill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--brand-tint);
+        color: var(--brand);
+        border: 1px solid rgba(91, 63, 166, 0.25);
+        border-radius: 999px;
+        padding: 2px 4px 2px 10px;
+        font-size: 11.5px;
+        cursor: pointer;
+        white-space: nowrap;
+        max-width: 380px;
+      }
+      .fpill .t {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .fpill b {
+        font-weight: 600;
+        opacity: 0.7;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .fpill b:hover {
+        background: rgba(91, 63, 166, 0.18);
+        opacity: 1;
+      }
+      .fpill--no {
+        background: rgba(185, 28, 28, 0.08);
+        color: #b91c1c;
+        border-color: rgba(185, 28, 28, 0.25);
+      }
+      .plus {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px dashed var(--brand);
+        color: var(--brand);
+        background: transparent;
+        font-size: 15px;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .plus:hover,
+      .plus.on {
+        background: var(--brand);
+        color: #fff;
+        border-style: solid;
+      }
+      .plusmenu {
+        position: absolute;
+        left: 0;
+        top: 30px;
+        z-index: 6;
+        width: 290px;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+        padding: 8px;
+      }
+      .plusmenu input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 5px 8px;
+        font: inherit;
+        font-size: 12px;
+        outline: 0;
+        margin-bottom: 4px;
+      }
+      .plusmenu .list {
+        max-height: 300px;
+        overflow: auto;
+      }
+      .plusmenu h4 {
+        font-size: 9.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 8px 4px 2px;
+        font-weight: 600;
+      }
+      .plusmenu button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 12px;
+        padding: 4px 6px;
+        border-radius: 5px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .plusmenu button:hover {
+        background: var(--brand-tint);
+      }
+      .plusmenu button[disabled] {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .pop--pill {
+        width: 270px;
+        top: 30px;
+      }
+      .pophead {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .pophead input[type="text"] {
+        flex: 0 1 130px;
+        width: auto;
+        min-width: 0;
+        margin-bottom: 0;
+      }
+      .pclear {
+        font-size: 11.5px;
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .pclear:hover {
+        color: var(--brand);
+      }
+      .pdone {
+        margin-left: auto;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #fff !important;
+        background: var(--brand);
+        padding: 4px 12px;
+        border-radius: 999px;
+        text-decoration: none;
+      }
+      .pop--plat {
+        width: 320px;
+      }
+      .pop--plat .list {
+        max-height: 250px;
+      }
+      .platrow {
+        display: grid !important;
+        grid-template-columns: auto 10px 1fr auto;
+        gap: 9px;
+        align-items: center;
+        padding: 6px 4px !important;
+      }
+      .platrow i,
+      .chipx i,
+      .pd {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+        flex: none;
+      }
+      .pd {
+        margin-right: 3px;
+        box-shadow: 0 0 0 1.5px #fff;
+      }
+      .pc {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .selchips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 6px;
+      }
+      .chipx {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 5px;
+        background: var(--brand-tint);
+        color: var(--brand);
+        border-radius: 999px;
+        padding: 2px 9px !important;
+        font-size: 11px !important;
+        cursor: pointer;
+      }
+      .platbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: var(--muted);
+        margin: 2px 2px 4px;
+      }
+      .phone .pop--plat {
+        width: auto;
+        max-height: 82%;
+      }
+      .phone .pop--plat .list {
+        max-height: 300px;
+      }
+      .phone .platrow {
+        padding: 10px 6px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>/search v3: one header band, results below</h1>
+    <p class="lede">
+      v3: one compact header band (search, + Add a filter, Advanced mode, view
+      toggle) with simple summary pills below it; Advanced mode swings out the
+      full filter panel, and pills and panel share one state. Illustrative,
+      made-up data (about 600 roms). The 25% sidebar is today's FilterDrawer,
+      docked instead of hidden behind a button, with the same sections, labels,
+      controls and behavior: 11 tri-state properties, the platform multi-select,
+      13 searchable multi-selects each with its any/all/none logic, the
+      game-length range, active-count tag, Save as smart collection and Reset.
+      Every control filters the results live. Icons are letter badges here; the
+      real component uses its mdi icons.
+    </p>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="app"></div>
+
+    <script>
+      // ---------- data (fixed seed) ----------
+      let seed = 11;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const pick = (a) => a[Math.floor(rnd() * a.length)];
+      const some = (a, max) => {
+        const n = 1 + Math.floor(rnd() * max);
+        const out = new Set();
+        for (let i = 0; i < n; i++) out.add(pick(a));
+        return [...out];
+      };
+      const PLATFORMS = [
+        ["Meta Quest 3", "#5b3fa6", 9],
+        ["LeapTV", "#e0836a", 7],
+        ["Polymega", "#2e7d9a", 8],
+        ["Google Stadia", "#d9534f", 5],
+        ["Plug & Play", "#6aa84f", 6],
+        ["Imlac PDS-1", "#b8860b", 3],
+        ["ScummVM", "#2f6f5e", 6],
+        ["V.Smile", "#c2569e", 5],
+        ["Windows Mixed Reality", "#4a5fc1", 4],
+        ["PlayStation VR2", "#1f2937", 5],
+        ["Mega Duck", "#9aa5b1", 2],
+        ["Game.com", "#e1a100", 4],
+      ];
+      const A = [
+        "Astral",
+        "Shadow",
+        "Crimson",
+        "Eternal",
+        "Silent",
+        "Ultimate",
+        "Super",
+        "Mega",
+        "Radiant",
+        "Legend of",
+        "Iron",
+        "Neon",
+        "Frozen",
+        "Lunar",
+        "Hollow",
+        "Golden",
+      ];
+      const B = [
+        "Adventure",
+        "Rampage",
+        "Hunters",
+        "Force",
+        "Paradise",
+        "Horizon",
+        "Odyssey",
+        "Heroes",
+        "Strike",
+        "Chronicles",
+        "Inferno",
+        "Drift",
+        "Kingdom",
+        "Protocol",
+        "Rally",
+        "Quest",
+      ];
+      const C = [
+        "II",
+        "III",
+        "64",
+        "Advance",
+        "Deluxe",
+        "Reloaded",
+        "DX",
+        "Zero",
+        "Evolution",
+        "Last Stand",
+        "Broken Seal",
+        "Ascension",
+        "",
+      ];
+      const REG = [
+        "USA",
+        "Europe",
+        "Japan",
+        "Brazil",
+        "Asia",
+        "Korea",
+        "World",
+        "Australia",
+      ];
+      const EXT = ["zip", "bin", "iso", "rom", "7z"];
+      const PROVC = [
+        "#7c5cff",
+        "#2b9348",
+        "#d97706",
+        "#2563eb",
+        "#db2777",
+        "#0f766e",
+      ];
+      // filter vocabulary, 1:1 with FilterDrawer.vue
+      const BOOLS = [
+        ["matched", "Matched", 0.98, "M"],
+        ["favorite", "Favorite", 0.06, "★"],
+        ["duplicate", "Has versions", 0.2, "V"],
+        ["playable", "Playable in browser", 0.3, "P"],
+        ["missing", "Missing from disk", 0.02, "?"],
+        ["physical", "Physical game", 0.03, "B"],
+        ["verified", "Hash verified", 0.25, "✓"],
+        ["ra", "Has RetroAchievements", 0.1, "T"],
+        ["saves", "Has saves", 0.08, "S"],
+        ["states", "Has save states", 0.06, "s"],
+        ["soundtrack", "Has soundtrack", 0.05, "♪"],
+      ];
+      const GROUPS = [
+        [
+          "genre",
+          "Genre",
+          "G",
+          [
+            "Action",
+            "Adventure",
+            "RPG",
+            "Puzzle",
+            "Sport",
+            "Racing",
+            "Platformer",
+            "Shooter",
+            "Strategy",
+            "Simulation",
+          ],
+        ],
+        [
+          "franchise",
+          "Franchise",
+          "F",
+          ["Astral", "Shadow", "Crimson", "Eternal", "Silent", "Neon", "Lunar"],
+        ],
+        [
+          "collection",
+          "Collection",
+          "C",
+          ["Co-op night", "Long road trip", "Shelf A", "Shelf B"],
+        ],
+        [
+          "company",
+          "Company",
+          "Co",
+          ["Nova Works", "Pixel Harbor", "Kite Games", "Ember Labs"],
+        ],
+        ["publisher", "Publisher", "Pu", ["Brightline", "Orbit", "Kestrel"]],
+        [
+          "developer",
+          "Developer",
+          "D",
+          ["Studio Nine", "Tallow", "Wren Interactive"],
+        ],
+        ["age", "Age rating", "A", ["E", "E10+", "T", "M"]],
+        ["region", "Region", "R", REG],
+        ["language", "Language", "L", ["en", "ja", "fr", "de", "es", "pt"]],
+        ["tag", "Tag", "#", ["Beta", "Demo", "Rev A", "Hack"]],
+        ["players", "Player count", "1+", ["1", "2", "3-4", "5+"]],
+        [
+          "provider",
+          "Metadata provider",
+          "Mp",
+          [
+            "IGDB",
+            "Screenscraper",
+            "MobyGames",
+            "RetroAchievements",
+            "Hasheous",
+            "LaunchBox",
+          ],
+        ],
+        [
+          "status",
+          "Status",
+          "St",
+          ["Playing", "Backlogged", "Finished", "Hidden", "Incomplete"],
+        ],
+      ];
+      const ROMS = [];
+      const totalW = PLATFORMS.reduce((s, p) => s + p[2], 0);
+      PLATFORMS.forEach((p, pi) => {
+        const n = Math.round((600 * p[2]) / totalW);
+        for (let i = 0; i < n; i++) {
+          const name =
+            `${pick(A)} ${pick(B)}${pick(C) ? " " + pick(C) : ""}`.trim();
+          const region = pick(REG);
+          const r = {
+            name,
+            plat: pi,
+            year: 1984 + Math.floor(rnd() * 42),
+            gb: Math.round((0.02 + rnd() * rnd() * 9) * 100) / 100,
+            added: `2026-${String(1 + Math.floor(rnd() * 10)).padStart(2, "0")}-${String(1 + Math.floor(rnd() * 28)).padStart(2, "0")}`,
+            file: `${name} (${region}).${pick(EXT)}`,
+            b: {},
+            a: {},
+            hours:
+              rnd() < 0.55
+                ? Math.round((2 + rnd() * rnd() * 60) * 10) / 10
+                : null,
+          };
+          BOOLS.forEach(([k, , p]) => (r.b[k] = rnd() < p));
+          GROUPS.forEach(
+            ([k, , , vals]) =>
+              (r.a[k] =
+                k === "region"
+                  ? [region]
+                  : k === "provider"
+                    ? some(vals, 3)
+                    : k === "status"
+                      ? rnd() < 0.5
+                        ? [pick(vals)]
+                        : []
+                      : rnd() < 0.8
+                        ? some(vals, k === "genre" ? 3 : 2)
+                        : []),
+          );
+          r.prov = r.a.provider.map((v) =>
+            GROUPS.find((g) => g[0] === "provider")[3].indexOf(v),
+          );
+          ROMS.push(r);
+        }
+      });
+      ROMS.sort((a, b) => a.name.localeCompare(b.name));
+      ROMS.forEach((r, i) => (r.id = i));
+
+      // ---------- state ----------
+      const fresh = () => ({
+        tri: Object.fromEntries(BOOLS.map((b) => [b[0], null])),
+        plats: new Set(),
+        groups: Object.fromEntries(
+          GROUPS.map((g) => [g[0], { sel: new Set(), logic: "any" }]),
+        ),
+        lmin: "",
+        lmax: "",
+      });
+      let platSort = "count",
+        phone = false,
+        phoneAdv = false,
+        dock = "none",
+        sopen = null,
+        S = fresh(),
+        query = "",
+        open = null,
+        popQ = "",
+        active = 0,
+        bar = false,
+        pending = new Set(),
+        plusOpen = false,
+        plusQ = "";
+      const activeCount = () =>
+        Object.values(S.tri).filter((v) => v !== null).length +
+        (S.plats.size ? 1 : 0) +
+        Object.values(S.groups).filter((g) => g.sel.size).length +
+        (S.lmin !== "" || S.lmax !== "" ? 1 : 0);
+      function passes(r) {
+        for (const [k, v] of Object.entries(S.tri))
+          if (v !== null && r.b[k] !== v) return false;
+        if (S.plats.size && !S.plats.has(r.plat)) return false;
+        for (const [k, g] of Object.entries(S.groups)) {
+          if (!g.sel.size) continue;
+          const have = r.a[k],
+            sel = [...g.sel];
+          if (g.logic === "any" && !sel.some((v) => have.includes(v)))
+            return false;
+          if (g.logic === "all" && !sel.every((v) => have.includes(v)))
+            return false;
+          if (g.logic === "none" && sel.some((v) => have.includes(v)))
+            return false;
+        }
+        if (S.lmin !== "" || S.lmax !== "") {
+          if (r.hours === null) return false;
+          if (S.lmin !== "" && r.hours < +S.lmin) return false;
+          if (S.lmax !== "" && r.hours > +S.lmax) return false;
+        }
+        const q = query.trim().toLowerCase();
+        return (
+          !q ||
+          (r.name + " " + r.file + " " + PLATFORMS[r.plat][0])
+            .toLowerCase()
+            .includes(q)
+        );
+      }
+      const matches = () => ROMS.filter(passes);
+      const hl = (s) => {
+        const q = query.trim();
+        if (!q) return s;
+        const i = s.toLowerCase().indexOf(q.toLowerCase());
+        return i < 0
+          ? s
+          : s.slice(0, i) +
+              "<mark>" +
+              s.slice(i, i + q.length) +
+              "</mark>" +
+              s.slice(i + q.length);
+      };
+      const size = (gb) =>
+        gb >= 1 ? `${gb.toFixed(2)} GB` : `${Math.round(gb * 1024)} MB`;
+      const dots = (r) =>
+        `<span class="dots">${r.prov.map((p) => `<i style="background:${PROVC[p]}"></i>`).join("")}</span>`;
+      const art = (w, h) =>
+        `<span class="art" style="width:${w}px;height:${h}px"></span>`;
+      const esc = (s) => String(s).replace(/"/g, "&quot;");
+
+      // ---------- sidebar (the drawer, docked) ----------
+      function sidebar() {
+        const n = activeCount();
+        const bools = BOOLS.map(
+          ([
+            k,
+            label,
+            ,
+            ic,
+          ]) => `<div class="bool ${S.tri[k] !== null ? "on" : ""}"><span class="lbl"><span class="ic">${ic}</span>${label}</span>
+    <span class="seg seg--sm" data-tri="${k}"><button class="${S.tri[k] === null ? "on" : ""}" data-v="all" title="Show all">○</button><button class="${S.tri[k] === true ? "on" : ""}" data-v="yes" title="Only: ${label}">✓</button><button class="${S.tri[k] === false ? "on" : ""}" data-v="no" title="Exclude: ${label}">✕</button></span></div>`,
+        ).join("");
+        const popFor = (key, items, selSet, counts) => {
+          const q = popQ.trim().toLowerCase();
+          const shown = items.filter(
+            (v) =>
+              !q ||
+              String(v.label ?? v)
+                .toLowerCase()
+                .includes(q),
+          );
+          return `<div class="pop"><div class="pophead"><input type="text" data-fid="p" placeholder="Search" value="${esc(popQ)}"><a href="#" data-clear="${key}" class="pclear">Clear</a><a href="#" data-closepop class="pdone">Done</a></div>
+      <div class="list">${
+        shown
+          .map((v) => {
+            const val = v.value ?? v,
+              lab = v.label ?? v;
+            return `<label><input type="checkbox" data-pick="${key}" data-val="${esc(val)}" ${selSet.has(val) ? "checked" : ""}>${lab}${counts ? ` <span style="margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:10.5px">${counts(val)}</span>` : ""}</label>`;
+          })
+          .join("") || '<div class="hint">No match</div>'
+      }</div></div>`;
+        };
+        const platItems = PLATFORMS.map((p, i) => ({ value: i, label: p[0] }));
+        const platCount = (i) => ROMS.filter((r) => r.plat === i).length;
+        const platVal = S.plats.size
+          ? [...S.plats].map((i) => PLATFORMS[i][0]).join(", ")
+          : "";
+        const multis = GROUPS.map(([k, label, ic, vals]) => {
+          const g = S.groups[k];
+          const v = [...g.sel].join(", ");
+          return `<div class="multi ${g.sel.size ? "" : "idle"}"><button class="sel" data-open="${k}"><small><span class="ic">${ic}</span>${label}</small><span class="${v ? "" : "ph"}">${v || "Any"}</span></button>
+      <span class="seg seg--sm" data-logic="${k}">${["any", "all", "none"].map((l, i) => `<button class="${g.logic === l ? "on" : ""}" data-v="${l}" title="Match ${l.toUpperCase()} of the selected values">${["∪", "∩", "∅"][i]}</button>`).join("")}</span>
+      ${sopen === k ? popFor(k, vals, g.sel) : ""}</div>`;
+        }).join("");
+        return `<aside class="side">
+    <div class="side-head"><span>Filters</span>${n ? `<span class="tag">${n}</span>` : ""}<span style="flex:1"></span><button class="btn btn--ghost" ${n ? "" : "disabled"} id="reset" title="Reset filters">↺ Reset</button><button class="btn" ${n ? "" : "disabled"} id="smart" title="Save as smart collection"><span class="lbl-full">Save smart collection</span><span class="lbl-short">Save</span></button></div>
+    <section class="sec"><h3>Properties</h3>${bools}</section>
+    <section class="sec"><h3>Platforms</h3><div class="multi" style="grid-template-columns:1fr"><button class="sel" data-open="plats"><small><span class="ic">▣</span>Platforms</small><span class="${platVal ? "" : "ph"}">${platVal || "All platforms"}</span></button>${sopen === "plats" ? popFor("plats", platItems, S.plats, platCount) : ""}</div></section>
+    <section class="sec"><h3>Tags</h3>${multis}</section>
+    <section class="sec"><h3>Game length</h3><div class="len"><label>From (hours)<input type="number" data-fid="lmin" placeholder="Any" value="${esc(S.lmin)}"></label><label>To (hours)<input type="number" data-fid="lmax" placeholder="Any" value="${esc(S.lmax)}"></label></div>
+      ${S.lmin !== "" || S.lmax !== "" ? '<p class="hint">Games without a HowLongToBeat time are hidden while a length range is set.</p>' : ""}</section>
+</aside>`;
+      }
+
+      // ---------- pill bar: the panel's fields as pills + a (+) button ----------
+      const FIELDS = [
+        ...BOOLS.map((b) => ({
+          k: "b:" + b[0],
+          label: b[1],
+          head: "Properties",
+          ic: b[3],
+        })),
+        { k: "plats", label: "Platforms", head: "Platforms", ic: "▣" },
+        ...GROUPS.map((g) => ({
+          k: "g:" + g[0],
+          label: g[1],
+          head: "Tags",
+          ic: g[2],
+        })),
+        { k: "len", label: "Game length", head: "Game length", ic: "h" },
+      ];
+      const platItemsTop = PLATFORMS.map((p, i) => ({ value: i, label: p[0] }));
+      const platCountTop = (i) => ROMS.filter((r) => r.plat === i).length;
+      function popup(key) {
+        if (key === "plats") {
+          // a long list: find it fast, selected first, counts, big touch rows
+          const q = popQ.trim().toLowerCase();
+          const all = PLATFORMS.map((p, i) => ({
+            i,
+            name: p[0],
+            color: p[1],
+            n: platCountTop(i),
+          }));
+          const list = all
+            .filter((p) => !q || p.name.toLowerCase().includes(q))
+            .sort(
+              (a, b) =>
+                S.plats.has(b.i) - S.plats.has(a.i) ||
+                (platSort === "az" ? a.name.localeCompare(b.name) : b.n - a.n),
+            );
+          const sel = all.filter((p) => S.plats.has(p.i));
+          return `<div class="pop pop--pill pop--plat"><div class="pophead"><input type="text" data-fid="p" placeholder="Find a platform" value="${esc(popQ)}"><a href="#" data-clear="plats" class="pclear">Clear</a><a href="#" data-closepop class="pdone">Done</a></div>
+      ${sel.length ? `<div class="selchips">${sel.map((p) => `<label class="chipx"><input type="checkbox" data-pick="plats" data-val="${p.i}" checked hidden><i style="background:${p.color}"></i>${p.name} ×</label>`).join("")}</div>` : ""}
+      <div class="platbar"><span>${list.length} of ${all.length} platforms</span><span class="seg seg--sm">${[
+        ["count", "Most games"],
+        ["az", "A to Z"],
+      ]
+        .map(
+          ([k, l]) =>
+            `<button class="${platSort === k ? "on" : ""}" data-ps="${k}">${l}</button>`,
+        )
+        .join("")}</span></div>
+      <div class="list">${list.map((p) => `<label class="platrow"><input type="checkbox" data-pick="plats" data-val="${p.i}" ${S.plats.has(p.i) ? "checked" : ""}><i style="background:${p.color}"></i><span class="pn">${p.name}</span><span class="pc">${p.n}</span></label>`).join("") || '<div class="hint">No platform matches</div>'}</div>
+      </div>`;
+        }
+        if (key === "len")
+          return `<div class="pop pop--pill"><div class="pophead"><b style="font-size:12px;flex:1">Game length</b><a href="#" data-clear="len" class="pclear">Clear</a><a href="#" data-closepop class="pdone">Done</a></div><div class="len"><label>From (hours)<input type="number" data-fid="lmin" placeholder="Any" value="${esc(S.lmin)}"></label><label>To (hours)<input type="number" data-fid="lmax" placeholder="Any" value="${esc(S.lmax)}"></label></div>
+    <p class="hint">Games without a HowLongToBeat time are hidden while a length range is set.</p></div>`;
+        const isP = key === "plats",
+          g = isP ? null : GROUPS.find((x) => x[0] === key);
+        const items = isP ? platItemsTop : g[3],
+          set = isP ? S.plats : S.groups[key].sel,
+          q = popQ.trim().toLowerCase();
+        const shown = items.filter(
+          (v) =>
+            !q ||
+            String(v.label ?? v)
+              .toLowerCase()
+              .includes(q),
+        );
+        return `<div class="pop pop--pill"><div class="pophead"><input type="text" data-fid="p" placeholder="Search" value="${esc(popQ)}"><a href="#" data-clear="${key}" class="pclear">Clear</a><a href="#" data-closepop class="pdone">Done</a></div><div class="list">${
+          shown
+            .map((v) => {
+              const val = v.value ?? v,
+                lab = v.label ?? v;
+              return `<label><input type="checkbox" data-pick="${key}" data-val="${esc(val)}" ${set.has(val) ? "checked" : ""}>${lab}${isP ? ` <span style="margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:10.5px">${platCountTop(val)}</span>` : ""}</label>`;
+            })
+            .join("") || '<div class="hint">No match</div>'
+        }</div>
+    </div>`;
+      }
+      function pillsHTML() {
+        const out = [];
+        BOOLS.forEach(([k, label]) => {
+          const v = S.tri[k];
+          if (v === null) return;
+          out.push(
+            `<span class="pillwrap"><span class="fpill ${v ? "" : "fpill--no"}" data-flip="${k}" title="Click to switch between only and exclude"><span class="t">${v ? label : "not " + label}</span><b data-rm="b:${k}">×</b></span></span>`,
+          );
+        });
+        if (S.plats.size || pending.has("plats")) {
+          const names = [...S.plats].map((i) => PLATFORMS[i][0]);
+          out.push(
+            `<span class="pillwrap"><span class="fpill" data-pill="plats"><span class="t">${[
+              ...S.plats,
+            ]
+              .slice(0, 3)
+              .map(
+                (i) =>
+                  `<i class="pd" style="background:${PLATFORMS[i][1]}"></i>`,
+              )
+              .join(
+                "",
+              )}${names.length > 1 ? "Platforms" : "Platform"}: ${names.length ? (names.length > 2 ? names[0] + ` +${names.length - 1}` : names.join(", ")) : "choose..."}</span><b data-rm="plats">×</b></span>${open === "plats" ? popup("plats") : ""}</span>`,
+          );
+        }
+        GROUPS.forEach(([k, label]) => {
+          const g = S.groups[k];
+          if (!g.sel.size && !pending.has(k)) return;
+          const vals = [...g.sel];
+          const word = { any: "", all: "all of ", none: "not " }[g.logic];
+          out.push(
+            `<span class="pillwrap"><span class="fpill" data-pill="${k}"><span class="t">${label}: ${vals.length ? word + vals.slice(0, 2).join(", ") + (vals.length > 2 ? ` +${vals.length - 2}` : "") : "choose..."}</span><b data-rm="g:${k}">×</b></span>${open === k ? popup(k) : ""}</span>`,
+          );
+        });
+        if (S.lmin !== "" || S.lmax !== "" || pending.has("len"))
+          out.push(
+            `<span class="pillwrap"><span class="fpill" data-pill="len"><span class="t">Length ${S.lmin || "0"} to ${S.lmax || "any"} h</span><b data-rm="len">×</b></span>${open === "len" ? popup("len") : ""}</span>`,
+          );
+        return out.join("");
+      }
+      function plusHTML() {
+        const q = plusQ.trim().toLowerCase();
+        let head = "";
+        const rows = FIELDS.filter(
+          (f) => !q || f.label.toLowerCase().includes(q),
+        )
+          .map((f) => {
+            const h = f.head !== head ? `<h4>${f.head}</h4>` : "";
+            head = f.head;
+            return (
+              h +
+              `<button data-field="${f.k}"><span class="ic">${f.ic}</span>${f.label}</button>`
+            );
+          })
+          .join("");
+        return `<span class="pillwrap"><button class="plus ${plusOpen ? "on" : ""}" id="plus" title="Narrow your search" aria-label="Add a filter"><span class="pl">+</span> Add a filter</button>${plusOpen ? `<div class="plusmenu"><input type="text" data-fid="pq" placeholder="Narrow by genre, region, status..." value="${esc(plusQ)}"><div class="list">${rows || '<div class="hint">No such field</div>'}</div></div>` : ""}</span>`;
+      }
+      function closeOpen() {
+        if (open && open !== "len") {
+          const empty =
+            open === "plats" ? !S.plats.size : !S.groups[open].sel.size;
+          if (empty) pending.delete(open);
+        }
+        if (open === "len" && S.lmin === "" && S.lmax === "")
+          pending.delete("len");
+        open = null;
+        sopen = null;
+        popQ = "";
+      }
+
+      // ---------- main pane ----------
+      const VIEWS = ["Tiles", "Table", "Swarm"];
+      function mainPane(list) {
+        const pills = pillsHTML();
+        return `<div class="area-header pinned"><div class="hrow">
+      <div class="field"><span class="mag">⌕</span><input data-fid="s" placeholder="Name, filename, hash..." value="${esc(query)}" aria-label="Search"><span class="fcount"><b>${list.length.toLocaleString()}</b> results</span></div>
+      ${plusHTML()}
+      <a href="#" class="advlink" data-adv>${dock === "left" ? "Hide advanced mode" : "Advanced mode"}</a>
+      <span class="seg view" id="viewseg">${VIEWS.map((v, i) => `<button class="${i === active ? "on" : ""}" data-i="${i}"><span class="vi">${["▦", "≡", "✺"][i]}</span> ${v}</button>`).join("")}</span></div>
+    ${pills ? `<div class="subline">${pills}<a href="#" class="clearall" id="clearall">Clear all</a></div>` : ""}</div>
+    <div class="area-content body">${active === 0 ? tiles(list) : active === 1 ? table(list) : swarm()}</div>${footerHTML(list)}`;
+      }
+      const footerHTML = (list) =>
+        `<footer class="area-footer"><span>Showing ${Math.min(60, list.length)} of ${list.length.toLocaleString()}</span><a href="#">Select all ${list.length.toLocaleString()} results</a><a href="#">Save search as smart collection</a></footer>`;
+      const tiles = (list) =>
+        list.length
+          ? `<div class="tiles">${list
+              .slice(0, 60)
+              .map(
+                (r) =>
+                  `<div class="tile">${art(28, 42)}<div class="stack"><span class="name">${hl(r.name)}</span><span class="facts">${PLATFORMS[r.plat][0]} · ${r.year} · ${size(r.gb)}</span><span class="fn">${hl(r.file)}</span></div><span class="more">...</span></div>`,
+              )
+              .join("")}</div>`
+          : `<div class="empty">No games match these filters.</div>`;
+      const table = (list) =>
+        list.length
+          ? `<table class="ledger"><thead><tr><th style="width:34%">Title</th><th style="width:17%">Platform</th><th style="width:10%;text-align:right">Size</th><th style="width:11%">Added</th><th style="width:8%">Rel.</th><th style="width:16%">Meta</th><th style="width:4%"></th></tr></thead><tbody>${list
+              .slice(0, 60)
+              .map(
+                (r) =>
+                  `<tr><td><div class="cell-title">${art(18, 26)}<span class="name">${hl(r.name)}</span></div></td><td>${PLATFORMS[r.plat][0]}</td><td class="num">${size(r.gb)}</td><td>${r.added}</td><td>${r.year}</td><td>${dots(r)}</td><td class="more">...</td></tr>`,
+              )
+              .join("")}</tbody></table>`
+          : `<div class="empty">No games match these filters.</div>`;
+      const swarm = () =>
+        `<div class="swarm-wrap"><canvas id="swarm" height="560"></canvas><div class="tip" id="tip"></div></div><div class="legend">${PLATFORMS.map((p) => `<span><b style="background:${p[1]}"></b>${p[0]}</span>`).join("")}</div>`;
+      let pts = [];
+      function layout(W, H) {
+        const counts = PLATFORMS.map(
+            (_, i) => ROMS.filter((r) => r.plat === i).length,
+          ),
+          k = Math.min(12, W / 80);
+        const cs = counts.map((n, i) => ({
+          i,
+          r: k * Math.sqrt(n) * 0.62 + 10,
+          x: W / 2 + Math.cos(i * 2.4) * 200,
+          y: H / 2 + Math.sin(i * 2.4) * 150,
+        }));
+        for (let it = 0; it < 400; it++)
+          cs.forEach((a) => {
+            a.x += (W / 2 - a.x) * 0.01;
+            a.y += (H / 2 - a.y) * 0.014;
+            cs.forEach((b) => {
+              if (a === b) return;
+              const dx = a.x - b.x,
+                dy = a.y - b.y,
+                d = Math.hypot(dx, dy) || 0.01,
+                m = a.r + b.r + 6;
+              if (d < m) {
+                const p = (m - d) / 2;
+                a.x += (dx / d) * p;
+                a.y += (dy / d) * p;
+                b.x -= (dx / d) * p;
+                b.y -= (dy / d) * p;
+              }
+            });
+            a.x = Math.min(W - a.r, Math.max(a.r, a.x));
+            a.y = Math.min(H - a.r, Math.max(a.r, a.y));
+          });
+        pts = [];
+        cs.forEach((c) => {
+          let j = 0;
+          ROMS.forEach((r) => {
+            if (r.plat !== c.i) return;
+            const ang = j * 2.39996,
+              rad = k * 0.62 * Math.sqrt(j);
+            pts.push({
+              r,
+              x: c.x + Math.cos(ang) * rad,
+              y: c.y + Math.sin(ang) * rad,
+            });
+            j++;
+          });
+        });
+      }
+      function draw(list) {
+        const cv = document.getElementById("swarm");
+        if (!cv) return;
+        const dpr = window.devicePixelRatio || 1,
+          W = cv.clientWidth,
+          H = 560;
+        cv.width = W * dpr;
+        cv.height = H * dpr;
+        const g = cv.getContext("2d");
+        g.scale(dpr, dpr);
+        if (!pts.length || cv._w !== W) {
+          layout(W, H);
+          cv._w = W;
+        }
+        const hit = new Set(list.map((r) => r.id)),
+          all = hit.size === ROMS.length;
+        pts.forEach((p) => {
+          const on = hit.has(p.r.id);
+          g.beginPath();
+          g.fillStyle = on ? PLATFORMS[p.r.plat][1] : "rgba(120,125,140,.16)";
+          g.arc(p.x, p.y, on && !all ? 3.8 : 3, 0, 7);
+          g.fill();
+        });
+        cv.onmousemove = (e) => {
+          const b = cv.getBoundingClientRect(),
+            mx = e.clientX - b.left,
+            my = e.clientY - b.top;
+          let best = null,
+            bd = 64;
+          pts.forEach((p) => {
+            const d = (p.x - mx) ** 2 + (p.y - my) ** 2;
+            if (d < bd && hit.has(p.r.id)) {
+              bd = d;
+              best = p;
+            }
+          });
+          const tip = document.getElementById("tip");
+          if (!best) {
+            tip.style.display = "none";
+            return;
+          }
+          tip.style.display = "block";
+          tip.style.left = mx + 12 + "px";
+          tip.style.top = my + 12 + "px";
+          tip.innerHTML = `<b>${best.r.name}</b><br>${PLATFORMS[best.r.plat][0]} · ${best.r.year} · ${size(best.r.gb)}`;
+        };
+      }
+
+      // ---------- render + events ----------
+      const app = document.getElementById("app"),
+        tabsEl = document.getElementById("tabs");
+      function phoneHTML(list) {
+        const pills = pillsHTML();
+        const rows = list
+          .slice(0, 40)
+          .map(
+            (r) =>
+              `<div class="row2">${art(26, 38)}<div class="stack"><span class="name">${hl(r.name)}</span><span class="facts">${PLATFORMS[r.plat][0]} · ${r.year} · ${size(r.gb)}</span></div><span class="more">...</span></div>`,
+          )
+          .join("");
+        return `<div class="phone">
+    <div class="p-head">
+      <div class="p-row1"><div class="field"><span class="mag">⌕</span><input data-fid="s" placeholder="Name, filename, hash..." value="${esc(query)}" aria-label="Search"></div>
+        <span class="seg view icons" id="viewseg">${["▦", "≡", "✺"].map((v, i) => `<button class="${i === active ? "on" : ""}" data-i="${i}" aria-label="${VIEWS[i]}">${v}</button>`).join("")}</span></div>
+      <div class="p-row2">${plusHTML()}<a href="#" class="advlink" data-adv>Advanced mode</a><span class="p-count" style="margin-left:auto"><b>${list.length.toLocaleString()}</b> results</span></div>
+      ${pills ? `<div class="p-pills">${pills}</div>` : ""}
+    </div>
+    <div class="p-body">${active === 2 ? swarm() : rows || '<div class="empty">No games match.</div>'}</div>
+    ${phoneAdv ? `<div class="sheet"><div class="sheet-top"><b>Advanced mode</b><a href="#" data-adv>Done</a></div>${sidebar()}</div>` : ""}
+  </div>`;
+      }
+      const HDR =
+        "The header band is the whole control surface: one top row (short search field with the live count, a '+ Add a filter' button, the view toggle at the upper right) and a bottom row that is collapsed until a filter exists, then holds only the summary pills. Pills: click to edit, x to remove, a property pill flips between only and exclude. Fixed 56 px tiles, four columns, no art-led cards.";
+      const TABS = [
+        ["Header + tiles", HDR],
+        ["Header + table", HDR + " Fixed 30 px rows."],
+        [
+          "Header + swarm",
+          HDR + " Filters and search light the matching dots in place.",
+        ],
+        [
+          "Advanced mode open",
+          "Advanced mode swings the full filter panel out beside the results (all logic, tri-state properties, every field). The pills stay simple and share the same state: change either and the other follows.",
+        ],
+        [
+          "iPhone SE (320 px)",
+          "The same header on a 320 px screen: search first, then Add a filter and Advanced mode on one line, view toggle as three icons, pills on a single scrolling line. Pills are simple (tap for a checkbox list); anything with logic lives in Advanced mode, which opens as a full-screen sheet.",
+        ],
+      ];
+      function render() {
+        const fid =
+          document.activeElement && document.activeElement.dataset
+            ? document.activeElement.dataset.fid
+            : null;
+        const pos =
+          fid && document.activeElement.selectionStart != null
+            ? document.activeElement.selectionStart
+            : null;
+        const sideScroll = (app.querySelector(".side") || {}).scrollTop || 0;
+        const list = matches();
+        const tabNow = phone ? 4 : dock === "left" ? 3 : active;
+        tabsEl.innerHTML = TABS.map(
+          (t, i) =>
+            `<button class="tab" role="tab" aria-selected="${i === tabNow}" data-i="${i}">${t[0]}</button>`,
+        ).join("");
+        if (phone)
+          app.innerHTML = `${phoneHTML(list)}<p class="note">${TABS[4][1]}</p>`;
+        else
+          app.innerHTML = `<div class="shell" data-dock="${dock}">${sidebar()}${mainPane(list)}</div><p class="note">${TABS[tabNow][1]}${bar ? "" : " Clicking a field opens its searchable list; the ∪ ∩ ∅ toggle is the any / all / none logic."}</p>`;
+        const sideEl = app.querySelector(".side");
+        if (sideEl) sideEl.scrollTop = sideScroll;
+        tabsEl.querySelectorAll(".tab").forEach(
+          (b) =>
+            (b.onclick = () => {
+              const i = +b.dataset.i;
+              phone = i === 4;
+              phoneAdv = false;
+              if (i === 3) {
+                dock = "left";
+                active = 0;
+              } else if (i < 3) {
+                dock = "none";
+                active = i;
+              }
+              bar = dock === "none";
+              open = null;
+              sopen = null;
+              plusOpen = false;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-adv]").forEach(
+          (a) =>
+            (a.onclick = (e) => {
+              e.preventDefault();
+              open = null;
+              sopen = null;
+              plusOpen = false;
+              if (phone) {
+                phoneAdv = !phoneAdv;
+                render();
+                return;
+              }
+              dock = dock === "left" ? "none" : "left";
+              bar = dock === "none";
+              const sh = app.querySelector(".shell");
+              if (sh) {
+                sh.dataset.dock = dock;
+                a.textContent =
+                  dock === "left" ? "Hide advanced mode" : "Advanced mode";
+                tabsEl
+                  .querySelectorAll(".tab")
+                  .forEach((t, i) =>
+                    t.setAttribute(
+                      "aria-selected",
+                      String(i === (dock === "left" ? 3 : active)),
+                    ),
+                  );
+              } else render();
+            }),
+        );
+        app.querySelectorAll("[data-ps]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              platSort = b.dataset.ps;
+              render();
+            }),
+        );
+        const clearAll = document.getElementById("clearall");
+        if (clearAll)
+          clearAll.onclick = (e) => {
+            e.preventDefault();
+            S = fresh();
+            pending = new Set();
+            open = null;
+            sopen = null;
+            render();
+          };
+        app.querySelectorAll("[data-flip]").forEach(
+          (el) =>
+            (el.onclick = (e) => {
+              if (e.target.dataset.rm) return;
+              S.tri[el.dataset.flip] = !S.tri[el.dataset.flip];
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-pill]").forEach(
+          (el) =>
+            (el.onclick = (e) => {
+              if (e.target.dataset.rm) return;
+              const k = el.dataset.pill;
+              if (open === k) closeOpen();
+              else {
+                closeOpen();
+                open = k;
+              }
+              plusOpen = false;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-rm]").forEach(
+          (el) =>
+            (el.onclick = (e) => {
+              e.stopPropagation();
+              const k = el.dataset.rm;
+              if (k.startsWith("b:")) S.tri[k.slice(2)] = null;
+              else if (k === "plats") {
+                S.plats.clear();
+                pending.delete("plats");
+              } else if (k === "len") {
+                S.lmin = S.lmax = "";
+                pending.delete("len");
+              } else {
+                const g = k.slice(2);
+                S.groups[g].sel.clear();
+                pending.delete(g);
+              }
+              if (open) open = null;
+              render();
+            }),
+        );
+        const plus = document.getElementById("plus");
+        if (plus)
+          plus.onclick = () => {
+            plusOpen = !plusOpen;
+            plusQ = "";
+            closeOpen();
+            render();
+          };
+        app.querySelectorAll("[data-field]").forEach(
+          (el) =>
+            (el.onclick = () => {
+              const f = el.dataset.field;
+              plusOpen = false;
+              plusQ = "";
+              if (f.startsWith("b:")) S.tri[f.slice(2)] = true;
+              else if (f === "plats") {
+                pending.add("plats");
+                open = "plats";
+              } else if (f === "len") {
+                pending.add("len");
+                open = "len";
+              } else {
+                const g = f.slice(2);
+                pending.add(g);
+                open = g;
+              }
+              popQ = "";
+              render();
+            }),
+        );
+        app.querySelectorAll("#viewseg button").forEach(
+          (b) =>
+            (b.onclick = () => {
+              active = +b.dataset.i;
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-tri]").forEach((el) =>
+          el.querySelectorAll("button").forEach(
+            (b) =>
+              (b.onclick = () => {
+                S.tri[el.dataset.tri] = { all: null, yes: true, no: false }[
+                  b.dataset.v
+                ];
+                render();
+              }),
+          ),
+        );
+        app.querySelectorAll("[data-logic]").forEach((el) =>
+          el.querySelectorAll("button").forEach(
+            (b) =>
+              (b.onclick = () => {
+                S.groups[el.dataset.logic].logic = b.dataset.v;
+                render();
+              }),
+          ),
+        );
+        app.querySelectorAll("[data-open]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              open = null;
+              sopen = sopen === b.dataset.open ? null : b.dataset.open;
+              popQ = "";
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-pick]").forEach(
+          (c) =>
+            (c.onchange = () => {
+              const k = c.dataset.pick,
+                v = k === "plats" ? +c.dataset.val : c.dataset.val,
+                set = k === "plats" ? S.plats : S.groups[k].sel;
+              set.has(v) ? set.delete(v) : set.add(v);
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-clear]").forEach(
+          (a) =>
+            (a.onclick = (e) => {
+              e.preventDefault();
+              const k = a.dataset.clear;
+              if (k === "len") {
+                S.lmin = S.lmax = "";
+              } else (k === "plats" ? S.plats : S.groups[k].sel).clear();
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-closepop]").forEach(
+          (a) =>
+            (a.onclick = (e) => {
+              e.preventDefault();
+              closeOpen();
+              render();
+            }),
+        );
+        app.querySelectorAll("[data-fid]").forEach(
+          (el) =>
+            (el.oninput = () => {
+              const f = el.dataset.fid;
+              if (f === "s") query = el.value;
+              else if (f === "p") popQ = el.value;
+              else if (f === "pq") plusQ = el.value;
+              else if (f === "lmin") S.lmin = el.value;
+              else S.lmax = el.value;
+              render();
+            }),
+        );
+        const reset = document.getElementById("reset");
+        if (reset)
+          reset.onclick = () => {
+            S = fresh();
+            open = null;
+            sopen = null;
+            pending = new Set();
+            render();
+          };
+        if (fid) {
+          const el = app.querySelector(`[data-fid="${fid}"]`);
+          if (el) {
+            el.focus();
+            if (pos != null && el.setSelectionRange && el.type === "text")
+              el.setSelectionRange(pos, pos);
+          }
+        }
+        draw(list);
+      }
+      window.__demo = () => {
+        S = fresh();
+        query = "";
+        open = null;
+        S.tri.verified = true;
+        S.tri.missing = false;
+        S.plats = new Set([0, 2, 7]);
+        S.groups.genre.sel = new Set(["Action", "RPG"]);
+        S.groups.region.sel = new Set(["USA", "Europe"]);
+        S.groups.status.sel = new Set(["Hidden"]);
+        S.groups.status.logic = "none";
+        render();
+      };
+      window.__demoBar = () => {
+        S = fresh();
+        query = "";
+        open = null;
+        sopen = null;
+        plusOpen = false;
+        pending = new Set();
+        bar = true;
+        dock = "none";
+        active = 0;
+        S.tri.verified = true;
+        S.tri.missing = false;
+        S.plats = new Set([0, 2, 7]);
+        S.groups.genre.sel = new Set(["Action", "RPG"]);
+        S.groups.status.sel = new Set(["Hidden"]);
+        S.groups.status.logic = "none";
+        render();
+      };
+      render();
+    </script>
+  </body>
+</html>
