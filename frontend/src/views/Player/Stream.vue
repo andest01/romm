@@ -463,9 +463,10 @@ watch(
     if (current && !states.some((s) => s.id === current.id)) {
       selectedState.value = null;
     }
-    if (!statePreselected.value && native.length > 0) {
+    const [firstNative] = native;
+    if (!statePreselected.value && firstNative) {
       statePreselected.value = true;
-      if (!selectedState.value) selectedState.value = native[0]!;
+      if (!selectedState.value) selectedState.value = firstNative;
     }
   },
   { immediate: true },

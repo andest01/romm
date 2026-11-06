@@ -225,7 +225,8 @@ function createUISettings() {
 export function useUISettings() {
   // Return singleton instance
   if (!uiSettingsInstance) {
-    uiSettingsInstance = effectScope(true).run(createUISettings)!;
+    uiSettingsInstance =
+      effectScope(true).run(createUISettings) ?? createUISettings();
   }
   return uiSettingsInstance;
 }

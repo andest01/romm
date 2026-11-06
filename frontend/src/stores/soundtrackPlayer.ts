@@ -257,9 +257,10 @@ const useSoundtrackPlayer = defineStore("soundtrackPlayer", () => {
   }
 
   const currentIndex = computed(() => {
-    if (!track.value) return -1;
+    const current = track.value;
+    if (!current) return -1;
     return playlist.value.findIndex(
-      (p) => p.fileId === track.value!.fileId && p.romId === track.value!.romId,
+      (p) => p.fileId === current.fileId && p.romId === current.romId,
     );
   });
 
@@ -270,14 +271,14 @@ const useSoundtrackPlayer = defineStore("soundtrackPlayer", () => {
   );
 
   function next() {
-    if (!hasNext.value) return;
-    const nextTrack = playlist.value[currentIndex.value + 1]!;
+    const nextTrack = playlist.value[currentIndex.value + 1];
+    if (!hasNext.value || !nextTrack) return;
     play(nextTrack, playlistMeta.value[nextTrack.fileId] ?? {});
   }
 
   function previous() {
-    if (!hasPrevious.value) return;
-    const prevTrack = playlist.value[currentIndex.value - 1]!;
+    const prevTrack = playlist.value[currentIndex.value - 1];
+    if (!hasPrevious.value || !prevTrack) return;
     play(prevTrack, playlistMeta.value[prevTrack.fileId] ?? {});
   }
 

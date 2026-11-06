@@ -118,8 +118,8 @@ export function installFullscreenFallback(): () => void {
     void exit();
     detachWatcher.disconnect();
     styleEl.remove();
-    while (overrides.length) {
-      const { target, key, prev } = overrides.pop()!;
+    for (let entry = overrides.pop(); entry; entry = overrides.pop()) {
+      const { target, key, prev } = entry;
       if (prev) Object.defineProperty(target, key, prev);
       else Reflect.deleteProperty(target, key);
     }

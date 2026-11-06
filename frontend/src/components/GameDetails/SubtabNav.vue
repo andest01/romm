@@ -61,9 +61,8 @@ watch(menuOpen, (open) => {
   if (!open) search.value = "";
 });
 
-function startsGroup(list: I[], index: number): boolean {
-  const group = list[index]!.group;
-  return !!group && group !== list[index - 1]?.group;
+function startsGroup(item: I, previous: I | undefined): boolean {
+  return !!item.group && item.group !== previous?.group;
 }
 
 function select(id: I["id"]) {
@@ -135,7 +134,7 @@ function select(id: I["id"]) {
       </template>
 
       <template v-for="(item, index) in menuItems" :key="item.id">
-        <template v-if="startsGroup(menuItems, index)">
+        <template v-if="startsGroup(item, menuItems[index - 1])">
           <RDivider v-if="index > 0" />
           <div class="r-subtab-nav__group" data-r-menu-no-close>
             {{ item.group }}

@@ -28,11 +28,10 @@ export function saveContentHash(bytes: Uint8Array): string {
   // A zip hashes by its entries, as `hash_zip_contents` does.
   if (looksLikeZip(bytes)) {
     try {
-      const entries = unzipSync(bytes);
-      const lines = Object.keys(entries)
-        .filter((name) => !name.endsWith("/"))
-        .sort()
-        .map((name) => `${name}:${md5(entries[name]!)}`);
+      const lines = Object.entries(unzipSync(bytes))
+        .filter(([name]) => !name.endsWith("/"))
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .map(([name, entry]) => `${name}:${md5(entry)}`);
       return SparkMD5.hash(lines.join("\n"));
     } catch {
       // Not a readable archive after all.

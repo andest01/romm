@@ -195,10 +195,10 @@ const dividerAfter = computed(() => {
   const { promoted, remaining } = promotion.value;
 
   // if there's nothing to promote, or nothing to remain, we don't need to divide.
-  const makesNoDifference = promoted.length === 0 || remaining.length === 0;
-  if (makesNoDifference) return undefined;
+  const lastPromoted = promoted.at(-1);
+  if (!lastPromoted || remaining.length === 0) return undefined;
 
-  const lastKey = promoted.at(-1)![props.itemKey];
+  const lastKey = lastPromoted[props.itemKey];
   return (platform: Platform) => platform[props.itemKey] === lastKey;
 });
 

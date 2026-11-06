@@ -102,16 +102,17 @@ watch(
   manualEntries,
   (entries) => {
     const currentIds = new Set(entries.map((e) => e.id));
-    if (entries.length === 0) {
+    const [first] = entries;
+    if (!first) {
       selectedManualId.value = "";
     } else {
       // If a new entry appears after a prior snapshot, select it so the user
       // lands on the manual they just uploaded.
-      const added = entries.filter((e) => !previousManualIds.has(e.id));
-      if (added.length > 0 && previousManualIds.size > 0) {
-        selectedManualId.value = added[added.length - 1]!.id;
+      const lastAdded = entries.findLast((e) => !previousManualIds.has(e.id));
+      if (lastAdded && previousManualIds.size > 0) {
+        selectedManualId.value = lastAdded.id;
       } else if (!entries.some((e) => e.id === selectedManualId.value)) {
-        selectedManualId.value = entries[0]!.id;
+        selectedManualId.value = first.id;
       }
     }
     previousManualIds = currentIds;

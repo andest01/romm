@@ -113,9 +113,10 @@ const openBulk = (payload: SimpleRom[]) => {
 useEmitterEvent("showRefreshMetadataDialog", openSingle);
 useEmitterEvent("showRefreshMetadataDialogBulk", openBulk);
 
-const singleRom = computed<SimpleRom | null>(() =>
-  roms.value.length === 1 ? roms.value[0]! : null,
-);
+const singleRom = computed<SimpleRom | null>(() => {
+  const [first, second] = roms.value;
+  return first && !second ? first : null;
+});
 const singleRomCover = computed<string | null>(() => {
   const r = singleRom.value;
   if (!r) return null;

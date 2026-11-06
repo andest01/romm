@@ -95,14 +95,15 @@ watch(
   entries,
   (list) => {
     const currentIds = new Set(list.map((e) => e.id));
-    if (list.length === 0) {
+    const [first] = list;
+    if (!first) {
       selectedId.value = "";
     } else {
-      const added = list.filter((e) => !previousIds.has(e.id));
-      if (added.length > 0 && previousIds.size > 0) {
-        selectedId.value = added[added.length - 1]!.id;
+      const lastAdded = list.findLast((e) => !previousIds.has(e.id));
+      if (lastAdded && previousIds.size > 0) {
+        selectedId.value = lastAdded.id;
       } else if (!list.some((e) => e.id === selectedId.value)) {
-        selectedId.value = list[0]!.id;
+        selectedId.value = first.id;
       }
     }
     previousIds = currentIds;

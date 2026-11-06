@@ -1,4 +1,5 @@
 // trunk-ignore-all(eslint/@typescript-eslint/no-explicit-any)
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AxiosRequestConfig, AxiosResponse } from "axios";
 import { useUserLocalStorage } from "@/composables/useUserLocalStorage";
 import api from "@/services/api";
@@ -84,9 +85,8 @@ class CacheService {
     const cacheKey = this.generateCacheKey(config);
 
     // Check if there's already a pending request for this cache key
-    if (this.pendingRequests.has(cacheKey)) {
-      return this.pendingRequests.get(cacheKey)!;
-    }
+    const pending = this.pendingRequests.get(cacheKey);
+    if (pending) return pending;
 
     // Check cache first
     const cachedEntry = await this.getCachedResponse(cacheKey);
@@ -153,13 +153,14 @@ class CacheService {
   }
 
   async clearCacheForPattern(pattern: string): Promise<void> {
-    if (!this.cache) return;
+    const { cache } = this;
+    if (!cache) return;
 
     try {
-      const keys = await this.cache.keys();
+      const keys = await cache.keys();
       const matchingKeys = keys.filter((key) => key.url.includes(pattern));
 
-      await Promise.all(matchingKeys.map((key) => this.cache!.delete(key)));
+      await Promise.all(matchingKeys.map((key) => cache.delete(key)));
     } catch (error) {
       console.error("Error clearing cache pattern:", error);
     }

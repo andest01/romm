@@ -127,7 +127,8 @@ async function deleteRoms() {
       );
       let failed = 0;
       results.forEach((result, i) => {
-        const rom = deletedRoms[i]!;
+        const rom = deletedRoms[i];
+        if (!rom) return;
         if (result.status === "fulfilled") {
           configStore.addExclusion(exclusionType(rom), rom.fs_name);
         } else {

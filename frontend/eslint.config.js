@@ -5,6 +5,7 @@ import { createTypeScriptImportResolver } from "eslint-import-resolver-typescrip
 import importX from "eslint-plugin-import-x";
 import vue from "eslint-plugin-vue";
 import vuea11y from "eslint-plugin-vuejs-accessibility";
+import { builtinRules } from "eslint/use-at-your-own-risk";
 import globals from "globals";
 import romm from "./eslint-plugin-romm/index.js";
 import e2eConfig from "./eslint.e2e.config.js";
@@ -348,6 +349,76 @@ export default withVueTs(
     rules: {
       "@typescript-eslint/no-redundant-type-constituents": "off",
       "@typescript-eslint/no-unnecessary-type-assertion": "off",
+    },
+  },
+  // Strong typing: existing types, signatures and satisfies over casts.
+  {
+    files: ["src/**/*.ts", "src/**/*.vue"],
+    // `!` is a smell: a claim the code hasn't proved. A second copy of
+    // no-restricted-syntax keeps it advisory while the list above stays an error.
+    // `??` on a value that can't be missing is the cover-up, and syntax can't
+    // tell it from a real default, so AGENTS.md covers that one.
+    plugins: {
+      proof: {
+        rules: { "unproven-claim": builtinRules.get("no-restricted-syntax") },
+      },
+    },
+    rules: {
+      "proof/unproven-claim": [
+        "warn",
+        {
+          selector: "TSNonNullExpression",
+          message:
+            "Can this really be missing? Handle it, or restructure so it can't be. If neither fits, disable with the reason it holds. Don't swap it for a made-up `??` default.",
+        },
+      ],
+      "@typescript-eslint/no-unsafe-type-assertion": "warn",
+      "@typescript-eslint/consistent-type-assertions": [
+        "warn",
+        { assertionStyle: "as", objectLiteralTypeAssertions: "never" },
+      ],
+      "@typescript-eslint/switch-exhaustiveness-check": "warn",
+      "@typescript-eslint/no-unnecessary-condition": "warn",
+      "@typescript-eslint/no-unnecessary-type-arguments": "warn",
+      "@typescript-eslint/no-unnecessary-type-parameters": "warn",
+    },
+  },
+  // Plain .ts only: logic belongs here, not in components. Signatures are
+  // explicit; callbacks, typed function expressions and IIFEs are exempt.
+  // The SFC `any` that switched the two assertion rules off above cannot
+  // reach a file that imports no components.
+  {
+    files: ["src/**/*.ts"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": [
+        "warn",
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
+          allowIIFEs: true,
+        },
+      ],
+      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+      "@typescript-eslint/no-redundant-type-constituents": "warn",
+    },
+  },
+  // Tests and stories reach outside the types on purpose, so conditions the
+  // types call impossible, `!`, and unannotated helpers are fine. Casts stay
+  // flagged: disable the line with a reason when one is deliberate.
+  {
+    files: ["src/**/*.test.ts", "src/**/*.stories.ts"],
+    rules: {
+      "@typescript-eslint/consistent-type-assertions": [
+        "warn",
+        {
+          assertionStyle: "as",
+          objectLiteralTypeAssertions: "allow-as-parameter",
+        },
+      ],
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "proof/unproven-claim": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off",
     },
   },
   {

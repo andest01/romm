@@ -77,9 +77,11 @@ function upgradeDatabase(request: IDBOpenDBRequest) {
   for (const name of names) {
     if (name !== STORE_NAME) db.deleteObjectStore(name);
   }
-  const store = names.includes(STORE_NAME)
-    ? request.transaction!.objectStore(STORE_NAME)
-    : db.createObjectStore(STORE_NAME, { keyPath: "id" });
+  const { transaction } = request;
+  const store =
+    transaction && names.includes(STORE_NAME)
+      ? transaction.objectStore(STORE_NAME)
+      : db.createObjectStore(STORE_NAME, { keyPath: "id" });
   for (const name of Array.from(store.indexNames)) {
     if (name !== OWNER_INDEX) store.deleteIndex(name);
   }

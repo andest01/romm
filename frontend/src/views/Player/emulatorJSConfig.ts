@@ -156,7 +156,8 @@ export function buildEjsConfig(input: EjsConfigInput): EjsConfig {
   );
   const core =
     supportedCores.find((supported) => supported === input.core) ??
-    supportedCores[0]!;
+    supportedCores[0];
+  if (!core) throw new Error(`No EmulatorJS core for ${rom.platform_slug}`);
 
   return {
     EJS_core: core,

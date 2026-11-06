@@ -26,7 +26,7 @@ import {
 import { bytesEqual, saveContentHash } from "@/utils/saveSync/hash";
 
 /** Tears the emulator down once, however many owners ask. */
-export function exitEmulatorOnce() {
+export function exitEmulatorOnce(): void {
   // The player and its shell both unmount on the way out, and a second exit
   // throws ErrnoError(28) unmounting the filesystem, then aborts the runtime.
   const emulator = window.EJS_emulator;
@@ -74,7 +74,7 @@ async function takeScreenshot(): Promise<ArrayBuffer | undefined> {
 // session; the file it is waiting for is what stops it.
 function releaseScreenshotWait(gameManager?: {
   FS?: { writeFile(path: string, data: Uint8Array): void };
-}) {
+}): void {
   try {
     gameManager?.FS?.writeFile("/screenshot.png", new Uint8Array(0));
   } catch (error) {
@@ -185,8 +185,8 @@ export async function saveState({
       ],
     });
 
-    const uploadedState = uploadedStates[0]!;
-    if (uploadedState.status == "fulfilled") {
+    const uploadedState = uploadedStates[0];
+    if (uploadedState?.status == "fulfilled") {
       await pendingAssetStore.clear(pendingId);
       if (rom) rom.user_states.unshift(uploadedState.value);
       return { state: uploadedState.value, kept: false };
@@ -264,7 +264,8 @@ export async function saveSave({
       ],
     });
 
-    let uploadedSave = uploadedSaves[0]!;
+    let uploadedSave = uploadedSaves[0];
+    if (!uploadedSave) return null;
     if (isSlotConflict(uploadedSave)) {
       // Later writes update the archive in place, leaving the slot to the
       // other device's newer version.
@@ -816,8 +817,8 @@ export function installIOSFullscreenShim() {
   return () => {
     void exit();
     styleEl.remove();
-    while (overrides.length) {
-      const { target, key, prev } = overrides.pop()!;
+    for (let entry = overrides.pop(); entry; entry = overrides.pop()) {
+      const { target, key, prev } = entry;
       if (prev) Object.defineProperty(target, key, prev);
       else Reflect.deleteProperty(target, key);
     }

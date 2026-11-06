@@ -243,14 +243,16 @@ export function useGridNav(
     });
   }
 
-  function current(rs: Row[]): { rowIdx: number; colIdx: number } | null {
+  function current(
+    rs: Row[],
+  ): { rowIdx: number; colIdx: number; rowCells: HTMLElement[] } | null {
     const active = document.activeElement as HTMLElement | null;
     if (!active) return null;
     for (const [r, row] of rs.entries()) {
       if (row.el && !row.el.contains(active)) continue;
       for (const [c, cell] of row.cells.entries()) {
         if (cell.contains(active) || cell === active) {
-          return { rowIdx: r, colIdx: c };
+          return { rowIdx: r, colIdx: c, rowCells: row.cells };
         }
       }
     }
@@ -276,7 +278,8 @@ export function useGridNav(
     const cs = row.cells;
     if (cs.length === 0) return;
     const clamped = Math.min(Math.max(colIdx, 0), cs.length - 1);
-    const cell = cs[clamped]!;
+    const cell = cs[clamped];
+    if (!cell) return;
     const target = focusableIn(cell);
     navCell = cell;
 
@@ -360,12 +363,13 @@ export function useGridNav(
   // Focuses the first or last cell that holds a control, skipping skeletons.
   function focusEdge(edge: "first" | "last") {
     const rs = rows();
-    const order = edge === "first" ? rs.keys() : [...rs.keys()].reverse();
-    for (const r of order) {
-      const cs = rs[r]!.cells;
-      const cols = edge === "first" ? cs.keys() : [...cs.keys()].reverse();
-      for (const c of cols) {
-        if (!hasControl(cs[c]!)) continue;
+    const order = [...rs.entries()];
+    if (edge === "last") order.reverse();
+    for (const [r, row] of order) {
+      const cols = [...row.cells.entries()];
+      if (edge === "last") cols.reverse();
+      for (const [c, cell] of cols) {
+        if (!hasControl(cell)) continue;
         preferredCol = c;
         focusIn(rs, r, c, { verticalJump: true });
         return;
@@ -398,13 +402,15 @@ export function useGridNav(
   // The row about one viewport above or below `from`, clamped to the rows
   // that are mounted.
   function pageRow(rs: Row[], from: number, dir: 1 | -1): number {
-    const anchor = (row: Row) => row.el ?? row.cells[0]!;
-    const fromAnchor = anchor(rs[from]!);
+    const anchor = (row?: Row) => row?.el ?? row?.cells[0];
+    const fromAnchor = anchor(rs[from]);
+    if (!fromAnchor) return from;
     const top = fromAnchor.getBoundingClientRect().top;
     const target = top + dir * pageHeight(fromAnchor);
     let best = from;
     for (let r = from + dir; r >= 0 && r < rs.length; r += dir) {
-      const rowTop = anchor(rs[r]!).getBoundingClientRect().top;
+      const rowTop = anchor(rs[r])?.getBoundingClientRect().top;
+      if (rowTop === undefined) break;
       if (dir === 1 ? rowTop > target : rowTop < target) break;
       best = r;
     }
@@ -426,7 +432,7 @@ export function useGridNav(
     if (!cur) return;
 
     let { rowIdx, colIdx } = cur;
-    const rowCells = rs[rowIdx]!.cells;
+    const { rowCells } = cur;
     if (rowCells[colIdx] !== navCell) preferredCol = colIdx;
     let verticalJump = false;
 

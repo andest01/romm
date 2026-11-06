@@ -127,8 +127,8 @@ watch([() => props.indeterminate, showMultiIcon], syncIndeterminate);
 
 function onChange(evt: Event) {
   if (isMulti.value && props.states) {
-    const next = props.states[(currentIndex.value + 1) % props.states.length]!;
-    emit("update:stateValue", next.value);
+    const next = props.states[(currentIndex.value + 1) % props.states.length];
+    if (next) emit("update:stateValue", next.value);
     return;
   }
   emit("update:modelValue", (evt.target as HTMLInputElement).checked);

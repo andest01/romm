@@ -150,11 +150,9 @@ export class GmeRenderer {
       return;
     }
 
-    const pcm = this.pcmView(frames * 2);
-    for (let frame = 0; frame < frames; frame += 1) {
-      left[frame] = pcm[frame * 2]! / 32768;
-      right[frame] = pcm[frame * 2 + 1]! / 32768;
-    }
+    this.pcmView(frames * 2).forEach((sample, i) => {
+      (i % 2 === 0 ? left : right)[i >> 1] = sample / 32768;
+    });
 
     if (this.gme.gme_track_ended(this.emu)) {
       this.playing = false;

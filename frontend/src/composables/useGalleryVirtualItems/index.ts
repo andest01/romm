@@ -214,7 +214,8 @@ export function assignFlatRowLetters(
   // never overlap a later (higher) row, so it's skipped for good.
   let base = 0;
   for (const row of rows) {
-    while (base < ranges.length && ranges[base]!.end <= row.start) base++;
+    let passed = ranges[base];
+    while (passed && passed.end <= row.start) passed = ranges[++base];
     const letters: string[] = [];
     for (let j = base, r = ranges[j]; r && r.start < row.end; r = ranges[++j]) {
       if (r.end > row.start) letters.push(r.letter);
@@ -373,12 +374,8 @@ export function useGalleryVirtualItems(opts: Options) {
       // letter (drives AlphaStrip's scroll-spy).
       let rangeIdx = 0;
       for (let p = 0; p < total; p++) {
-        while (
-          rangeIdx + 1 < ranges.length &&
-          p >= ranges[rangeIdx + 1]!.start
-        ) {
-          rangeIdx++;
-        }
+        let next = ranges[rangeIdx + 1];
+        while (next && p >= next.start) next = ranges[++rangeIdx + 1];
         items.push(shareListRow(p, ranges[rangeIdx]?.letter ?? "#"));
       }
       return items;
@@ -447,7 +444,7 @@ export function useGalleryVirtualItems(opts: Options) {
       const rows = packFlowRows(0, total, rowWidth, cardHeight, gap, ratioAt);
       const lettersPerRow = assignFlatRowLetters(rows, ranges);
       for (const [i, row] of rows.entries()) {
-        items.push(shareRow(row.start, row.end, lettersPerRow[i]!));
+        items.push(shareRow(row.start, row.end, lettersPerRow[i] ?? []));
       }
     }
 
@@ -502,8 +499,8 @@ export function useGalleryVirtualItems(opts: Options) {
       // position. Both rows and ranges are ascending → one forward walk.
       const ranges = letterRanges.value; // sorted by start
       let li = 0;
-      for (let i = 0; i < items.length && li < ranges.length; i++) {
-        const it = items[i]!;
+      for (const [i, it] of items.entries()) {
+        if (li >= ranges.length) break;
         if (it.kind !== "row") continue;
         for (
           let r = ranges[li];

@@ -1,4 +1,5 @@
 // trunk-ignore-all(eslint/@typescript-eslint/no-explicit-any)
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AxiosRequestConfig, AxiosResponse, Method } from "axios";
 import type { CustomLimitOffsetPage_SimpleRomSchema_ as GetRomsResponse } from "@/__generated__/models/CustomLimitOffsetPage_SimpleRomSchema_";
 import { buildGetRomsQuery, type GetRomsParams } from "@/services/api/rom";

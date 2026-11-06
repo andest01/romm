@@ -83,9 +83,9 @@ export function sameFacetOptions(
     a.length === b.length &&
     a.every(
       (o, i) =>
-        o.value === b[i]!.value &&
-        o.label === b[i]!.label &&
-        o.count === b[i]!.count,
+        o.value === b[i]?.value &&
+        o.label === b[i]?.label &&
+        o.count === b[i]?.count,
     )
   );
 }

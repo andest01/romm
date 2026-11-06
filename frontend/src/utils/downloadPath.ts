@@ -63,8 +63,8 @@ export function getDownloadFileName(rom: SimpleRom): string {
 /** The one file this rom resolves to on disk, or null when it resolves to
  *  several and the endpoint builds an archive instead. */
 export function getSoleRomFile(rom: SimpleRom): RomFileSchema | null {
-  const files = rom.files ?? [];
-  return files.length === 1 ? files[0]! : null;
+  const [file, otherFile] = rom.files ?? [];
+  return file && !otherFile ? file : null;
 }
 
 export function getDownloadLink({

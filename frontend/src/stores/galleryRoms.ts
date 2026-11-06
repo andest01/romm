@@ -191,7 +191,8 @@ async function applyItemsBatched(
     if (!isStillRelevant()) return;
     const end = Math.min(i + APPLY_BATCH_SIZE, items.length);
     for (let j = i; j < end; j++) {
-      byPosition.set(baseOffset + j, items[j]!);
+      const item = items[j];
+      if (item) byPosition.set(baseOffset + j, item);
     }
     if (end < items.length) await nextFrame();
   }
@@ -795,7 +796,10 @@ export default defineStore("v2GalleryRoms", {
       }
       // Drop parked windows that scrolled out of view before getting a slot.
       for (let i = queuedWindows.length - 1; i >= 0; i--) {
-        if (!wanted.has(queuedWindows[i]!)) queuedWindows.splice(i, 1);
+        const offset = queuedWindows[i];
+        if (offset !== undefined && !wanted.has(offset)) {
+          queuedWindows.splice(i, 1);
+        }
       }
       for (const offset of wanted) {
         void this.fetchWindowAt(offset);

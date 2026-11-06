@@ -183,17 +183,17 @@ const groupedAvailable = computed<Group[]>(() => {
   const map = new Map<string, Platform[]>();
   for (const p of supportedAvailable.value) {
     const key = p.family_name || OTHER_GROUP;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(p);
+    const group = map.get(key);
+    if (group) group.push(p);
+    else map.set(key, [p]);
   }
   const groups: Group[] = [];
-  const keys = [...map.keys()].sort((a, b) => {
+  const entries = [...map].sort(([a], [b]) => {
     if (a === OTHER_GROUP) return 1;
     if (b === OTHER_GROUP) return -1;
     return a.localeCompare(b);
   });
-  for (const key of keys) {
-    const items = map.get(key)!;
+  for (const [key, items] of entries) {
     items.sort((a, b) => {
       const aGen = a.generation ?? -1;
       const bGen = b.generation ?? -1;

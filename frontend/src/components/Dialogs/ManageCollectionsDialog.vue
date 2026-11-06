@@ -194,8 +194,8 @@ async function createNewCollection() {
 }
 
 const subtitle = computed(() => {
-  if (roms.value.length === 1) {
-    const rom = roms.value[0]!;
+  const [rom] = roms.value;
+  if (rom && roms.value.length === 1) {
     return rom.name ?? rom.fs_name ?? "";
   }
   if (roms.value.length > 1) {

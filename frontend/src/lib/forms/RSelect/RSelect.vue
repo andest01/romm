@@ -309,7 +309,7 @@ const filteredItems = computed<NormalisedItem[]>(() => {
   if (!q) return normalisedItems.value;
   const index = itemSearchIndex.value;
   return normalisedItems.value.filter((_, i) =>
-    index[i]!.some((term) => term.includes(q)),
+    index[i]?.some((term) => term.includes(q)),
   );
 });
 
@@ -408,8 +408,8 @@ function recomputeFit() {
 
   let used = 0;
   let count = 0;
-  for (let i = 0; i < chips.length; i++) {
-    const w = chips[i]!.offsetWidth;
+  for (const [i, chip] of chips.entries()) {
+    const w = chip.offsetWidth;
     const remaining = chips.length - 1 - i;
     const overflowReserve = remaining > 0 ? overflowWidth + gap : 0;
     const gapNow = count > 0 ? gap : 0;
@@ -784,7 +784,7 @@ function moveActive(delta: number) {
   for (let n = 0; n < list.length - lo; n++) {
     if (i < lo) i = list.length - 1;
     if (i >= list.length) i = lo;
-    if (i === -1 || !list[i]!.disabled) break;
+    if (i === -1 || !list[i]?.disabled) break;
     i += delta || 1;
   }
   activeIndex.value = i;
@@ -809,10 +809,11 @@ function moveActiveTo(edge: "first" | "last") {
     scrollActiveIntoView();
     return;
   }
-  const order = list.map((_, i) => i);
-  if (edge === "last") order.reverse();
-  const i = order.find((n) => !list[n]!.disabled);
-  if (i === undefined) return;
+  const i =
+    edge === "last"
+      ? list.findLastIndex((item) => !item.disabled)
+      : list.findIndex((item) => !item.disabled);
+  if (i === -1) return;
   activeIndex.value = i;
   scrollActiveIntoView();
 }
@@ -844,12 +845,12 @@ function typeahead(char: string) {
   typeBuffer += char.toLowerCase();
   typeTimer = setTimeout(() => (typeBuffer = ""), TYPEAHEAD_RESET_MS);
   const cycling = [...typeBuffer].every((c) => c === typeBuffer[0]);
-  const query = cycling ? typeBuffer[0]! : typeBuffer;
+  const query = cycling ? typeBuffer.charAt(0) : typeBuffer;
   const from = activeIndex.value + (cycling || typeBuffer.length === 1 ? 1 : 0);
   for (let n = 0; n < list.length; n++) {
     const i = (from + n + list.length) % list.length;
-    const item = list[i]!;
-    if (!item.disabled && item.title.toLowerCase().startsWith(query)) {
+    const item = list[i];
+    if (item && !item.disabled && item.title.toLowerCase().startsWith(query)) {
       activeIndex.value = i;
       scrollActiveIntoView();
       return;

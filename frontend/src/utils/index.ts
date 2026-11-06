@@ -973,7 +973,9 @@ export function shuffled<T>(
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {
     const target = Math.floor(random() * (index + 1));
-    [result[index], result[target]] = [result[target]!, result[index]!];
+    const moved = result.slice(index, index + 1);
+    const displaced = result.splice(target, 1, ...moved);
+    result.splice(index, 1, ...displaced);
   }
   return result;
 }

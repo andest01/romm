@@ -183,8 +183,8 @@ export function useGamepad() {
     }
     const at = NAV_TARGETS.findIndex(({ id }) => id === current);
     const next =
-      NAV_TARGETS[(at + step + NAV_TARGETS.length) % NAV_TARGETS.length]!;
-    if (next.to !== route.path) void router.push(next.to);
+      NAV_TARGETS[(at + step + NAV_TARGETS.length) % NAV_TARGETS.length];
+    if (next && next.to !== route.path) void router.push(next.to);
   }
 
   // A is polled before the D-pad, so wait for that poll's arrows to queue
@@ -317,7 +317,8 @@ export function useGamepad() {
         // A button can be in any combination; press-edge always emits the
         // CustomEvent regardless of built-in semantics.
         for (let i = 0; i < pad.buttons.length; i++) {
-          const button = pad.buttons[i]!;
+          const button = pad.buttons[i];
+          if (!button) continue;
           const binding = BUTTON_MAP[i];
           const action = BUTTON_ACTIONS[i];
           const prev = (st.buttons[i] ||= { pressed: false, nextRepeatAt: 0 });

@@ -139,10 +139,10 @@ const filenamePlaceholder = computed(() => {
 watch(
   () => props.rom,
   () => {
-    selectedRomFile.value =
-      baseFiles.value.length === 1 ? baseFiles.value[0]! : null;
-    selectedPatchFile.value =
-      patchFiles.value.length === 1 ? patchFiles.value[0]! : null;
+    const [baseFile, otherBaseFile] = baseFiles.value;
+    const [patchFile, otherPatchFile] = patchFiles.value;
+    selectedRomFile.value = baseFile && !otherBaseFile ? baseFile : null;
+    selectedPatchFile.value = patchFile && !otherPatchFile ? patchFile : null;
     uploadedPatch.value = null;
     // Preselect the ROM's own platform as the upload target.
     selectedPlatformId.value = props.rom.platform_id;
@@ -152,9 +152,9 @@ watch(
 
 watch(
   archiveMembers,
-  (members) => {
+  ([member, otherMember]) => {
     selectedArchiveMemberName.value =
-      members.length === 1 ? members[0]!.name : null;
+      member && !otherMember ? member.name : null;
   },
   { immediate: true },
 );

@@ -49,8 +49,7 @@ function readGamepadBits() {
     for (const [index, bit] of padButtonBits) {
       if (buttons[index]?.pressed) mask |= bit;
     }
-    for (let axis = 0; axis < padAxisBits.length; axis += 1) {
-      const [negativeBit, positiveBit] = padAxisBits[axis]!;
+    for (const [axis, [negativeBit, positiveBit]] of padAxisBits.entries()) {
       const value = axes[axis] ?? 0;
       if (value < -AXIS_THRESHOLD) mask |= negativeBit;
       if (value > AXIS_THRESHOLD) mask |= positiveBit;

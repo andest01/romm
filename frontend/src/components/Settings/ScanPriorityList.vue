@@ -64,7 +64,8 @@ function move(index: number, delta: number) {
   const target = index + delta;
   if (target < 0 || target >= enabled.value.length) return;
   const next = [...enabled.value];
-  [next[index], next[target]] = [next[target]!, next[index]!];
+  const displaced = next.splice(target, 1, ...next.slice(index, index + 1));
+  next.splice(index, 1, ...displaced);
   emitNext(next);
 }
 

@@ -117,9 +117,11 @@ const offsets = computed<number[]>(() => {
   const len = props.items.length;
   const out = new Array<number>(len + 1);
   out[0] = 0;
+  let top = 0;
   for (let i = 0; i < len; i++) {
     const h = props.getItemHeight(props.items[i], i);
-    out[i + 1] = out[i]! + (Number.isFinite(h) && h > 0 ? h : 0);
+    top += Number.isFinite(h) && h > 0 ? h : 0;
+    out[i + 1] = top;
   }
   return out;
 });
@@ -129,7 +131,7 @@ const offsets = computed<number[]>(() => {
  *  towards it, by less than that item has already grown. */
 function offsetAt(offs: number[], i: number): number {
   const shift = props.offsetShift;
-  return offs[i]! + (shift && i > shift.fromIndex ? shift.px : 0);
+  return (offs[i] ?? 0) + (shift && i > shift.fromIndex ? shift.px : 0);
 }
 
 const totalHeight = computed(() => {

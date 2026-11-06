@@ -203,10 +203,9 @@ export async function createPico8Runtime(
     }
 
     let target = 0;
-    for (let index = 0; index < FRAMEBUFFER_BYTES; index += 1) {
-      const packed = framebuffer[index]!;
-      pixels[target] = paletteLut[packed & 0x0f]!;
-      pixels[target + 1] = paletteLut[packed >> 4]!;
+    for (const packed of framebuffer) {
+      pixels[target] = paletteLut[packed & 0x0f] ?? 0;
+      pixels[target + 1] = paletteLut[packed >> 4] ?? 0;
       target += 2;
     }
     context.putImageData(imageData, 0, 0);

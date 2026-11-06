@@ -157,7 +157,8 @@ export function installScanLifecycle() {
           roms: [],
           new_firmware_count: 0,
         });
-        scannedPlatform = scanningStore.scanningPlatforms.at(0)!;
+        scannedPlatform = scanningStore.scanningPlatforms.at(0);
+        if (!scannedPlatform) return;
       }
 
       const existingInPlatform = scannedPlatform.roms.find(

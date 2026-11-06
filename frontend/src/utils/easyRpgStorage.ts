@@ -31,9 +31,11 @@ function saveDir(game: string): string {
 // Laid out as IDBFS lays it out, so the player opens it without an upgrade.
 function upgradeSaveDb(request: IDBOpenDBRequest) {
   const db = request.result;
-  const store = db.objectStoreNames.contains(IDBFS_STORE)
-    ? request.transaction!.objectStore(IDBFS_STORE)
-    : db.createObjectStore(IDBFS_STORE);
+  const { transaction } = request;
+  const store =
+    transaction && db.objectStoreNames.contains(IDBFS_STORE)
+      ? transaction.objectStore(IDBFS_STORE)
+      : db.createObjectStore(IDBFS_STORE);
   if (!store.indexNames.contains(IDBFS_TIMESTAMP_INDEX)) {
     store.createIndex(IDBFS_TIMESTAMP_INDEX, IDBFS_TIMESTAMP_INDEX, {
       unique: false,
@@ -76,10 +78,10 @@ export function readEasyRpgSaves(game: string): Promise<PlayerSaveFile[]> {
       )
         return;
       const fileName = key.slice(prefix.length);
-      const match = SAVE_FILE.exec(fileName);
-      if (!match) return;
+      const slot = SAVE_FILE.exec(fileName)?.[1];
+      if (!slot) return;
       saves.push({
-        slot: match[1]!,
+        slot,
         fileName,
         bytes: entry.contents,
         updatedAt: entry.timestamp.getTime(),

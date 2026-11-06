@@ -50,26 +50,27 @@ function toneFor(action: string): Leaf["tone"] {
 const groups = computed<Group[]>(() => {
   const map = new Map<string, Group>();
   for (const raw of props.scopes) {
-    const parts = raw.split(".");
+    const lastDot = raw.lastIndexOf(".");
     // Single-segment permission (`invite`, `reset`): its own group, no leaves.
-    if (parts.length < 2) {
+    if (lastDot === -1) {
       const key = raw;
       if (!map.has(key)) {
         map.set(key, { label: key.toUpperCase(), sortKey: key, leaves: [] });
       }
       continue;
     }
-    const action = parts[parts.length - 1]!;
-    const scopePath = parts.slice(0, -1);
-    const sortKey = scopePath.join(".");
-    if (!map.has(sortKey)) {
-      map.set(sortKey, {
+    const action = raw.slice(lastDot + 1);
+    const sortKey = raw.slice(0, lastDot);
+    const scopePath = sortKey.split(".");
+    let group = map.get(sortKey);
+    if (!group) {
+      group = {
         label: scopePath.map((p) => p.toUpperCase()).join(" · "),
         sortKey,
         leaves: [],
-      });
+      };
+      map.set(sortKey, group);
     }
-    const group = map.get(sortKey)!;
     if (!group.leaves.some((l) => l.action === action)) {
       group.leaves.push({ action, tone: toneFor(action) });
     }
