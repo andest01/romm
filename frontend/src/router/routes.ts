@@ -63,6 +63,7 @@ export const routeComponents: Partial<Record<RouteName, RouteViewLoader>> = {
   [ROUTES.COLLECTIONS_INDEX]: () => import("@/views/CollectionsIndex.vue"),
   // Dev tool: live gamepad input inspector.
   [ROUTES.CONTROLLER_DEBUG]: () => import("@/views/ControllerDebug.vue"),
+  [ROUTES.STEARCH]: () => import("@/components/Stearch/Stearch.container.vue"),
 };
 
 export const routeLayouts = {

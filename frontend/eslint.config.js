@@ -372,6 +372,50 @@ export default withVueTs(
       "romm/no-unscoped-local-storage": "off",
     },
   },
+  // Pure means pure: props in, events out. State lives in containers and the store.
+  {
+    files: [
+      "src/components/Stearch/**/*.pure-component.vue",
+      "src/components/Stearch/**/*.layout.vue",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "vue",
+              importNames: [
+                "ref",
+                "shallowRef",
+                "reactive",
+                "computed",
+                "watch",
+                "watchEffect",
+                "inject",
+                "onMounted",
+                "onBeforeUnmount",
+              ],
+              message:
+                "Pure components have no state. Move it to the store and pass it down through a container.",
+            },
+            {
+              name: "pinia",
+              message:
+                "Pure components have no state. Connect it in the container.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["@/stores/*", "**/*.store", "@/composables/*"],
+              message:
+                "Pure components have no state. Connect it in the container.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // After the base configs, so its exceptions win.
   ...e2eConfig,
   // Keep last: Prettier owns formatting, so this switches off every

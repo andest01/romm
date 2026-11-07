@@ -6,6 +6,7 @@ export const ROUTES = {
   MAIN: "main",
   HOME: "home",
   SEARCH: "search",
+  STEARCH: "stearch",
   MUSIC: "music",
   PLATFORM: "platform",
   COLLECTION: "collection",
