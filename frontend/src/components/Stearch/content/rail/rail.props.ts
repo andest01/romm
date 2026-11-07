@@ -6,8 +6,15 @@ export interface RailBucket {
   isCurrent: boolean;
 }
 
+/** The visible part of the list, as fractions of the rail's height, 0 to 1. */
+export interface RailThumb {
+  start: number;
+  size: number;
+}
+
 export interface RailProps {
   buckets: RailBucket[];
+  thumb: RailThumb;
 }
 
 export interface RailEmits {

@@ -6,10 +6,12 @@ import { ITEM_VERBS } from "./item.story-args";
 import { LIST_ITEMS } from "./list.items";
 import type { ListItemKind, ListProps } from "./list.props";
 import ListPure from "./list.pure-component.vue";
-import { buildScrollRows, headHeightFor, rowHeightFor } from "./list.selectors";
+import { buildScrollRows, headHeightFor, itemFit } from "./list.selectors";
 
-type Args = Pick<ListProps, "columns" | "errorMessage" | "emptyMessage"> & {
+type Args = Pick<ListProps, "errorMessage" | "emptyMessage"> & {
   itemKind: ListItemKind;
+  /** The width items get. Columns and row height follow from it. */
+  listWidth: number;
   itemCount: number;
   pendingCount: number;
   onPress: () => void;
@@ -20,53 +22,59 @@ const meta: Meta<Args> = {
   tags: ["!autodocs"],
   parameters: { layout: "fullscreen" },
   argTypes: {
+    itemKind: { control: "radio", options: Object.keys(LIST_ITEMS) },
+    listWidth: { control: { type: "range", min: 280, max: 2400, step: 10 } },
     itemCount: { control: { type: "range", min: 0, max: 1000, step: 1 } },
     pendingCount: { control: { type: "range", min: 0, max: 100, step: 1 } },
-    itemKind: {
-      control: "radio",
-      options: Object.keys(LIST_ITEMS),
-    },
-    columns: { control: { type: "range", min: 1, max: 8, step: 1 } },
     errorMessage: { control: "text" },
     emptyMessage: { control: "text" },
     onPress: { control: false },
   },
   args: {
+    itemKind: "tile",
+    listWidth: 1340,
     itemCount: 100,
     pendingCount: 0,
-    itemKind: "tile",
-    columns: 4,
     errorMessage: null,
     emptyMessage: "No games match your search.",
     onPress: fn(),
   },
   render: (args) => ({
     components: { ListPure },
-    setup: () => ({
-      args,
-      item: computed(() => LIST_ITEMS[args.itemKind]),
-      verbs: ITEM_VERBS,
-      setScroller: () => undefined,
-      rowHeight: computed(() => rowHeightFor(args.itemKind, window.innerWidth)),
-      rows: computed(() =>
-        buildScrollRows(
-          stearchSlots(args.itemCount, args.pendingCount),
-          args.columns,
-          [],
+    setup: () => {
+      const fit = computed(() =>
+        itemFit(args.itemKind, { width: args.listWidth }),
+      );
+      return {
+        args,
+        fit,
+        item: computed(() => LIST_ITEMS[args.itemKind]),
+        verbs: ITEM_VERBS,
+        setScroller: () => undefined,
+        headHeight: headHeightFor(args.itemKind.startsWith("phone")),
+        rows: computed(() =>
+          buildScrollRows(
+            stearchSlots(args.itemCount, args.pendingCount),
+            fit.value.columns,
+            [],
+          ),
         ),
-      ),
-      headHeight: headHeightFor(false),
-    }),
+      };
+    },
     template: `
-      <div style="height: 100vh">
+      <div :style="{ height: '100vh', width: args.listWidth + 'px' }">
         <ListPure
           :rows="rows"
-          :row-height="rowHeight"
+          :row-height="fit.rowHeight"
           :head-height="headHeight"
-          :columns="args.columns"
+          :columns="fit.columns"
           :item="item"
           :verbs="verbs"
           :set-scroller="setScroller"
+          :band="null"
+          :band-offset="0"
+          :rail="null"
+          :scrollbar-width="0"
           :error-message="args.errorMessage"
           :empty-message="args.emptyMessage"
           @press="args.onPress"
@@ -81,6 +89,16 @@ export default meta;
 type Story = StoryObj<Args>;
 
 export const Playground: Story = {};
+
+/** v4's phone photo grid on a 320 phone: five covers a row. */
+export const PhoneCovers: Story = {
+  args: { itemKind: "phone-cover", listWidth: 320 },
+};
+
+/** Your 1920 screen with the panel open: four tiles a row. */
+export const TilesBesidePanel: Story = {
+  args: { itemKind: "tile", listWidth: 1340 },
+};
 
 export const PressingHandsActionsBack: Story = {
   args: { itemCount: 1 },

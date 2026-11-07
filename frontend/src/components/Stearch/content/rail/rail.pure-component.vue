@@ -22,11 +22,30 @@ defineEmits<RailEmits>();
     >
       {{ bucket.label }}
     </div>
+    <div
+      class="stearch-rail__thumb"
+      :style="{
+        insetBlockStart: `${thumb.start * 100}%`,
+        blockSize: `${thumb.size * 100}%`,
+      }"
+    />
   </div>
 </template>
 
 <style scoped>
+/* The rail is the list's scrollbar: buckets are the track, and the thumb
+   marks what's on screen. */
+.stearch-rail__thumb {
+  position: absolute;
+  inset-inline: 0;
+  min-block-size: 16px;
+  border: 1px solid var(--r-color-brand-primary);
+  border-radius: var(--r-radius-sm);
+  background: color-mix(in srgb, var(--r-color-brand-primary) 20%, transparent);
+  pointer-events: none;
+}
 .stearch-rail {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;

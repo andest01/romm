@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { selectAnchorPosition } from "./Stearch.attention.selectors";
 import {
   LOADED_STEARCH_STATE,
   SECOND_STEARCH_ROW,
@@ -15,6 +16,36 @@ const { results, query } = LOADED_STEARCH_STATE;
 const withWindows = (windows: typeof results.windows) => ({
   ...LOADED_STEARCH_STATE,
   results: { ...results, windows },
+});
+
+describe("selectAnchorPosition", () => {
+  it("anchors on the active item when it's loaded", () => {
+    // Arrange
+    const state = stearchReducer(LOADED_STEARCH_STATE, {
+      type: "attention/set",
+      patch: { activeId: SECOND_STEARCH_ROW.id },
+    });
+
+    // Act
+    const position = selectAnchorPosition(state);
+
+    // Assert
+    expect(position).toBe(SECOND_STEARCH_ROW.position);
+  });
+
+  it("falls back to the top of the list without an active item", () => {
+    // Arrange
+    const state = stearchReducer(LOADED_STEARCH_STATE, {
+      type: "view/set",
+      patch: { visibleSpan: { first: 30, last: 40 } },
+    });
+
+    // Act
+    const position = selectAnchorPosition(state);
+
+    // Assert
+    expect(position).toBe(30);
+  });
 });
 
 describe("selectLoadedRoms", () => {

@@ -73,8 +73,9 @@ content/content.container.vue  items plus scroll: the one `content` the app sees
    - **Roots and trunk:** the state is the ground. `Stearch.selectors.ts` is the trunk, with one plain selector per field and nothing else. It's the only code that reads `IStearchState`, apart from the reducer and store that write it. ESLint enforces this.
    - **Branches:** memoized families at the root, one per state branch: `Stearch.results.selectors.ts`, `Stearch.rows.selectors.ts`, `Stearch.attention.selectors.ts`, `Stearch.query.selectors.ts` and `Stearch.layout.selectors.ts`. They build only on the trunk and on each other.
    - **Leaves:** each domain's `*.selectors.ts` returns exactly the props its pure component takes, so containers just bind them.
-6. **State stays immutable.** The store holds state in a `shallowRef`, so selectors can compare identity. Replace values; never edit them in place.
-7. **No silent fallbacks.** Don't use `!`, or an invented `??` default, on a value that can't be missing. See "Don't silence a type check" in the root `AGENTS.md`.
+6. **State comes from events.** A click, a keypress, a scroll range or a network reply may dispatch. A watcher never does, because one that dispatches can feed back into itself: two of them once re-ran each other until Vue stopped and `/stearch` went blank. ESLint enforces this. Screen facts, such as the list's size, the device and the band's push, stay in the view and reach pure components as props. Each has one owner and is read-only to everyone else: `content/content.view.ts` derives the device, and `use-scroller-jump.ts` owns the band's push, the list's box and the scrollbar's measured width. Never write a shared ref from several places; if a fact comes from an event, it belongs in state. The store holds the user's job; the view holds the screen. The one exception left is `locale/set`, which is marked and still an open question.
+7. **State stays immutable.** The store holds state in a `shallowRef`, so selectors can compare identity. Replace values; never edit them in place.
+8. **No silent fallbacks.** Don't use `!`, or an invented `??` default, on a value that can't be missing. See "Don't silence a type check" in the root `AGENTS.md`.
 
 ## The reducer is a table
 
@@ -99,9 +100,12 @@ export const stearchReducer = reducerOf(HANDLERS);
 
 - Files are `<file>.stories.ts`, named after the file under test. Storybook does not read `.stories.vue`.
 - The title starts at the `Stearch` root section, mirrors the directories and ends in the exact file name, so a search finds the file: `Stearch/content/list/list.pure-component.vue`.
-- No generated Docs pages: every story sets `tags: ["!autodocs"]`. A page with nothing of ours on it trains people to ignore docs. Real notes live in these markdown files.
+- No generated Docs pages: every story sets `tags: ["!autodocs"]`. A page with nothing of ours on it trains people to ignore docs. Real notes live in these markdown files. Write the tag literally in each story file: Storybook reads tags from the file itself, so a tag spread in from a shared object is ignored.
+- **Stories run offline.** Container stories connect the store to `fakeGetRoms` through `renderContainer`, so scrolling past the seeded rows fetches fake windows instead of a backend that isn't there. Never let a story reach the real API.
 - Stories mean it: real states, and `play()` for anything interactive.
-- Layout stories use `layout: "fullscreen"` and fill slots with plain labelled blocks. Responsive behaviour is CSS on `data-bp`, so a viewport change alone proves it.
+- **Pure layout stories show every part in its own colour.** Fill each part with `layoutPart(label, token)`, or `scrollingPart` for a part that scrolls, from `Stearch.story-helpers.ts`. Each part gets a different `PartToken` colour, a label naming the part and what it does ("Band · floats over the items"), and a dashed edge, so overlaps, gaps and scrolling show at a glance in both themes. Don't hand-roll blocks in a story: a layout story without these helpers is an outlier to fix.
+- **A layout fix lands in the layout and is proven in its story.** Change only the layout, then add a named story that recreates the bug with stand-in parts, and a `play()` check where one can assert it. `PanelCoversRaisedParts` does this for stacking: `raisedPart` layers something at `z-index: 10`, and the check confirms the open panel still covers it. Never patch the parts or views to hide a layout bug.
+- **One named story per state worth seeing.** Besides `Playground`, add a story for each layout state a reader should recognise, such as `BandBeingPushed` or `NoFooter`. Use `layout: "fullscreen"`, and size the frame as the layout is used, for example a 360px-wide panel. Responsive behaviour is CSS on `data-bp`, so a viewport change alone proves it.
 
 ### The solve for layouts
 
@@ -109,7 +113,7 @@ export const stearchReducer = reducerOf(HANDLERS);
 
 - **Parts are component props.** Required parts are `Component`; parts that can be absent are `Component | null`. The type enforces it, which slots can't.
 - **Never pass a part's data to a layout.** The layout takes a `background` component, never a `backgroundUrl`. If you're adding a URL, a title or a list, you're making the layout intimate with something it should only place. Make a domain with a container and pass that in.
-- **A `null` part just isn't there.** Plain `v-if` and CSS. Nothing clever.
+- **A `null` part just isn't there.** Plain `v-if` and CSS. Nothing clever. If the CSS needs to know whether a part exists, read it from the markup with `:has()`, as `list.pure-component.vue` does for the rail. Never add a prop or `data-` attribute that restates a part's presence.
 - **This orchestrates at a high level.** The root container reads as a list of parts, and stories can swap any part for a plain block.
 
 A layout's remaining props are the interface's real states. Ask what states the UI can be in and what moves between them, then:

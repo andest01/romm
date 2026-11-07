@@ -9,6 +9,7 @@ import TableContainer from "./table.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/content/table/table.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(TableContainer),
 };

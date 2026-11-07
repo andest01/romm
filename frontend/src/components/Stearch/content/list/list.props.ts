@@ -1,10 +1,11 @@
-import type { ComponentPublicInstance } from "vue";
+import type { Component, ComponentPublicInstance } from "vue";
 import type { ListSlot } from "../../Stearch.rows.selectors";
 import type { ItemPart, ItemProps } from "./item.props";
 
 /** The scroller methods a jump needs. */
 export interface JumpScroller {
   scrollTop: number;
+  containerEl: HTMLElement | null;
   scrollToIndex(index: number, options: { smooth: boolean }): void;
 }
 
@@ -39,6 +40,14 @@ export interface ListProps {
   item: ItemPart;
   verbs: ItemProps["verbs"];
   setScroller: (scroller: ScrollerRef) => void;
+  /** Floats over the top edge and names the current section. */
+  band: Component | null;
+  /** How far the next heading has pushed the band up, as a negative number. */
+  bandOffset: number;
+  /** Sits hard against the scrollbar's left edge, at full height. */
+  rail: Component | null;
+  /** The scrollbar's measured width, so the rail can sit beside it. */
+  scrollbarWidth: number;
   columns: number;
   rowHeight: number;
   headHeight: number;

@@ -259,6 +259,42 @@ Nothing here is settled until the RomM side has been measured.
 - **Type-only imports count.** They can't cause a runtime cycle, but they bind shallow files to deep ones all the same, so the zones treat them like any other import.
 - **Process:** the user noted better strategy here. What changed was reading the tools and the import graph before proposing, then naming the one move that resolves each case.
 
+### 2026-11-07: size as state, and a blank page
+
+- **Dimension:** feature changing, bug fixing.
+- **First try:** the list's box and the device became state (`view.listBox`, `view.device`), dispatched by watchers.
+- **What went wrong:** the device update was a second `watchEffect` that dispatched. `dispatch` reads state, so the two effects re-ran each other and Vue stopped them, leaving `/stearch` blank on refresh. No unit test could see it. A `watch` would have fixed this one case, but the user judged the whole pattern dangerous: the next person could rebuild it.
+- **Result:** backed out by design. State now comes only from events, and ESLint rejects a dispatch inside any watcher. The box, the device and the band's push live in the view (`content/content.view.ts`), never in the store. Columns come from width through the pure `itemFit`, with the same rule as `useResponsiveColumns`, bounded per item kind, so a 1920 screen with the panel open gets four tiles. Padding moved onto the scroller, so the measured box is the space items get, which fixed the phone cover heights. The list story shows it with a width slider.
+- **Lesson:** keep the job and the screen apart. Pure functions still compute the screen, and stay testable; they just aren't selectors of state.
+- **Reverted:** exporting the formula from `useResponsiveColumns`. It changed a shared interface for our sake. Stearch keeps a copy of the formula for now, a known duplicate.
+- **For later, from the user:**
+  - Should page health be state, for example `loading`, `failed` or `died and cannot recover`, so a broken page says so instead of going blank?
+  - Should `listBox` be the start of a fuller description of the world we live in, built from DOM types like `DOMRectReadOnly` (size, position) rather than one-off numbers?
+
+### 2026-11-07: read-ahead, settle and a request cap
+
+- **Dimension:** performance.
+- **Why:** `__perf_images` notes show each window costs the server about 1.3 s at 100k, because every request re-ranks the library. So the cap on requests in flight matters as much as reading ahead.
+- **Result:** one frozen `READ_AHEAD` policy in `Stearch.read-ahead.ts`: 48 results per window, 2 screens ahead in the scroll direction, 1 behind, a 150 ms settle, and 2 requests in flight. Screens are the unit, converted per device from columns and the visible rows. The store waits for scrolling to settle, so scrubbing, wheel, keyboard and gamepad never fetch the windows in between, then cancels requests for windows the user moved past.
+- **Kept open:** `screensKept` is infinite, the seam for dropping windows once 100k metrics exist.
+- **Not proven:** pure functions are tested. The store's settle, cap and cancellation have no test yet, and nothing has run against the 2k library.
+
+### 2026-11-07: band into the lists, rail as scrollbar, refs reined in
+
+- **Dimension:** cost, feature changing.
+- **Result:** the band moved out of the content layout into the list and table, where the table's column header and the band stack naturally, so the hard-coded `30` inset is gone. The content layout is just items and rail. While a rail exists, the layout hides the items' scrollbar and the rail becomes it, with a thumb for the visible span. The fixed 12px scrollbar width and the margin that bent the rules are gone. Views open on an anchor from state, the active item or else the top, so switching views keeps the same item in frame.
+- **What went wrong:** moving screen facts out of the store, I let shared refs be written from three places, with an invented `??` fallback. The user caught it. The visible span came from an event, so it went into state, and the rail's thumb became a selector. The band's push kept one owner and is exposed read-only. I also restated a part's presence as a `data-` attribute, when `:has()` reads it from the markup.
+- **Then reversed, same day:** the user needs to grab the native scrollbar and touch the rail. The scrollbar is back, and the rail sits hard against its left edge. Scrollbar widths differ by browser, so the scroller measures its own (`offsetWidth - clientWidth`), and each list places its rail with that. Each list now owns its whole scroll edge (band, rail, scrollbar), so `content.pure-layout.vue` had one part left and was deleted.
+- **Open:** the user may rescind the band. A mouse wheel over the rail still doesn't scroll the list.
+
+### 2026-11-07: stories hit the real API
+
+- **Dimension:** testing, portability.
+- **What went wrong:** switching the store to `romApi.getRoms` left the fake API with no caller, and the data-source seam became a fixed import. Container stories seeded 48 of 1,000 rows, so scrolling one fetched from a backend Storybook doesn't have, got a 404, and the whole list turned into an error. Spec 006 still claimed a one-line swap.
+- **Result:** the store takes its source through `connect(source)`, typed from `romApi.getRoms`. The app connects the real API and container stories connect the fake. An unconnected store reports it instead of quietly using the real API.
+- **Also found:** every container story had a Docs page, because Storybook only reads `tags` written in the story file, and ours were spread in from a shared object.
+- **Still open:** a failed later window replaces the whole list with an error. That's a product bug; it goes to the spec before code.
+
 ## Next measurements
 
 1. A shared 100k library for `/stearch` and `/search`.

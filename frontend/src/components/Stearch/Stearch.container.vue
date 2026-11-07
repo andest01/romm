@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, watchEffect } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import romApi from "@/services/api/rom";
 import { buildLabels } from "./Stearch.labels";
 import { selectPanelLayout } from "./Stearch.layout.selectors";
 import StearchLayout from "./Stearch.pure-layout.vue";
@@ -14,9 +15,16 @@ const { t } = useI18n();
 const store = stearchStore();
 const panelLayout = computed(() => selectPanelLayout(store.state));
 
-watchEffect(() => {
-  store.dispatch([{ type: "locale/set", labels: buildLabels(t) }]);
-});
+// The one watcher that dispatches, and an open question: labels change only
+// when the language does. See "State comes from events" in AGENTS.md.
+/* eslint-disable no-restricted-syntax */
+watch(
+  () => buildLabels(t),
+  (labels) => store.dispatch([{ type: "locale/set", labels }]),
+  { immediate: true },
+);
+/* eslint-enable no-restricted-syntax */
+store.connect(romApi.getRoms);
 onMounted(store.start);
 </script>
 

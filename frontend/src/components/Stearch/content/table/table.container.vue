@@ -2,20 +2,32 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { RTableColumn } from "@/lib";
+import { selectAnchorPosition } from "../../Stearch.attention.selectors";
 import {
   selectErrorMessage,
+  selectIsLoading,
   selectSections,
 } from "../../Stearch.results.selectors";
 import { selectSlots } from "../../Stearch.rows.selectors";
-import { selectSortDir, selectSortKey } from "../../Stearch.selectors";
+import {
+  selectSortDir,
+  selectSortKey,
+  selectVisiblePosition,
+} from "../../Stearch.selectors";
 import stearchStore from "../../Stearch.store";
+import type { VisibleRange } from "../list/list.props";
 import {
   buildScrollRows,
   buildWindowActions,
   headHeightFor,
+  itemsPerScreen,
+  withGhosts,
 } from "../list/list.selectors";
 import { useScrollerJump } from "../list/use-scroller-jump";
 import Verbs from "../list/verbs/verbs.container.vue";
+import RailContainer from "../rail/rail.container.vue";
+import SectionContainer from "../section/section.container.vue";
+import { selectSectionProps } from "../section/section.selectors";
 import RowPure from "./row/row.pure-component.vue";
 import TablePure from "./table.pure-component.vue";
 import { buildSortActions, TABLE_ROW_HEIGHT } from "./table.selectors";
@@ -36,26 +48,44 @@ const COLUMNS: readonly RTableColumn[] = [
 ];
 const GRID_TEMPLATE =
   "minmax(0, 3fr) minmax(0, 1fr) 90px 100px 100px 80px 70px 90px 80px 64px";
-const ROW_COLUMNS = 1;
-
 const { t } = useI18n();
 const store = stearchStore();
 const headHeight = headHeightFor(false);
 const rows = computed(() =>
   buildScrollRows(
-    selectSlots(store.state),
-    ROW_COLUMNS,
+    withGhosts(
+      selectSlots(store.state),
+      selectIsLoading(store.state),
+      itemsPerScreen({ columns: 1, rowHeight: TABLE_ROW_HEIGHT }, box.value),
+    ),
+    1,
     selectSections(store.state),
   ),
 );
 const sortKey = computed(() => selectSortKey(store.state));
 const sortDir = computed(() => selectSortDir(store.state));
-const setScroller = useScrollerJump(
+const { setScroller, box, scrollbarWidth, bandOffset } = useScrollerJump(
   () => rows.value,
   () => TABLE_ROW_HEIGHT,
   () => headHeight,
+  () => selectAnchorPosition(store.state),
+);
+const band = computed(() =>
+  selectSectionProps(store.state) ? SectionContainer : null,
 );
 const errorMessage = computed(() => selectErrorMessage(store.state));
+
+function onRange(range: VisibleRange): void {
+  store.dispatch(
+    buildWindowActions(range, rows.value, {
+      previousPosition: selectVisiblePosition(store.state),
+      itemsPerScreen: itemsPerScreen(
+        { columns: 1, rowHeight: TABLE_ROW_HEIGHT },
+        box.value,
+      ),
+    }),
+  );
+}
 </script>
 
 <template>
@@ -63,6 +93,10 @@ const errorMessage = computed(() => selectErrorMessage(store.state));
     :item="RowPure"
     :verbs="Verbs"
     :set-scroller="setScroller"
+    :band="band"
+    :band-offset="bandOffset"
+    :rail="RailContainer"
+    :scrollbar-width="scrollbarWidth"
     :table-label="TABLE_LABEL"
     :columns="COLUMNS"
     :grid-template="GRID_TEMPLATE"
@@ -75,6 +109,6 @@ const errorMessage = computed(() => selectErrorMessage(store.state));
     :empty-message="t('rom.no-games-match')"
     @press="store.dispatch"
     @sort="(payload) => store.dispatch(buildSortActions(payload))"
-    @range="(range) => store.dispatch(buildWindowActions(range, rows))"
+    @range="onRange"
   />
 </template>

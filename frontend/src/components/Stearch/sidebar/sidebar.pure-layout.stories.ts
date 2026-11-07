@@ -1,11 +1,21 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
-import { h } from "vue";
+import { layoutPart, scrollingPart } from "../Stearch.story-helpers";
 import SidebarLayout from "./sidebar.pure-layout.vue";
 
-const block = (label: string, height: string) => () =>
-  h("div", { style: { height } }, label);
-
-const FOOTER = block("Footer verbs", "48px");
+const HEADER = layoutPart(
+  "Header · verbs stay put",
+  "--r-color-brand-primary",
+  "48px",
+);
+const BODY = scrollingPart("Body · scrolls", "--r-color-info", {
+  rows: 30,
+  paddingInline: "0px",
+});
+const FOOTER = layoutPart(
+  "Footer · verbs stay put",
+  "--r-color-success",
+  "48px",
+);
 
 const meta: Meta<typeof SidebarLayout> = {
   title: "Stearch/sidebar/sidebar.pure-layout.vue",
@@ -13,7 +23,9 @@ const meta: Meta<typeof SidebarLayout> = {
   component: SidebarLayout,
   parameters: { layout: "fullscreen" },
   decorators: [
-    () => ({ template: `<div style="height: 100vh"><story /></div>` }),
+    () => ({
+      template: `<div style="height: 100vh; width: 360px"><story /></div>`,
+    }),
   ],
   argTypes: {
     header: { control: false },
@@ -25,12 +37,17 @@ const meta: Meta<typeof SidebarLayout> = {
     },
   },
   args: {
-    header: block("Header verbs", "48px"),
-    body: block("A tall body scrolls here", "200vh"),
+    header: HEADER,
+    body: BODY,
     footer: FOOTER,
   },
 };
 
 export default meta;
 
-export const Playground: StoryObj<typeof SidebarLayout> = {};
+type Story = StoryObj<typeof SidebarLayout>;
+
+export const Playground: Story = {};
+
+/** Without a footer, the body takes its space. */
+export const NoFooter: Story = { args: { footer: null } };

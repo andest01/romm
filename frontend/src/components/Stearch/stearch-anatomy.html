@@ -119,8 +119,8 @@
           <desc id="stearch-anatomy-desc">
             The Stearch page drawn as its layouts and parts, each labelled with
             the file that draws it: a page layout holding the header, the filter
-            panel with its own layout, the content layout with band, items and
-            rail, and the footer.
+            panel with its own layout, the content as a list or table that owns
+            its band, rail and scrollbar, and the footer.
           </desc>
           <rect width="100%" height="100%" fill="#f5f5f5" />
 
@@ -263,12 +263,13 @@
             height="536"
             rx="6"
             fill="none"
-            stroke="#bf4520"
-            stroke-dasharray="5,4"
+            stroke="#2d3142"
           />
-          <text x="408" y="184" class="layout">Content layout</text>
-          <text x="408" y="198" class="path-accent">
-            content/content.pure-layout.vue · content.container.vue
+          <text x="408" y="184" class="name">
+            Content: the list or the table, each owning its scroll edge
+          </text>
+          <text x="408" y="198" class="path">
+            content/content.container.vue picks one
           </text>
 
           <rect
@@ -284,8 +285,8 @@
             Section band: F · 45 games · Select · Prev · Next
           </text>
           <text x="418" y="242" class="path">
-            content/section/ · pushed by headings via
-            content/use-scroller-jump.ts
+            content/section/ · drawn by list and table · pushed via
+            content/list/use-scroller-jump.ts
           </text>
 
           <rect
@@ -366,12 +367,21 @@
           <text x="1132" y="372" text-anchor="middle" class="name">M</text>
           <text x="1132" y="452" text-anchor="middle" class="name">S</text>
           <text x="1132" y="532" text-anchor="middle" class="name">Z</text>
+          <rect
+            x="1150"
+            y="208"
+            width="8"
+            height="480"
+            rx="2"
+            fill="#ececec"
+            stroke="#4f5d75"
+          />
           <text x="1104" y="718" text-anchor="end" class="name">
-            Rail: drag to scrub
+            Rail: drag to scrub, hard against the native scrollbar
           </text>
           <text x="1104" y="734" text-anchor="end" class="path">
-            content/rail/ · width: --stearch-rail-width in
-            content.pure-layout.vue
+            content/rail/ · placed by list.pure-component.vue and
+            table.pure-component.vue at the measured scrollbar width
           </text>
 
           <!-- Footer -->

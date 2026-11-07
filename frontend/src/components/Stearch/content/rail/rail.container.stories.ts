@@ -9,6 +9,7 @@ import RailContainer from "./rail.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/content/rail/rail.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(RailContainer),
 };

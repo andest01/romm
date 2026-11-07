@@ -9,6 +9,7 @@ import FieldList from "./field-list.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/fields/field-list/field-list.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(FieldList),
 };

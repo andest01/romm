@@ -1,37 +1,21 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
-import { h, type Component } from "vue";
+import { expect } from "storybook/test";
+import type { Component } from "vue";
 import type {
   StearchLayoutProps,
   StearchPanelLayout,
 } from "./Stearch.pure-layout-props";
 import StearchLayout from "./Stearch.pure-layout.vue";
+import { layoutPart, raisedPart, scrollingPart } from "./Stearch.story-helpers";
 
-const block =
-  (label: string, token: string, minHeight: string): Component =>
-  () =>
-    h(
-      "div",
-      {
-        style: {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          minHeight,
-          background: `color-mix(in srgb, var(${token}) 30%, var(--r-color-bg))`,
-          color: "var(--r-color-fg)",
-          fontSize: "2rem",
-          fontWeight: 700,
-        },
-      },
-      label,
-    );
-
-const HEADER = block("Header", "--r-color-brand-primary", "96px");
-const PANEL = block("Panel", "--r-color-warning", "100%");
-const CONTENT = block("Content", "--r-color-info", "100%");
-const FOOTER = block("Footer", "--r-color-success", "64px");
-const BACKGROUND = block("Background", "--r-color-danger", "100%");
+const HEADER = layoutPart("Header", "--r-color-brand-primary", "96px");
+const PANEL = layoutPart("Panel", "--r-color-warning");
+const CONTENT = scrollingPart("Content", "--r-color-info", {
+  rows: 40,
+  paddingInline: "0px",
+});
+const FOOTER = layoutPart("Footer", "--r-color-success", "64px");
+const BACKGROUND = layoutPart("Background", "--r-color-danger");
 
 type Args = Omit<StearchLayoutProps, "panelLayout"> & StearchPanelLayout;
 
@@ -92,3 +76,27 @@ const meta: Meta<Args> = {
 export default meta;
 
 export const Playground: StoryObj<Args> = {};
+
+/** Parts layer things high inside themselves, as the list's band and rail do.
+ *  Each region is its own stacking layer, so the open panel still covers them
+ *  wherever they overlap. */
+export const PanelCoversRaisedParts: StoryObj<Args> = {
+  args: {
+    content: raisedPart("Content", "--r-color-info"),
+    footer: raisedPart("Footer", "--r-color-success"),
+    panelState: "shown",
+  },
+  play: async ({ canvasElement }) => {
+    const panel = canvasElement.querySelector("aside");
+    if (!panel) throw new Error("The layout drew no panel");
+    for (const raised of canvasElement.querySelectorAll("[data-raised]")) {
+      const box = raised.getBoundingClientRect();
+      const panelBox = panel.getBoundingClientRect();
+      const x = Math.max(box.left, panelBox.left) + 4;
+      const y = box.top + box.height / 2;
+      if (x > Math.min(box.right, panelBox.right)) continue;
+      const hit = document.elementFromPoint(x, y);
+      await expect(panel.contains(hit)).toBe(true);
+    }
+  },
+};

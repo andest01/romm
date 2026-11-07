@@ -9,6 +9,10 @@ export interface TableProps {
   item: ItemPart<RowProps>;
   verbs: RowProps["verbs"];
   setScroller: ListProps["setScroller"];
+  band: ListProps["band"];
+  bandOffset: ListProps["bandOffset"];
+  rail: ListProps["rail"];
+  scrollbarWidth: ListProps["scrollbarWidth"];
   tableLabel: string;
   columns: readonly RTableColumn[];
   gridTemplate: string;

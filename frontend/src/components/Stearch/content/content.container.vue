@@ -1,34 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useBreakpoint } from "@/composables/useBreakpoint";
-import { selectBandOffset, selectViewMode } from "../Stearch.selectors";
+import { selectViewMode } from "../Stearch.selectors";
 import stearchStore from "../Stearch.store";
-import ContentLayout from "./content.pure-layout.vue";
+import { provideContentView } from "./content.view";
 import ListContainer from "./list/list.container.vue";
-import { headHeightFor } from "./list/list.selectors";
-import RailContainer from "./rail/rail.container.vue";
-import SectionContainer from "./section/section.container.vue";
-import { selectSectionProps } from "./section/section.selectors";
 import TableContainer from "./table/table.container.vue";
-import { TABLE_ROW_HEIGHT } from "./table/table.selectors";
 
-const { xs } = useBreakpoint();
 const store = stearchStore();
+const view = provideContentView();
 const isTable = computed(
-  () => selectViewMode(store.state) === "table" && !xs.value,
-);
-const band = computed(() =>
-  selectSectionProps(store.state) ? SectionContainer : null,
+  () => selectViewMode(store.state) === "table" && view.device.value === "wide",
 );
 </script>
 
 <template>
-  <ContentLayout
-    :items="isTable ? TableContainer : ListContainer"
-    :band="band"
-    :rail="RailContainer"
-    :band-height="headHeightFor(xs)"
-    :band-inset="isTable ? TABLE_ROW_HEIGHT : 0"
-    :band-offset="selectBandOffset(store.state)"
-  />
+  <!-- Each view owns its scroll edge: band, rail and scrollbar. -->
+  <component :is="isTable ? TableContainer : ListContainer" />
 </template>

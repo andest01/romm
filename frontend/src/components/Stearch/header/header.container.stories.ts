@@ -10,6 +10,7 @@ import HeaderContainer from "./header.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/header/header.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(HeaderContainer),
 };

@@ -7,6 +7,12 @@ import type { StearchLabels } from "./Stearch.labels";
 
 export type StearchViewMode = "tiles" | "table" | "swarm";
 
+/** The first and last result on screen, by position. */
+export interface VisibleSpan {
+  readonly first: number;
+  readonly last: number;
+}
+
 /** The gallery's order keys own the names; this picks the ones we offer. */
 export const STEARCH_SORT_KEYS = [
   "name",
@@ -117,14 +123,12 @@ export interface IStearchState {
     readonly mode: StearchViewMode;
     readonly isAdvancedOpen: boolean;
     /** The result at the top of the list. */
-    readonly visiblePosition: number;
+    readonly visibleSpan: VisibleSpan;
     /** The latest request to scroll. Each one is a new object. */
     readonly jump: {
       readonly position: number;
       readonly isSmooth: boolean;
     } | null;
-    /** How far the next heading has pushed the section band up. */
-    readonly bandOffset: number;
     /** The field open in the add-a-filter menu. */
     readonly openFieldId: string | null;
   };

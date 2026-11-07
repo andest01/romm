@@ -24,7 +24,15 @@ export const Letters: Story = {
       { key: "C", label: "C", share: 0.5, isCurrent: false },
       { key: "Z", label: "Z", share: 0.15, isCurrent: false },
     ],
+    thumb: { start: 0.1, size: 0.15 },
   },
 };
 
-export const NoResults: Story = { args: { buckets: [] } };
+export const NoResults: Story = {
+  args: { buckets: [], thumb: { start: 0, size: 1 } },
+};
+
+/** A sort without letters: the rail is just a scrollbar thumb. */
+export const ThumbOnly: Story = {
+  args: { buckets: [], thumb: { start: 0.4, size: 0.1 } },
+};

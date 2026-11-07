@@ -17,6 +17,7 @@ import {
 // The whole page: any app state is one arg away.
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/Stearch.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(StearchContainer),
 };

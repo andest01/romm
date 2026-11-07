@@ -1,10 +1,10 @@
 import { defineStore } from "pinia";
 import { shallowRef } from "vue";
-import romApi from "@/services/api/rom";
 import type { StearchAction } from "./Stearch.actions";
+import type { StearchSource } from "./Stearch.data-source";
+import { READ_AHEAD, type WindowRequest } from "./Stearch.read-ahead";
 import { INITIAL_STEARCH_STATE, stearchReducer } from "./Stearch.reducer";
 import { parsePage } from "./Stearch.schema";
-import { STEARCH_WINDOW_SIZE } from "./Stearch.window-size";
 
 const QUERY_DEBOUNCE_MS = 200;
 
@@ -18,67 +18,122 @@ const QUERY_ACTIONS: ReadonlySet<StearchAction["type"]> = new Set([
 // compare; a deep reactive proxy would hide that.
 export default defineStore("stearch", () => {
   const state = shallowRef(INITIAL_STEARCH_STATE);
-  const inFlightOffsets = new Set<number>();
+  const inFlight = new Map<number, AbortController>();
+  /** Offsets still to fetch for the latest settled range, nearest first. */
+  let queue: number[] = [];
   let lastRequestId = 0;
   let queryTimer: ReturnType<typeof setTimeout> | undefined;
+  let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Set by whoever mounts Stearch: the real API in the app, a fake in stories. */
+  let source: StearchSource | null = null;
 
-  async function fetchWindow(offset: number, requestId: number): Promise<void> {
-    inFlightOffsets.add(offset);
+  async function fetchWindow(
+    { offset, limit }: WindowRequest,
+    requestId: number,
+    signal: AbortSignal,
+  ): Promise<void> {
     try {
       // Only the first window carries aggregates; the reducer reads them there.
       const isFirstWindow = offset === 0;
-      const { data } = await romApi.getRoms({
+      if (!source) throw new Error("No data source connected to Stearch");
+      const { data } = await source({
         ...state.value.query,
-        limit: STEARCH_WINDOW_SIZE,
+        limit,
         offset,
+        signal,
         withCharIndex: isFirstWindow,
         withFilterValues: isFirstWindow,
         withRomIdIndex: isFirstWindow,
         withTotal: isFirstWindow,
       });
-      const page = parsePage(data);
-      dispatch([{ type: "window/loaded", requestId, offset, page }]);
+      dispatch([
+        { type: "window/loaded", requestId, offset, page: parsePage(data) },
+      ]);
     } catch (error) {
+      // A cancelled request is one the user moved past, not a failure.
+      if (signal.aborted) return;
       const message = error instanceof Error ? error.message : String(error);
       dispatch([{ type: "window/failed", requestId, message }]);
     } finally {
-      inFlightOffsets.delete(offset);
+      if (inFlight.get(offset)?.signal === signal) inFlight.delete(offset);
+      pump();
     }
+  }
+
+  /** Starts queued windows, up to the in-flight cap. */
+  function pump(): void {
+    const { status, windows } = state.value.results;
+    if (status.kind !== "ready") return;
+    while (inFlight.size < READ_AHEAD.maxRequestsInFlight) {
+      const offset = queue.shift();
+      if (offset === undefined) return;
+      if (windows[offset] || inFlight.has(offset)) continue;
+      const controller = new AbortController();
+      inFlight.set(offset, controller);
+      void fetchWindow(
+        { offset, limit: READ_AHEAD.itemsPerWindow },
+        status.requestId,
+        controller.signal,
+      );
+    }
+  }
+
+  /** The latest range wins: older wants are dropped, and requests for
+   *  windows the user moved past are cancelled. */
+  function settleOn(offsets: readonly number[]): void {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      const wanted = new Set(offsets);
+      for (const [offset, controller] of inFlight) {
+        if (!wanted.has(offset)) controller.abort();
+      }
+      queue = [...offsets];
+      pump();
+    }, READ_AHEAD.settleMillis);
+  }
+
+  function cancelAll(): void {
+    clearTimeout(settleTimer);
+    queue = [];
+    for (const controller of inFlight.values()) controller.abort();
+    inFlight.clear();
   }
 
   function runQuery(): void {
     lastRequestId += 1;
-    inFlightOffsets.clear();
+    cancelAll();
     dispatch([{ type: "window/requested", requestId: lastRequestId }]);
-    void fetchWindow(0, lastRequestId);
-  }
-
-  function runEffect(action: StearchAction): void {
-    if (QUERY_ACTIONS.has(action.type)) {
-      clearTimeout(queryTimer);
-      queryTimer = setTimeout(runQuery, QUERY_DEBOUNCE_MS);
-    }
-    if (action.type === "window/wanted") {
-      const { status, windows } = state.value.results;
-      if (
-        status.kind === "ready" &&
-        !windows[action.offset] &&
-        !inFlightOffsets.has(action.offset)
-      ) {
-        void fetchWindow(action.offset, status.requestId);
-      }
-    }
+    const controller = new AbortController();
+    inFlight.set(0, controller);
+    void fetchWindow(
+      { offset: 0, limit: READ_AHEAD.itemsPerWindow },
+      lastRequestId,
+      controller.signal,
+    );
   }
 
   function dispatch(actions: readonly StearchAction[]): void {
     state.value = actions.reduce(stearchReducer, state.value);
-    actions.forEach(runEffect);
+    if (actions.some(({ type }) => QUERY_ACTIONS.has(type))) {
+      clearTimeout(queryTimer);
+      queryTimer = setTimeout(runQuery, QUERY_DEBOUNCE_MS);
+    }
+    const wanted = actions.flatMap((action) =>
+      action.type === "window/wanted" ? [action.offset] : [],
+    );
+    if (wanted.length > 0) settleOn(wanted);
   }
 
-  /** First load. Seeded stories aren't idle, so they never fetch. */
+  /** Where pages come from. Nothing fetches until a source is connected. */
+  function connect(next: StearchSource): void {
+    source = next;
+  }
+
+  /** First load. A seeded story isn't idle, so it skips this, but scrolling
+   *  it still fetches windows from its connected source. */
   function start(): void {
     if (state.value.results.status.kind === "idle") runQuery();
   }
 
-  return { state, dispatch, start };
+  return { state, dispatch, connect, start };
 });

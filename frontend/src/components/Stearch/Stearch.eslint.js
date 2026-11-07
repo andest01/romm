@@ -128,6 +128,12 @@ export default [
         },
         {
           selector:
+            "CallExpression[callee.name=/^(watch|watchEffect|watchPostEffect|watchSyncEffect)$/] CallExpression[callee.property.name='dispatch']",
+          message:
+            "State changes come from events, never from watchers: a watcher that dispatches can feed back into itself. Keep screen facts view-only (see content/content.view.ts).",
+        },
+        {
+          selector:
             "MemberExpression[property.name=/^(query|view|results|attention|labels)$/]:matches([object.name='state'], [object.property.name='state'])",
           message:
             "Read state through a selector in Stearch.selectors.ts, the only file that touches IStearchState.",

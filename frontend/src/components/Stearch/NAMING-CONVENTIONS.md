@@ -35,15 +35,15 @@ Counts are committed files on `feature/stearch` (2d7c1bc28), 125 code files in a
 
 ## Data
 
-| Suffix              | Count | What it is                                                     |
-| ------------------- | ----- | -------------------------------------------------------------- |
-| `*.fields.ts`       | 1     | One line of data per search field                              |
-| `*.items.ts`        | 1     | Which component draws each item kind                           |
-| `*.labels.ts`       | 1     | Label keys generated from `en_US`                              |
-| `*.window-size.ts`  | 1     | The page size for windowed fetches                             |
-| `*.fake-api.ts`     | 1     | A fake `getRoms` for stories and tests                         |
-| `*.eslint.js`       | 1     | Stearch's lint rules, spread into `frontend/eslint.config.js`  |
-| `eslint-rules/*.js` | 1     | Stearch's own lint rules, loaded as the local `stearch` plugin |
+| Suffix              | Count | What it is                                                                           |
+| ------------------- | ----- | ------------------------------------------------------------------------------------ |
+| `*.fields.ts`       | 1     | One line of data per search field                                                    |
+| `*.items.ts`        | 1     | Which component draws each item kind                                                 |
+| `*.labels.ts`       | 1     | Label keys generated from `en_US`                                                    |
+| `*.read-ahead.ts`   | 1     | The buffer policy: window size, screens ahead and behind, settle, requests in flight |
+| `*.fake-api.ts`     | 1     | A fake `getRoms` for stories and tests                                               |
+| `*.eslint.js`       | 1     | Stearch's lint rules, spread into `frontend/eslint.config.js`                        |
+| `eslint-rules/*.js` | 1     | Stearch's own lint rules, loaded as the local `stearch` plugin                       |
 
 ## Tests and stories
 

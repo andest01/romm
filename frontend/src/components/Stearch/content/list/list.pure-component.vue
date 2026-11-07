@@ -9,7 +9,10 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
 </script>
 
 <template>
-  <div class="stearch-list">
+  <div
+    class="stearch-list"
+    :style="{ '--stearch-scrollbar-width': `${scrollbarWidth}px` }"
+  >
     <REmptyState
       v-if="errorMessage"
       icon="mdi-alert-circle-outline"
@@ -23,6 +26,7 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
     <RVirtualScroller
       v-else
       :ref="setScroller"
+      class="stearch-list__scroller"
       :items="rows"
       :get-item-height="
         (_, index) => (rows[index]?.kind === 'head' ? headHeight : rowHeight)
@@ -58,16 +62,56 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
         </template>
       </template>
     </RVirtualScroller>
+    <div
+      v-if="band"
+      class="stearch-list__band"
+      :style="{ blockSize: `${headHeight}px` }"
+    >
+      <div
+        class="stearch-list__band-part"
+        :style="{ transform: `translateY(${bandOffset}px)` }"
+      >
+        <component :is="band" />
+      </div>
+    </div>
+    <div v-if="rail" class="stearch-list__rail"><component :is="rail" /></div>
   </div>
 </template>
 
 <style scoped>
 .stearch-list {
+  --stearch-rail-width: 0px;
+  position: relative;
   height: 100%;
   min-height: 0;
 }
-.stearch-list__row,
-.stearch-list__head {
+/* Room for the rail only while there is one. */
+.stearch-list:has(> .stearch-list__rail) {
+  --stearch-rail-width: 24px;
+}
+/* The rail sits hard against the native scrollbar, so both can be grabbed. */
+.stearch-list__rail {
+  position: absolute;
+  z-index: 2;
+  inset-block: 0;
+  inset-inline-end: var(--stearch-scrollbar-width);
+  inline-size: var(--stearch-rail-width);
+}
+/* The band floats over the top of the scroller, clipped to its own height,
+   so a heading can push it out of view. It stops short of the scrollbar. */
+.stearch-list__band {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  inset-block-start: 0;
+  inset-inline: 0 var(--stearch-scrollbar-width);
+}
+.stearch-list__band-part {
+  block-size: 100%;
+  background: var(--r-color-surface);
+}
+/* Padding sits on the scroller, so its content box is the items' width. */
+.stearch-list__scroller {
   box-sizing: border-box;
   padding-inline: var(--r-row-pad) calc(var(--stearch-rail-width, 0px) + 6px);
 }

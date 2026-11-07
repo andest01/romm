@@ -14,6 +14,7 @@ import ListContainer from "./list.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/content/list/list.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(ListContainer),
 };

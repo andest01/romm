@@ -1,68 +1,88 @@
 <script setup lang="ts">
-import { useElementSize } from "@vueuse/core";
-import { computed, useTemplateRef } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { useBreakpoint } from "@/composables/useBreakpoint";
+import { selectAnchorPosition } from "../../Stearch.attention.selectors";
 import {
   selectErrorMessage,
+  selectIsLoading,
   selectSections,
 } from "../../Stearch.results.selectors";
 import { selectSlots } from "../../Stearch.rows.selectors";
-import { selectIsAdvancedOpen, selectViewMode } from "../../Stearch.selectors";
+import { selectViewMode, selectVisiblePosition } from "../../Stearch.selectors";
 import stearchStore from "../../Stearch.store";
-import { LIST_ITEMS } from "./list.items";
+import { useContentView } from "../content.view";
+import RailContainer from "../rail/rail.container.vue";
+import SectionContainer from "../section/section.container.vue";
+import { selectSectionProps } from "../section/section.selectors";
+import type { VisibleRange } from "./list.props";
 import ListPure from "./list.pure-component.vue";
 import {
   buildScrollRows,
   buildWindowActions,
-  columnsFor,
-  headHeightFor,
-  rowHeightFor,
+  itemKindFor,
+  itemsPerScreen,
+  listFitFor,
+  withGhosts,
 } from "./list.selectors";
 import { useScrollerJump } from "./use-scroller-jump";
 import Verbs from "./verbs/verbs.container.vue";
 
 const { t } = useI18n();
-const { width: listWidth } = useElementSize(useTemplateRef("list"));
-const { xs } = useBreakpoint();
 const store = stearchStore();
-const itemKind = computed(() => {
-  if (!xs.value) return "tile";
-  return selectViewMode(store.state) === "table" ? "phone-row" : "phone-cover";
-});
-const columns = computed(() =>
-  columnsFor(itemKind.value, selectIsAdvancedOpen(store.state)),
+const view = useContentView();
+const { setScroller, box, scrollbarWidth, bandOffset } = useScrollerJump(
+  () => rows.value,
+  () => fit.value.rowHeight,
+  () => fit.value.headHeight,
+  () => selectAnchorPosition(store.state),
+);
+const band = computed(() =>
+  selectSectionProps(store.state) ? SectionContainer : null,
+);
+// Size is a view fact: state gives the job, the DOM gives the room.
+const fit = computed(() =>
+  listFitFor(
+    itemKindFor(view.device.value, selectViewMode(store.state)),
+    view.device.value,
+    box.value,
+  ),
 );
 const rows = computed(() =>
   buildScrollRows(
-    selectSlots(store.state),
-    columns.value,
+    withGhosts(
+      selectSlots(store.state),
+      selectIsLoading(store.state),
+      itemsPerScreen(fit.value, box.value),
+    ),
+    fit.value.columns,
     selectSections(store.state),
   ),
 );
-const rowHeight = computed(() => rowHeightFor(itemKind.value, listWidth.value));
-const headHeight = computed(() => headHeightFor(xs.value));
-const setScroller = useScrollerJump(
-  () => rows.value,
-  () => rowHeight.value,
-  () => headHeight.value,
-);
 const errorMessage = computed(() => selectErrorMessage(store.state));
+
+function onRange(range: VisibleRange): void {
+  store.dispatch(
+    buildWindowActions(range, rows.value, {
+      previousPosition: selectVisiblePosition(store.state),
+      itemsPerScreen: itemsPerScreen(fit.value, box.value),
+    }),
+  );
+}
 </script>
 
 <template>
   <ListPure
-    ref="list"
-    :item="LIST_ITEMS[itemKind]"
+    v-bind="fit"
     :verbs="Verbs"
     :set-scroller="setScroller"
-    :columns="columns"
-    :row-height="rowHeight"
-    :head-height="headHeight"
+    :band="band"
+    :band-offset="bandOffset"
+    :rail="RailContainer"
+    :scrollbar-width="scrollbarWidth"
     :rows="rows"
     :error-message="errorMessage"
     :empty-message="t('rom.no-games-match')"
     @press="store.dispatch"
-    @range="(range) => store.dispatch(buildWindowActions(range, rows))"
+    @range="onRange"
   />
 </template>

@@ -10,6 +10,7 @@ import FooterContainer from "./footer.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/footer/footer.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(FooterContainer),
 };

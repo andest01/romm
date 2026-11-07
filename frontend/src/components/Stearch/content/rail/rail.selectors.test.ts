@@ -1,6 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { INITIAL_STEARCH_STATE } from "../../Stearch.reducer";
-import { buildScrubActions, selectRailProps } from "./rail.selectors";
+import {
+  buildScrubActions,
+  railThumb,
+  selectRailProps,
+} from "./rail.selectors";
+
+describe("railThumb", () => {
+  it("covers the visible share of the list", () => {
+    // Act
+    const thumb = railThumb({ first: 100, last: 149 }, 1000);
+
+    // Assert
+    expect(thumb).toEqual({ start: 0.1, size: 0.05 });
+  });
+
+  it("fills the rail when there is nothing to scroll", () => {
+    // Act
+    const thumb = railThumb({ first: 0, last: 0 }, 0);
+
+    // Assert
+    expect(thumb).toEqual({ start: 0, size: 1 });
+  });
+});
 
 describe("selectRailProps", () => {
   it("sizes buckets from char_index offsets", () => {

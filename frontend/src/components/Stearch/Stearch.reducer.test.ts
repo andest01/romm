@@ -140,7 +140,7 @@ describe("stearchReducer", () => {
     // Arrange
     const before = apply(LOADED_STEARCH_STATE, {
       type: "view/set",
-      patch: { visiblePosition: 300 },
+      patch: { visibleSpan: { first: 300, last: 340 } },
     });
 
     // Act
@@ -148,7 +148,7 @@ describe("stearchReducer", () => {
 
     // Assert
     expect(state.view).toMatchObject({
-      visiblePosition: 0,
+      visibleSpan: { first: 0, last: 0 },
       jump: { position: 0, isSmooth: false },
     });
   });

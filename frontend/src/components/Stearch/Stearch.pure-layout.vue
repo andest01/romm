@@ -97,6 +97,13 @@ html[data-bp~="sm-and-down"] .stearch-layout {
   pointer-events: none;
 }
 
+/* Each region is its own stacking layer, so whatever a part layers inside it
+   (a band, a rail, a raised button) can never rise above the panel. */
+.stearch-layout__header,
+.stearch-layout__content,
+.stearch-layout__footer {
+  isolation: isolate;
+}
 .stearch-layout__header {
   grid-area: header;
   border-bottom: 1px solid var(--r-color-border);

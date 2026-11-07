@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { StearchAction } from "../../Stearch.actions";
 import { LOADED_STEARCH_STATE } from "../../Stearch.fixtures";
 import { INITIAL_STEARCH_STATE } from "../../Stearch.reducer";
 import { selectSlots } from "../../Stearch.rows.selectors";
@@ -6,26 +7,62 @@ import {
   bandOffsetFor,
   buildScrollRows,
   buildWindowActions,
-  columnsFor,
+  itemFit,
+  itemKindFor,
   rowForPosition,
-  rowHeightFor,
+  spanOf,
+  withGhosts,
 } from "./list.selectors";
 
-describe("rowHeightFor", () => {
-  it("grows phone covers with the list's width", () => {
+describe("itemFit", () => {
+  it("fits four tiles beside the open panel on a 1920 screen", () => {
     // Act
-    const height = rowHeightFor("phone-cover", 524);
+    const fit = itemFit("tile", { width: 1340 });
 
     // Assert
-    expect(height).toBe(171);
+    expect(fit).toEqual({ columns: 4, rowHeight: 62 });
   });
 
-  it("keeps a fixed height for other items", () => {
+  it("caps tiles on a very wide list", () => {
     // Act
-    const height = rowHeightFor("phone-row", 524);
+    const { columns } = itemFit("tile", { width: 2400 });
 
     // Assert
-    expect(height).toBe(52);
+    expect(columns).toBe(6);
+  });
+
+  it("fits five covers on a 320 phone, sized to the width they get", () => {
+    // Act
+    const fit = itemFit("phone-cover", { width: 320 });
+
+    // Assert
+    expect(fit).toEqual({ columns: 5, rowHeight: 110 });
+  });
+
+  it("keeps phone rows to one fixed-height column", () => {
+    // Act
+    const fit = itemFit("phone-row", { width: 900 });
+
+    // Assert
+    expect(fit).toEqual({ columns: 1, rowHeight: 52 });
+  });
+});
+
+describe("itemKindFor", () => {
+  it("shows phone rows for Table on a phone", () => {
+    // Act
+    const kind = itemKindFor("phone", "table");
+
+    // Assert
+    expect(kind).toBe("phone-row");
+  });
+
+  it("shows tiles on a wide screen in either view", () => {
+    // Act
+    const kinds = [itemKindFor("wide", "tiles"), itemKindFor("wide", "table")];
+
+    // Assert
+    expect(kinds).toEqual(["tile", "tile"]);
   });
 });
 
@@ -40,13 +77,55 @@ describe("selectSlots", () => {
     expect(slots[48]).toBeNull();
   });
 
-  it("has only null slots before anything loads", () => {
+  it("has no slots before the total is known", () => {
     // Act
     const slots = selectSlots(INITIAL_STEARCH_STATE);
 
     // Assert
-    expect(slots.length).toBeGreaterThan(0);
-    expect(slots.every((slot) => slot === null)).toBe(true);
+    expect(slots).toEqual([]);
+  });
+});
+
+describe("spanOf", () => {
+  it("runs from the top row's first result to the bottom row's last", () => {
+    // Arrange
+    const rows = buildScrollRows(
+      Array.from({ length: 20 }, () => null),
+      4,
+      [],
+    );
+
+    // Act
+    const span = spanOf({ first: 1, last: 2 }, rows);
+
+    // Assert
+    expect(span).toEqual({ first: 4, last: 11 });
+  });
+});
+
+describe("withGhosts", () => {
+  it("fills a screen with ghosts while the first window loads", () => {
+    // Act
+    const slots = withGhosts([], true, 52);
+
+    // Assert
+    expect(slots).toHaveLength(52);
+  });
+
+  it("never draws fewer ghosts than the window being fetched", () => {
+    // Act
+    const slots = withGhosts([], true, 5);
+
+    // Assert
+    expect(slots).toHaveLength(48);
+  });
+
+  it("draws nothing extra once the total is known", () => {
+    // Act
+    const slots = withGhosts([], false, 52);
+
+    // Assert
+    expect(slots).toEqual([]);
   });
 });
 
@@ -117,42 +196,63 @@ describe("bandOffsetFor", () => {
   });
 });
 
-describe("columnsFor", () => {
-  it("drops a tile column while the panel shows", () => {
-    // Act
-    const columns = columnsFor("tile", true);
-
-    // Assert
-    expect(columns).toBe(3);
-  });
-
-  it("keeps phone covers at five columns", () => {
-    // Act
-    const columns = columnsFor("phone-cover", true);
-
-    // Assert
-    expect(columns).toBe(5);
-  });
-});
-
 describe("buildWindowActions", () => {
-  it("wants every window the visible rows touch", () => {
-    // Arrange
-    const range = { first: 10, last: 14 };
-    const rows = buildScrollRows(
-      Array.from({ length: 80 }, () => null),
-      4,
-      [],
+  // One result per row, 2,000 results, and a screen of 48: one window each.
+  const rows = buildScrollRows(
+    Array.from({ length: 2000 }, () => null),
+    1,
+    [],
+  );
+  const SCREEN = 48;
+  const wanted = (actions: readonly StearchAction[]) =>
+    actions.flatMap((action) =>
+      action.type === "window/wanted" ? [action.offset] : [],
     );
 
+  it("reports the top of the list", () => {
     // Act
-    const actions = buildWindowActions(range, rows);
+    const [first] = buildWindowActions({ first: 480, last: 489 }, rows, {
+      previousPosition: 0,
+      itemsPerScreen: SCREEN,
+    });
 
     // Assert
-    expect(actions).toEqual([
-      { type: "view/set", patch: { visiblePosition: 40 } },
-      { type: "window/wanted", offset: 0 },
-      { type: "window/wanted", offset: 48 },
-    ]);
+    expect(first).toEqual({
+      type: "view/set",
+      patch: { visibleSpan: { first: 480, last: 489 } },
+    });
+  });
+
+  it("scrolling down, wants what's visible, two screens ahead, one behind", () => {
+    // Act
+    const actions = buildWindowActions({ first: 480, last: 489 }, rows, {
+      previousPosition: 0,
+      itemsPerScreen: SCREEN,
+    });
+
+    // Assert
+    expect(wanted(actions)).toEqual([480, 528, 576, 432]);
+  });
+
+  it("scrolling up, reads ahead upward instead", () => {
+    // Act
+    const actions = buildWindowActions({ first: 480, last: 489 }, rows, {
+      previousPosition: 1000,
+      itemsPerScreen: SCREEN,
+    });
+
+    // Assert
+    expect(wanted(actions)).toEqual([480, 432, 384, 528]);
+  });
+
+  it("stops at the last result", () => {
+    // Act
+    const actions = buildWindowActions({ first: 1990, last: 1999 }, rows, {
+      previousPosition: 0,
+      itemsPerScreen: SCREEN,
+    });
+
+    // Assert
+    expect(wanted(actions)).toEqual([1968, 1920]);
   });
 });

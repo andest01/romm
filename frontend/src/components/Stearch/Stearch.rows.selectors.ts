@@ -1,11 +1,7 @@
 import { formatBytes } from "@/utils";
 import type { StearchAction } from "./Stearch.actions";
 import { createSelector } from "./Stearch.create-selector";
-import {
-  selectIsLoading,
-  selectPositionedRoms,
-  selectTotal,
-} from "./Stearch.results.selectors";
+import { selectPositionedRoms, selectTotal } from "./Stearch.results.selectors";
 import { selectSearchTerm, selectSelectedIds } from "./Stearch.selectors";
 import type { StearchRom } from "./Stearch.state-props";
 
@@ -40,7 +36,6 @@ export type ListSlot = ListRow | null;
 
 const EMPTY_VALUE = "—";
 const SECONDS_PER_HOUR = 3600;
-const PENDING_SLOT_COUNT = 24;
 
 function splitMatch(text: string, searchTerm: string): readonly TextPart[] {
   const term = searchTerm.trim().toLowerCase();
@@ -144,10 +139,9 @@ export const selectRows = createSelector(
 
 /** One slot per result, in position; unloaded positions are `null`. */
 export const selectSlots = createSelector(
-  [selectRows, selectTotal, selectIsLoading],
-  (rows, total, isLoading): readonly ListSlot[] => {
-    const count = total === 0 && isLoading ? PENDING_SLOT_COUNT : total;
-    const slots: ListSlot[] = Array.from({ length: count }, () => null);
+  [selectRows, selectTotal],
+  (rows, total): readonly ListSlot[] => {
+    const slots: ListSlot[] = Array.from({ length: total }, () => null);
     for (const row of rows) slots[row.position] = row;
     return slots;
   },

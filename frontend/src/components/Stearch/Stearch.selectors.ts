@@ -16,10 +16,11 @@ export const selectPlatformIds = (state: IStearchState) =>
 export const selectViewMode = (state: IStearchState) => state.view.mode;
 export const selectIsAdvancedOpen = (state: IStearchState) =>
   state.view.isAdvancedOpen;
+export const selectVisibleSpan = (state: IStearchState) =>
+  state.view.visibleSpan;
 export const selectVisiblePosition = (state: IStearchState) =>
-  state.view.visiblePosition;
+  state.view.visibleSpan.first;
 export const selectJump = (state: IStearchState) => state.view.jump;
-export const selectBandOffset = (state: IStearchState) => state.view.bandOffset;
 export const selectOpenFieldId = (state: IStearchState) =>
   state.view.openFieldId;
 

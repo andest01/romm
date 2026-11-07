@@ -9,6 +9,7 @@ import ContentContainer from "./content.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/content/content.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(ContentContainer),
 };

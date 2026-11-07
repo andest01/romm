@@ -9,6 +9,7 @@ import SidebarContainer from "./sidebar.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/sidebar/sidebar.container.vue",
+  tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
   render: renderContainer(SidebarContainer),
 };

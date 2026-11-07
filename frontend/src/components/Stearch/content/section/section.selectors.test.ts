@@ -7,7 +7,7 @@ import { selectSectionProps } from "./section.selectors";
 const { results, view } = LOADED_STEARCH_STATE;
 const STATE: IStearchState = {
   ...LOADED_STEARCH_STATE,
-  view: { ...view, visiblePosition: 2 },
+  view: { ...view, visibleSpan: { first: 2, last: 3 } },
   results: {
     ...results,
     ids: [10, 11, 12, 13],

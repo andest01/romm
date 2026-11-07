@@ -57,9 +57,8 @@ export const INITIAL_STEARCH_STATE: IStearchState = {
   view: {
     mode: "tiles",
     isAdvancedOpen: true,
-    visiblePosition: 0,
+    visibleSpan: { first: 0, last: 0 },
     jump: null,
-    bandOffset: 0,
     openFieldId: null,
   },
   labels: buildLabels((key) => key),
@@ -147,7 +146,10 @@ const HANDLERS: Handlers<IStearchState, StearchAction> = {
     } satisfies IStearchState;
     return HANDLERS["view/set"](loading, {
       type: "view/set",
-      patch: { visiblePosition: 0, jump: { position: 0, isSmooth: false } },
+      patch: {
+        visibleSpan: { first: 0, last: 0 },
+        jump: { position: 0, isSmooth: false },
+      },
     });
   },
   "window/loaded": (state, { requestId, offset, page }) => {

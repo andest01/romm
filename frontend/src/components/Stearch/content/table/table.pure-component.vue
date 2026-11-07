@@ -16,7 +16,10 @@ defineEmits<
 </script>
 
 <template>
-  <div class="stearch-table">
+  <div
+    class="stearch-table"
+    :style="{ '--stearch-scrollbar-width': `${scrollbarWidth}px` }"
+  >
     <REmptyState
       v-if="errorMessage"
       icon="mdi-alert-circle-outline"
@@ -85,6 +88,21 @@ defineEmits<
             </template>
           </template>
         </RVirtualScroller>
+        <div
+          v-if="band"
+          class="stearch-table__band"
+          :style="{ blockSize: `${headHeight}px` }"
+        >
+          <div
+            class="stearch-table__band-part"
+            :style="{ transform: `translateY(${bandOffset}px)` }"
+          >
+            <component :is="band" />
+          </div>
+        </div>
+        <div v-if="rail" class="stearch-table__rail">
+          <component :is="rail" />
+        </div>
       </div>
     </div>
   </div>
@@ -92,8 +110,22 @@ defineEmits<
 
 <style scoped>
 .stearch-table {
+  --stearch-rail-width: 0px;
   height: 100%;
   min-height: 0;
+}
+/* Room for the rail only while there is one. */
+.stearch-table:has(.stearch-table__rail) {
+  --stearch-rail-width: 24px;
+}
+/* The rail sits hard against the native scrollbar, below the column header,
+   so both can be grabbed. */
+.stearch-table__rail {
+  position: absolute;
+  z-index: 2;
+  inset-block: 0;
+  inset-inline-end: var(--stearch-scrollbar-width);
+  inline-size: var(--stearch-rail-width);
 }
 .stearch-table__head,
 .stearch-table__section {
@@ -122,7 +154,21 @@ defineEmits<
   align-items: center;
 }
 .stearch-table__body {
+  position: relative;
   flex: 1;
   min-height: 0;
+}
+/* The band floats over the body, below the column header, clipped to its own
+   height so a heading can push it out of view. */
+.stearch-table__band {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  inset-block-start: 0;
+  inset-inline: 0 var(--stearch-scrollbar-width);
+}
+.stearch-table__band-part {
+  block-size: 100%;
+  background: var(--r-color-surface);
 }
 </style>

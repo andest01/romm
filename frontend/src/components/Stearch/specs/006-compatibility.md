@@ -6,19 +6,19 @@ We don't want to own new code for views the app already has, and we don't need t
 
 ## Swap points
 
-| Choice          | Seam                                | To switch                                                          |
-| --------------- | ----------------------------------- | ------------------------------------------------------------------ |
-| Background      | Layout `background`                 | One line in `Stearch.container.vue`                                |
-| Filter panel    | Layout `panel`                      | One line, for example a `FilterDrawer` part                        |
-| Footer          | Layout `footer`                     | One line, for example `SelectionBar`                               |
-| Content         | Layout `content`                    | One line, for example `GalleryShell`                               |
-| List items      | `LIST_ITEMS`, leashed by `ItemPart` | One entry in `list.items.ts`                                       |
-| Table rows      | `item` on `TablePure`               | One line in `table.container.vue`                                  |
-| Data source     | `fetchWindow` in the store          | Swapped to `romApi.getRoms`; `fakeGetRoms` is the other side of it |
-| Verbs           | `verbs` on `ItemProps`              | One line in the list and table containers                          |
-| Selectors       | `createSelector`                    | One import, for `reselect`                                         |
-| Selection       | `runEffect` in the store            | One effect mirrors `selection/*` to `gallerySelection`             |
-| Background rule | `selectBackgroundUrl`               | One selector                                                       |
+| Choice          | Seam                                              | To switch                                                                  |
+| --------------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
+| Background      | Layout `background`                               | One line in `Stearch.container.vue`                                        |
+| Filter panel    | Layout `panel`                                    | One line, for example a `FilterDrawer` part                                |
+| Footer          | Layout `footer`                                   | One line, for example `SelectionBar`                                       |
+| Content         | Layout `content`                                  | One line, for example `GalleryShell`                                       |
+| List items      | `LIST_ITEMS`, leashed by `ItemPart`               | One entry in `list.items.ts`                                               |
+| Table rows      | `item` on `TablePure`                             | One line in `table.container.vue`                                          |
+| Data source     | `store.connect(source)`, typed by `StearchSource` | The app connects `romApi.getRoms`; container stories connect `fakeGetRoms` |
+| Verbs           | `verbs` on `ItemProps`                            | One line in the list and table containers                                  |
+| Selectors       | `createSelector`                                  | One import, for `reselect`                                                 |
+| Selection       | `runEffect` in the store                          | One effect mirrors `selection/*` to `gallerySelection`                     |
+| Background rule | `selectBackgroundUrl`                             | One selector                                                               |
 
 ## Requirements
 
