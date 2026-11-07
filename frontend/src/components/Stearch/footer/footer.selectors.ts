@@ -1,10 +1,8 @@
 import type { StearchAction } from "../Stearch.actions";
+import { selectSelectedCount } from "../Stearch.attention.selectors";
 import { createSelector } from "../Stearch.create-selector";
-import {
-  selectIds,
-  selectSelectedCount,
-  selectTotal,
-} from "../Stearch.selectors";
+import { selectTotal } from "../Stearch.results.selectors";
+import { selectIds } from "../Stearch.selectors";
 
 const CLEAR_ACTIONS: readonly StearchAction[] = [
   { type: "attention/set", patch: { selectedIds: [] } },

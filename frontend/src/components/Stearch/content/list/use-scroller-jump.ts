@@ -1,21 +1,9 @@
 import { usePreferredReducedMotion } from "@vueuse/core";
-import { computed, shallowRef, watch, type ComponentPublicInstance } from "vue";
-import { selectJump } from "../Stearch.selectors";
-import stearchStore from "../Stearch.store";
-import type { ScrollRow } from "./list/list.props";
-import {
-  bandOffsetFor,
-  headTopsOf,
-  rowForPosition,
-} from "./list/list.selectors";
-
-export interface JumpScroller {
-  scrollTop: number;
-  scrollToIndex(index: number, options: { smooth: boolean }): void;
-}
-
-/** What Vue hands a function `ref`. */
-export type ScrollerRef = Element | ComponentPublicInstance | null;
+import { computed, shallowRef, watch } from "vue";
+import { selectBandOffset, selectJump } from "../../Stearch.selectors";
+import stearchStore from "../../Stearch.store";
+import type { JumpScroller, ScrollerRef, ScrollRow } from "./list.props";
+import { bandOffsetFor, headTopsOf, rowForPosition } from "./list.selectors";
 
 const isJumpScroller = (instance: object): instance is JumpScroller =>
   "scrollToIndex" in instance;
@@ -47,7 +35,7 @@ export function useScrollerJump(
     () => scroller.value?.scrollTop ?? 0,
     (scrollTop) => {
       const offset = bandOffsetFor(headTops.value, scrollTop, headHeight());
-      if (offset === store.state.view.bandOffset) return;
+      if (offset === selectBandOffset(store.state)) return;
       store.dispatch([{ type: "view/set", patch: { bandOffset: offset } }]);
     },
   );

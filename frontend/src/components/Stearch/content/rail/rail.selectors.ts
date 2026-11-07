@@ -1,10 +1,7 @@
 import type { StearchAction } from "../../Stearch.actions";
 import { createSelector } from "../../Stearch.create-selector";
-import {
-  selectSections,
-  selectTotal,
-  selectVisiblePosition,
-} from "../../Stearch.selectors";
+import { selectSections, selectTotal } from "../../Stearch.results.selectors";
+import { selectVisiblePosition } from "../../Stearch.selectors";
 import type { RailProps } from "./rail.props";
 
 export const selectRailProps = createSelector(

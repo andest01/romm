@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SidebarLayoutProps } from "./sidebar.layout-props";
+import type { SidebarLayoutProps } from "./sidebar.pure-layout-props";
 
 defineProps<SidebarLayoutProps>();
 </script>

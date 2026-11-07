@@ -1,6 +1,6 @@
 import type { Component } from "vue";
 import type { StearchAction } from "../../Stearch.actions";
-import type { ListRow, ListSlot } from "./list.props";
+import type { ListRow, ListSlot } from "../../Stearch.rows.selectors";
 
 /** What a game can do, the same in every view. */
 export interface VerbsProps {

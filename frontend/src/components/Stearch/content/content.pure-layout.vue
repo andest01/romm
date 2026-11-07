@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContentLayoutProps } from "./content.layout-props";
+import type { ContentLayoutProps } from "./content.pure-layout-props";
 
 defineProps<ContentLayoutProps>();
 </script>

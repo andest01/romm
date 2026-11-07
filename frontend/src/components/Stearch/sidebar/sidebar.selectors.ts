@@ -1,7 +1,7 @@
 import type { StearchAction } from "../Stearch.actions";
 import { createSelector } from "../Stearch.create-selector";
-import { selectClearActions } from "../Stearch.selectors";
-import type { BarProps, BarVerb } from "./bar/bar.props";
+import { selectClearActions } from "../Stearch.query.selectors";
+import type { BarProps, BarVerb } from "./sidebar.props";
 
 // Stub labels: move to locale keys before this leaves the fork.
 const TITLE = "Filters";

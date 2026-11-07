@@ -1,10 +1,10 @@
 import { buildFakePage } from "./Stearch.fake-api";
 import { buildLabels } from "./Stearch.labels";
 import { INITIAL_STEARCH_STATE, stearchReducer } from "./Stearch.reducer";
+import { selectRows } from "./Stearch.rows.selectors";
+import type { ListRow, ListSlot } from "./Stearch.rows.selectors";
 import { parsePage } from "./Stearch.schema";
-import { selectRows } from "./Stearch.selectors";
 import type { IStearchState, StearchRom } from "./Stearch.state-props";
-import type { ListRow, ListSlot } from "./content/list/list.props";
 
 const REQUEST_ID = 1;
 

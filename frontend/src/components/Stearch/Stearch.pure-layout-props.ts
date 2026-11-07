@@ -1,7 +1,7 @@
 import type { Component } from "vue";
 
 export interface StearchPanelLayout {
-  isPanelShown: boolean;
+  panelState: "shown" | "hidden";
   /** `inline` slides in from the sides; `block` from the top or bottom. */
   panelAxis: "inline" | "block";
   panelPosition: "start" | "end";

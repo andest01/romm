@@ -2,12 +2,12 @@ import type { StearchAction } from "../Stearch.actions";
 import { createSelector } from "../Stearch.create-selector";
 import { STEARCH_FIELDS, type FieldCoreConcept } from "../Stearch.fields";
 import type { StearchLabels } from "../Stearch.labels";
-import { selectFilterValues } from "../Stearch.selectors";
-import type {
-  IStearchState,
-  StearchFilterValues,
-  StearchQuery,
-} from "../Stearch.state-props";
+import {
+  selectFilterValues,
+  selectLabels,
+  selectQuery,
+} from "../Stearch.selectors";
+import type { StearchFilterValues, StearchQuery } from "../Stearch.state-props";
 import type {
   ChoicePreview,
   ChoiceState,
@@ -30,9 +30,6 @@ const SECONDS_PER_HOUR = 3600;
 const LOGIC_LABELS = { any: "Any", all: "All", none: "None" } as const;
 const LOGIC_WORDS = { any: "", all: "all of ", none: "none of " } as const;
 const LOGIC_OPERATORS = ["any", "all", "none"] as const;
-
-const selectQuery = (state: IStearchState) => state.query;
-const selectLabels = (state: IStearchState) => state.labels;
 
 function logicWords(logic: string | null): string {
   return logic === "all" || logic === "none" ? LOGIC_WORDS[logic] : "";

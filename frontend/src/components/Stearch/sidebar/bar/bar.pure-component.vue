@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RBtn } from "@/lib";
 import type { ItemEmits } from "../../content/list/item.props";
-import type { BarProps } from "./bar.props";
+import type { BarProps } from "../sidebar.props";
 
 defineProps<BarProps>();
 

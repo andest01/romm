@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LOADED_STEARCH_STATE } from "../../Stearch.fixtures";
 import { INITIAL_STEARCH_STATE } from "../../Stearch.reducer";
-import { selectSlots } from "../../Stearch.selectors";
+import { selectSlots } from "../../Stearch.rows.selectors";
 import {
   bandOffsetFor,
   buildScrollRows,

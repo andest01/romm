@@ -1,4 +1,4 @@
-import type { StearchAction } from "../../Stearch.actions";
+import type { StearchAction } from "../Stearch.actions";
 
 export interface BarVerb {
   id: string;
@@ -6,6 +6,7 @@ export interface BarVerb {
   actions: readonly StearchAction[];
 }
 
+/** One row of verbs, for the sidebar's header or footer. */
 export interface BarProps {
   title: string | null;
   verbs: readonly BarVerb[];

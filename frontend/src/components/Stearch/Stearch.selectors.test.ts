@@ -5,14 +5,10 @@ import {
   STEARCH_ROM,
   STEARCH_ROW,
 } from "./Stearch.fixtures";
+import { selectPanelLayout } from "./Stearch.layout.selectors";
 import { INITIAL_STEARCH_STATE, stearchReducer } from "./Stearch.reducer";
-import {
-  coverUrlOf,
-  selectLoadedRoms,
-  selectPanelLayout,
-  selectRows,
-  titleOf,
-} from "./Stearch.selectors";
+import { selectLoadedRoms } from "./Stearch.results.selectors";
+import { coverUrlOf, selectRows, titleOf } from "./Stearch.rows.selectors";
 import { selectBackgroundProps } from "./background/background.selectors";
 
 const { results, query } = LOADED_STEARCH_STATE;
@@ -180,10 +176,10 @@ describe("background", () => {
 describe("selectPanelLayout", () => {
   it("shows the panel by default", () => {
     // Act
-    const { isPanelShown } = selectPanelLayout(INITIAL_STEARCH_STATE);
+    const { panelState } = selectPanelLayout(INITIAL_STEARCH_STATE);
 
     // Assert
-    expect(isPanelShown).toBe(true);
+    expect(panelState).toBe("shown");
   });
 
   it("hides the panel once Advanced mode is closed", () => {
@@ -194,9 +190,9 @@ describe("selectPanelLayout", () => {
     };
 
     // Act
-    const { isPanelShown } = selectPanelLayout(state);
+    const { panelState } = selectPanelLayout(state);
 
     // Assert
-    expect(isPanelShown).toBe(false);
+    expect(panelState).toBe("hidden");
   });
 });

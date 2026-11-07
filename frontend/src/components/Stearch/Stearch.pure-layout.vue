@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StearchLayoutProps } from "./Stearch.layout-props";
+import type { StearchLayoutProps } from "./Stearch.pure-layout-props";
 
 defineProps<StearchLayoutProps>();
 </script>
@@ -7,7 +7,7 @@ defineProps<StearchLayoutProps>();
 <template>
   <div
     class="stearch-layout"
-    :data-panel="panelLayout.isPanelShown ? 'shown' : 'hidden'"
+    :data-panel="panelLayout.panelState"
     :data-panel-axis="panelLayout.panelAxis"
     :data-panel-position="panelLayout.panelPosition"
   >
@@ -15,7 +15,10 @@ defineProps<StearchLayoutProps>();
       <component :is="background" />
     </div>
     <header class="stearch-layout__header"><component :is="header" /></header>
-    <aside class="stearch-layout__panel" :inert="!panelLayout.isPanelShown">
+    <aside
+      class="stearch-layout__panel"
+      :inert="panelLayout.panelState === 'hidden'"
+    >
       <component :is="panel" />
     </aside>
     <section class="stearch-layout__content">

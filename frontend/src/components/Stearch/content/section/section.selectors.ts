@@ -1,12 +1,11 @@
 import type { StearchAction } from "../../Stearch.actions";
 import { createSelector } from "../../Stearch.create-selector";
+import { selectSections } from "../../Stearch.results.selectors";
 import {
   selectIds,
-  selectSections,
   selectSelectedIds,
   selectVisiblePosition,
 } from "../../Stearch.selectors";
-import type { IStearchState } from "../../Stearch.state-props";
 import type { SectionProps } from "./section.props";
 
 // Stub labels: move to locale keys before this leaves the fork.
@@ -19,8 +18,6 @@ const jumpTo = (position: number): StearchAction => ({
   type: "view/set",
   patch: { jump: { position, isSmooth: true } },
 });
-
-export const selectBandOffset = (state: IStearchState) => state.view.bandOffset;
 
 /** The section at the top of the list; `null` for sorts without sections. */
 export const selectSectionProps = createSelector(

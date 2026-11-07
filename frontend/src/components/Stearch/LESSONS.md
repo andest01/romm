@@ -245,6 +245,20 @@ Nothing here is settled until the RomM side has been measured.
 - **Result:** the user's rule. 20 action types became 12. Each domain has one `*/set` with a `Partial` patch, and lists have `*/add` and `*/remove`. Selectors choose the direction. Toggles and resets are gone.
 - **Cost:** row press actions now depend on selection, so they rebuild when selection changes. The test that proved they didn't was replaced.
 
+### 2026-11-07: the selector tree
+
+- **Dimension:** cost, portability.
+- **Result:** the user's model. State is the ground, `Stearch.selectors.ts` the trunk with one selector per field, five root files the branches, and domain selectors the leaves that match component props. The old file mixed all three layers in 224 lines.
+- **Found by the split:** five places read state directly, in two containers, two selectors and one composable. All now go through the trunk, and an ESLint rule keeps it that way. Two domain files no longer mention `IStearchState` at all.
+- **Cost:** the rule repeats two repo-wide `no-restricted-syntax` entries, because a later ESLint block replaces the whole rule. If those change upstream, this copy must follow.
+
+### 2026-11-07: imports flow one way
+
+- **Dimension:** cost, portability.
+- **Result:** the user's rule. Selector code imports up the tree or across to peers, never down. A scan found no real cycles, because `import-x/no-cycle` already runs repo-wide. It did find three downward imports: the rows branch took its types from `content/list`, the scroller composable reached into its own subfolder, and the sidebar selectors took types from `bar/`. Each fix moved the shared piece up a level. ESLint zones now catch the next one, and probes proved all three zone kinds fire.
+- **Type-only imports count.** They can't cause a runtime cycle, but they bind shallow files to deep ones all the same, so the zones treat them like any other import.
+- **Process:** the user noted better strategy here. What changed was reading the tools and the import graph before proposing, then naming the one move that resolves each case.
+
 ## Next measurements
 
 1. A shared 100k library for `/stearch` and `/search`.

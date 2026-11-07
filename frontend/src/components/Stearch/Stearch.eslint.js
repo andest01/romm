@@ -1,0 +1,138 @@
+// Stearch's own lint rules, spread into frontend/eslint.config.js. Paths are
+// relative to frontend/, where the root config lives.
+import pureLayoutParts from "./eslint-rules/pure-layout-parts.js";
+
+const STEARCH = "src/components/Stearch";
+
+/** Rules only Stearch needs, as a local plugin. */
+const stearchPlugin = {
+  meta: { name: "stearch" },
+  rules: { "pure-layout-parts": pureLayoutParts },
+};
+
+const UP_ONLY =
+  "Selectors and their types reach up the tree or across to peers, never down: move what's shared up to where both sides can import it.";
+
+export default [
+  // Selector imports flow from the trunk out to the leaves, never back.
+  {
+    files: [`${STEARCH}/**/*.ts`],
+    rules: {
+      "import-x/no-restricted-paths": [
+        "error",
+        {
+          zones: [
+            {
+              target: `./${STEARCH}/Stearch.selectors.ts`,
+              from: `./${STEARCH}`,
+              except: ["./Stearch.state-props.ts"],
+              message:
+                "The trunk reads state only. It imports nothing else from Stearch.",
+            },
+            {
+              target: `./${STEARCH}/Stearch.*.selectors.ts`,
+              from: `./${STEARCH}/*/**`,
+              message: UP_ONLY,
+            },
+            {
+              target: `./${STEARCH}/*/*.selectors.ts`,
+              from: `./${STEARCH}/*/*/**`,
+              message: UP_ONLY,
+            },
+            {
+              target: `./${STEARCH}/*/*/*.selectors.ts`,
+              from: `./${STEARCH}/*/*/*/**`,
+              message: UP_ONLY,
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [`${STEARCH}/**/*.pure-layout.vue`],
+    plugins: { stearch: stearchPlugin },
+    rules: { "stearch/pure-layout-parts": "error" },
+  },
+  // Pure means pure: props in, events out. State lives in containers and the store.
+  {
+    files: [
+      `${STEARCH}/**/*.pure-component.vue`,
+      `${STEARCH}/**/*.pure-layout.vue`,
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "vue",
+              importNames: [
+                "ref",
+                "shallowRef",
+                "reactive",
+                "computed",
+                "watch",
+                "watchEffect",
+                "inject",
+                "onMounted",
+                "onBeforeUnmount",
+              ],
+              message:
+                "Pure components have no state. Move it to the store and pass it down through a container.",
+            },
+            {
+              name: "pinia",
+              message:
+                "Pure components have no state. Connect it in the container.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["@/stores/*", "**/*.store", "@/composables/*"],
+              message:
+                "Pure components have no state. Connect it in the container.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // The trunk: only Stearch.selectors.ts (and the reducer and store that write
+  // state) may read IStearchState's branches. Everything else goes through it.
+  {
+    files: [`${STEARCH}/**/*.{ts,vue}`],
+    ignores: [
+      `${STEARCH}/Stearch.selectors.ts`,
+      `${STEARCH}/Stearch.reducer.ts`,
+      `${STEARCH}/Stearch.store.ts`,
+      `${STEARCH}/**/*.test.ts`,
+      `${STEARCH}/**/*.stories.ts`,
+      `${STEARCH}/**/*.fixtures.ts`,
+      `${STEARCH}/**/*.story-args.ts`,
+    ],
+    rules: {
+      // Repeats the repo-wide entries: a later block replaces the whole rule.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.property.name='focus']",
+          message:
+            "Focus through focusFromInput from @/utils/autofocus, so keyboard and gamepad moves show the focus ring.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='emitter'][callee.property.name='on']",
+          message:
+            "Subscribe with useEmitterEvent from @/composables/useEmitterEvent, which unsubscribes when the component unmounts.",
+        },
+        {
+          selector:
+            "MemberExpression[property.name=/^(query|view|results|attention|labels)$/]:matches([object.name='state'], [object.property.name='state'])",
+          message:
+            "Read state through a selector in Stearch.selectors.ts, the only file that touches IStearchState.",
+        },
+      ],
+    },
+  },
+];

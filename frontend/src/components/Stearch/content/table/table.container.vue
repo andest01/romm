@@ -5,18 +5,17 @@ import type { RTableColumn } from "@/lib";
 import {
   selectErrorMessage,
   selectSections,
-  selectSlots,
-  selectSortDir,
-  selectSortKey,
-} from "../../Stearch.selectors";
+} from "../../Stearch.results.selectors";
+import { selectSlots } from "../../Stearch.rows.selectors";
+import { selectSortDir, selectSortKey } from "../../Stearch.selectors";
 import stearchStore from "../../Stearch.store";
 import {
   buildScrollRows,
   buildWindowActions,
   headHeightFor,
 } from "../list/list.selectors";
+import { useScrollerJump } from "../list/use-scroller-jump";
 import Verbs from "../list/verbs/verbs.container.vue";
-import { useScrollerJump } from "../use-scroller-jump";
 import RowPure from "./row/row.pure-component.vue";
 import TablePure from "./table.pure-component.vue";
 import { buildSortActions, TABLE_ROW_HEIGHT } from "./table.selectors";

@@ -8,6 +8,7 @@ import vuea11y from "eslint-plugin-vuejs-accessibility";
 import globals from "globals";
 import romm from "./eslint-plugin-romm/index.js";
 import e2eConfig from "./eslint.e2e.config.js";
+import stearchConfig from "./src/components/Stearch/Stearch.eslint.js";
 
 // Heavy modules that belong in a lazy chunk; add the next one here.
 const heavyImports = [
@@ -372,50 +373,8 @@ export default withVueTs(
       "romm/no-unscoped-local-storage": "off",
     },
   },
-  // Pure means pure: props in, events out. State lives in containers and the store.
-  {
-    files: [
-      "src/components/Stearch/**/*.pure-component.vue",
-      "src/components/Stearch/**/*.layout.vue",
-    ],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            {
-              name: "vue",
-              importNames: [
-                "ref",
-                "shallowRef",
-                "reactive",
-                "computed",
-                "watch",
-                "watchEffect",
-                "inject",
-                "onMounted",
-                "onBeforeUnmount",
-              ],
-              message:
-                "Pure components have no state. Move it to the store and pass it down through a container.",
-            },
-            {
-              name: "pinia",
-              message:
-                "Pure components have no state. Connect it in the container.",
-            },
-          ],
-          patterns: [
-            {
-              group: ["@/stores/*", "**/*.store", "@/composables/*"],
-              message:
-                "Pure components have no state. Connect it in the container.",
-            },
-          ],
-        },
-      ],
-    },
-  },
+  // Stearch keeps its own rules in its folder.
+  ...stearchConfig,
   // After the base configs, so its exceptions win.
   ...e2eConfig,
   // Keep last: Prettier owns formatting, so this switches off every

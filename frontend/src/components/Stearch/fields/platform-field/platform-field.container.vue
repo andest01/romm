@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import PlatformSelect from "@/components/shared/PlatformSelect.vue";
 import storePlatforms from "@/stores/platforms";
+import { selectPlatformIds } from "../../Stearch.selectors";
 import stearchStore from "../../Stearch.store";
 
 defineProps<{ label: string }>();
@@ -10,7 +11,7 @@ defineProps<{ label: string }>();
 const { t } = useI18n();
 const store = stearchStore();
 const platforms = storePlatforms();
-const selected = computed(() => store.state.query.platformIds);
+const selected = computed(() => selectPlatformIds(store.state));
 </script>
 
 <template>

@@ -5,13 +5,11 @@ import { useI18n } from "vue-i18n";
 import { useBreakpoint } from "@/composables/useBreakpoint";
 import {
   selectErrorMessage,
-  selectIsAdvancedOpen,
   selectSections,
-  selectSlots,
-  selectViewMode,
-} from "../../Stearch.selectors";
+} from "../../Stearch.results.selectors";
+import { selectSlots } from "../../Stearch.rows.selectors";
+import { selectIsAdvancedOpen, selectViewMode } from "../../Stearch.selectors";
 import stearchStore from "../../Stearch.store";
-import { useScrollerJump } from "../use-scroller-jump";
 import { LIST_ITEMS } from "./list.items";
 import ListPure from "./list.pure-component.vue";
 import {
@@ -21,6 +19,7 @@ import {
   headHeightFor,
   rowHeightFor,
 } from "./list.selectors";
+import { useScrollerJump } from "./use-scroller-jump";
 import Verbs from "./verbs/verbs.container.vue";
 
 const { t } = useI18n();

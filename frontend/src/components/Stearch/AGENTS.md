@@ -42,13 +42,14 @@ All new code, stories and tests live here, by domain. The route loads `Stearch.c
 
 ```
 Stearch.container.vue         root, connects the store to the layout
-Stearch.layout.vue            pure grid with slots
-Stearch.layout-props.ts
+Stearch.pure-layout.vue       pure grid that places parts
+Stearch.pure-layout-props.ts
 Stearch.state-props.ts        IStearchStateProps, the root state
 Stearch.actions.ts            action objects: one union per domain, StearchAction joins them
 Stearch.reducer.ts            pure state transitions
 Stearch.store.ts              one dispatch()
-Stearch.selectors.ts          core selectors
+Stearch.selectors.ts          the trunk: one selector per state field
+Stearch.<family>.selectors.ts  branches: results, rows, attention, query, layout
 Stearch.create-selector.ts    memoizer, same call shape as reselect
 Stearch.fixtures.ts           shared story and test data
 content/content.container.vue  items plus scroll: the one `content` the app sees
@@ -64,11 +65,14 @@ content/content.container.vue  items plus scroll: the one `content` the app sees
 
 ## Rules
 
-1. **Pure means pure.** `*.pure-component.vue` and `*.layout.vue` have no state: props in, events out. No `ref`, `computed`, stores or composables. ESLint enforces the imports. `R*` primitives may keep their own internal state.
+1. **Pure means pure.** `*.pure-component.vue` and `*.pure-layout.vue` have no state: props in, events out. No `ref`, `computed`, stores or composables. ESLint enforces the imports. `R*` primitives may keep their own internal state.
 2. **No optional props.** Every prop is positively defined, in a `*.props.ts` file.
 3. **State lives at the root.** Most of the page is `IStearchStateProps`. Containers connect it to pure components and do little else: run a selector, bind props, dispatch on events. Labels are passed in from containers.
 4. **Updates are boring.** Selectors build arrays of plain action objects, pure components hand them back, and containers pass them to `store.dispatch`. A container builds an action only for a value only the DOM knows, such as typed text. The reducer never mutates and has no side effects.
-5. **Selectors do the work.** Derived values and transformations belong in selectors, not templates or containers. Domain selectors build on core ones in `Stearch.selectors.ts`. A selector returns the same object until an input changes.
+5. **Selectors do the work, and they grow like a tree.** Derived values and transformations belong in selectors, not templates or containers. A selector returns the same object until an input changes.
+   - **Roots and trunk:** the state is the ground. `Stearch.selectors.ts` is the trunk, with one plain selector per field and nothing else. It's the only code that reads `IStearchState`, apart from the reducer and store that write it. ESLint enforces this.
+   - **Branches:** memoized families at the root, one per state branch: `Stearch.results.selectors.ts`, `Stearch.rows.selectors.ts`, `Stearch.attention.selectors.ts`, `Stearch.query.selectors.ts` and `Stearch.layout.selectors.ts`. They build only on the trunk and on each other.
+   - **Leaves:** each domain's `*.selectors.ts` returns exactly the props its pure component takes, so containers just bind them.
 6. **State stays immutable.** The store holds state in a `shallowRef`, so selectors can compare identity. Replace values; never edit them in place.
 7. **No silent fallbacks.** Don't use `!`, or an invented `??` default, on a value that can't be missing. See "Don't silence a type check" in the root `AGENTS.md`.
 
@@ -112,7 +116,8 @@ A layout's remaining props are the interface's real states. Ask what states the 
 
 - **Regions are named grid areas.** Each placement is one `grid-template` you can read as a picture, and each part just names its `grid-area`. Don't offset regions with padding or margins. To make room for something optional, keep its area and size its track to `0px`, so the names never change.
 - **Parts fill their container.** A pure component takes the size it's given and never sets its own outer width, so any layout can hold it. Grid tracks inside a part are `minmax(0, 1fr)`, because a bare `1fr` won't shrink below its content. Only the layout decides what scrolls.
-- **Layouts nest.** Any region with parts of its own gets a layout, as `sidebar.layout.vue` does for header, body and footer.
+- **Layouts nest.** Any region with parts of its own gets a layout, as `sidebar.pure-layout.vue` does for header, body and footer.
+- **A pure layout's props serve layout only.** At least two `Component` parts (the `stearch/pure-layout-parts` lint rule checks this), view states such as `panelState: "shown" | "hidden"` rather than narrow booleans, and very rarely a CSS preference such as a speed or colour override. With fewer than two parts, it's a pure component.
 - **Layouts hold no logic.** They arrange parts through an interface and don't know what's inside.
 - **Give each state its own prop.** `isPanelShown` is visibility; one prop doing visibility and position can't animate.
 - **Name placement in flexbox terms.** An axis (`inline`, `block`) plus a position (`start`, `end`) covers every edge. Use CSS logical properties, not left, right, top or bottom.
@@ -146,6 +151,28 @@ Storybook, docs, tests and types must be good enough to work without any AI. Som
 ## Tests
 
 Every test follows arrange, act, assert, in that order, with a `// Arrange`, `// Act` and `// Assert` comment on each block. One act per test. Never act inside an `expect`. If there's nothing to arrange, leave that block out.
+
+## Imports flow one way
+
+Selectors and the types they use import **up the tree or across to peers, never down**. The trunk imports only state types. A root branch imports nothing from a subfolder. A domain's selectors import nothing from their own subfolders. `import type` counts too: it can't cause a runtime cycle, but it still ties a shallow file to a deep one.
+
+Two checks hold this:
+
+- **`import-x/no-cycle`** (repo-wide) reports any loop, up to 15 files deep.
+- **`import-x/no-restricted-paths`** zones in `Stearch.eslint.js` report a downward import before it can close into a loop.
+
+**When one happens.** The symptoms are `Cannot access 'selectX' before initialization`, an import that is `undefined` when the module loads, or a selector that works in tests but breaks after a hot reload. Selectors are created as modules load, so a cycle bites at once.
+
+1. Run `npx eslint src/components/Stearch`. `no-cycle` prints the loop file by file, and the zones name the downward import.
+2. Find the edge that points down, where a shallower file imports a deeper one.
+3. Move the shared piece up to the nearest folder both sides can reach, usually a root branch or the domain's own `*.props.ts`, and import it from there.
+4. Don't dodge it with lazy `import()`, getters, re-export files, or by pushing logic into the trunk. Those hide the loop instead of removing it.
+
+Worked example: `ListRow` lived in `content/list/list.props.ts`, but the rows branch at the root produces it. It moved up into `Stearch.rows.selectors.ts`, and `list.props.ts` now imports it from there.
+
+## Lint rules
+
+Stearch's ESLint rules live in [Stearch.eslint.js](Stearch.eslint.js): the purity guard for pure components and layouts, and the trunk rule that only `Stearch.selectors.ts` reads state. `frontend/eslint.config.js` spreads them in with one line. Add new Stearch rules there, not to the root config.
 
 ## Checks
 

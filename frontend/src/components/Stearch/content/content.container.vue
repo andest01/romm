@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useBreakpoint } from "@/composables/useBreakpoint";
-import { selectViewMode } from "../Stearch.selectors";
+import { selectBandOffset, selectViewMode } from "../Stearch.selectors";
 import stearchStore from "../Stearch.store";
-import ContentLayout from "./content.layout.vue";
+import ContentLayout from "./content.pure-layout.vue";
 import ListContainer from "./list/list.container.vue";
 import { headHeightFor } from "./list/list.selectors";
 import RailContainer from "./rail/rail.container.vue";
 import SectionContainer from "./section/section.container.vue";
-import {
-  selectBandOffset,
-  selectSectionProps,
-} from "./section/section.selectors";
+import { selectSectionProps } from "./section/section.selectors";
 import TableContainer from "./table/table.container.vue";
 import { TABLE_ROW_HEIGHT } from "./table/table.selectors";
 

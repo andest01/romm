@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { h } from "vue";
-import ContentLayout from "./content.layout.vue";
+import ContentLayout from "./content.pure-layout.vue";
 
 const ITEMS = () =>
   h("div", { style: { height: "100%", overflow: "auto" } }, [
@@ -10,7 +10,7 @@ const BAND = () => h("div", "Band");
 const RAIL = () => h("div", { style: { height: "100%" } }, "Rail");
 
 const meta: Meta<typeof ContentLayout> = {
-  title: "Stearch/content/content.layout.vue",
+  title: "Stearch/content/content.pure-layout.vue",
   tags: ["!autodocs"],
   component: ContentLayout,
   parameters: { layout: "fullscreen" },

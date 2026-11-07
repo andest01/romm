@@ -1,18 +1,18 @@
 import type { StearchAction } from "../Stearch.actions";
 import { createSelector } from "../Stearch.create-selector";
+import { selectClearActions } from "../Stearch.query.selectors";
+import { selectTotal } from "../Stearch.results.selectors";
 import {
-  selectClearActions,
   selectIsAdvancedOpen,
+  selectLabels,
   selectOpenFieldId,
   selectSearchTerm,
   selectSortDir,
   selectSortKey,
-  selectTotal,
   selectViewMode,
 } from "../Stearch.selectors";
 import {
   STEARCH_SORT_KEYS,
-  type IStearchState,
   type StearchSortDir,
   type StearchSortKey,
 } from "../Stearch.state-props";
@@ -51,8 +51,10 @@ const SORT_ARROWS: Readonly<Record<StearchSortDir, string>> = {
   desc: "↓",
 };
 
-const selectPlaceholder = (state: IStearchState) =>
-  state.labels["rom.search-placeholder"];
+const selectPlaceholder = createSelector(
+  [selectLabels],
+  (labels) => labels["rom.search-placeholder"],
+);
 
 const selectSearch = createSelector(
   [selectSearchTerm, selectPlaceholder, selectTotal],

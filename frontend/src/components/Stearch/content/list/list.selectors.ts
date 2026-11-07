@@ -1,12 +1,8 @@
 import { LIST_ROW_HEIGHT_PX } from "@/components/Gallery/listColumns";
 import type { StearchAction } from "../../Stearch.actions";
+import type { ListSlot } from "../../Stearch.rows.selectors";
 import { STEARCH_WINDOW_SIZE } from "../../Stearch.window-size";
-import type {
-  ListItemKind,
-  ListSlot,
-  ScrollRow,
-  VisibleRange,
-} from "./list.props";
+import type { ListItemKind, ScrollRow, VisibleRange } from "./list.props";
 
 const ROW_HEIGHT: Readonly<
   Record<Exclude<ListItemKind, "phone-cover">, number>

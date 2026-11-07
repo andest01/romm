@@ -1,36 +1,15 @@
-import type { StearchAction } from "../../Stearch.actions";
-import type { StearchRom } from "../../Stearch.state-props";
-import type { ScrollerRef } from "../use-scroller-jump";
+import type { ComponentPublicInstance } from "vue";
+import type { ListSlot } from "../../Stearch.rows.selectors";
 import type { ItemPart, ItemProps } from "./item.props";
 
-export interface TextPart {
-  text: string;
-  isMatch: boolean;
+/** The scroller methods a jump needs. */
+export interface JumpScroller {
+  scrollTop: number;
+  scrollToIndex(index: number, options: { smooth: boolean }): void;
 }
 
-/** The API rom, plus only what has to be derived for display. */
-export type ListRow = StearchRom & {
-  /** Where this row sits among all results. */
-  readonly position: number;
-  readonly title: string;
-  readonly titleParts: readonly TextPart[];
-  readonly fileNameParts: readonly TextPart[];
-  readonly coverUrl: string | null;
-  readonly size: string;
-  readonly added: string;
-  readonly released: string;
-  readonly year: string;
-  readonly rating: string;
-  readonly length: string;
-  readonly languagesLabel: string;
-  readonly regionsLabel: string;
-  readonly isSelected: boolean;
-  readonly pressActions: readonly StearchAction[];
-  readonly hoverActions: readonly StearchAction[];
-};
-
-/** `null` is an item that exists but isn't loaded yet. */
-export type ListSlot = ListRow | null;
+/** What Vue hands a function `ref`. */
+export type ScrollerRef = Element | ComponentPublicInstance | null;
 
 export type ListItemKind = "tile" | "phone-row" | "phone-cover" | "gallery-row";
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { selectTotal } from "../../Stearch.selectors";
+import { selectTotal } from "../../Stearch.results.selectors";
 import stearchStore from "../../Stearch.store";
 import RailPure from "./rail.pure-component.vue";
 import { buildScrubActions, selectRailProps } from "./rail.selectors";

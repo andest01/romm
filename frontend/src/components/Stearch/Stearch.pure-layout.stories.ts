@@ -3,8 +3,8 @@ import { h, type Component } from "vue";
 import type {
   StearchLayoutProps,
   StearchPanelLayout,
-} from "./Stearch.layout-props";
-import StearchLayout from "./Stearch.layout.vue";
+} from "./Stearch.pure-layout-props";
+import StearchLayout from "./Stearch.pure-layout.vue";
 
 const block =
   (label: string, token: string, minHeight: string): Component =>
@@ -42,13 +42,13 @@ const nullable = (part: Component) => ({
 });
 
 const meta: Meta<Args> = {
-  title: "Stearch/Stearch.layout.vue",
+  title: "Stearch/Stearch.pure-layout.vue",
   tags: ["!autodocs"],
   // The layout fills the viewport, so it can't be centered, and the app's nav
   // bars don't exist here.
   parameters: { layout: "fullscreen" },
   argTypes: {
-    isPanelShown: { control: "boolean" },
+    panelState: { control: "radio", options: ["shown", "hidden"] },
     panelAxis: { control: "radio", options: ["inline", "block"] },
     panelPosition: { control: "radio", options: ["start", "end"] },
     header: { control: false },
@@ -58,7 +58,7 @@ const meta: Meta<Args> = {
     background: nullable(BACKGROUND),
   },
   args: {
-    isPanelShown: true,
+    panelState: "shown",
     panelAxis: "inline",
     panelPosition: "start",
     header: HEADER,
@@ -79,7 +79,7 @@ const meta: Meta<Args> = {
           :footer="args.footer"
           :background="args.background"
           :panel-layout="{
-            isPanelShown: args.isPanelShown,
+            panelState: args.panelState,
             panelAxis: args.panelAxis,
             panelPosition: args.panelPosition,
           }"

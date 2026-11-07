@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { h } from "vue";
-import SidebarLayout from "./sidebar.layout.vue";
+import SidebarLayout from "./sidebar.pure-layout.vue";
 
 const block = (label: string, height: string) => () =>
   h("div", { style: { height } }, label);
@@ -8,7 +8,7 @@ const block = (label: string, height: string) => () =>
 const FOOTER = block("Footer verbs", "48px");
 
 const meta: Meta<typeof SidebarLayout> = {
-  title: "Stearch/sidebar/sidebar.layout.vue",
+  title: "Stearch/sidebar/sidebar.pure-layout.vue",
   tags: ["!autodocs"],
   component: SidebarLayout,
   parameters: { layout: "fullscreen" },

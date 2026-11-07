@@ -2,8 +2,8 @@
 import { computed, onMounted, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { buildLabels } from "./Stearch.labels";
-import StearchLayout from "./Stearch.layout.vue";
-import { selectPanelLayout } from "./Stearch.selectors";
+import { selectPanelLayout } from "./Stearch.layout.selectors";
+import StearchLayout from "./Stearch.pure-layout.vue";
 import stearchStore from "./Stearch.store";
 import ContentContainer from "./content/content.container.vue";
 import FooterContainer from "./footer/footer.container.vue";
