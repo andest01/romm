@@ -121,7 +121,7 @@ export function buildWindowActions(
   const firstWindow = Math.floor(top.position / STEARCH_WINDOW_SIZE);
   const lastWindow = Math.floor(bottom.position / STEARCH_WINDOW_SIZE);
   const actions: StearchAction[] = [
-    { type: "view/visible", position: top.position },
+    { type: "view/set", patch: { visiblePosition: top.position } },
   ];
   for (let window = firstWindow; window <= lastWindow; window += 1) {
     actions.push({

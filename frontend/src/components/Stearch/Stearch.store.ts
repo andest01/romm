@@ -10,7 +10,8 @@ const QUERY_DEBOUNCE_MS = 200;
 
 const QUERY_ACTIONS: ReadonlySet<StearchAction["type"]> = new Set([
   "query/set",
-  "query/toggle",
+  "query/add",
+  "query/remove",
 ]);
 
 // A shallowRef keeps state identity stable, which is what memoized selectors

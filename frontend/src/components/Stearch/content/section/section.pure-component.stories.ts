@@ -2,9 +2,7 @@ import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import SectionPure from "./section.pure-component.vue";
 
-const SELECT_ACTIONS = [
-  { type: "selection/section", start: 0, size: 45 },
-] as const;
+const SELECT_ACTIONS = [{ type: "selection/add", ids: [1, 2, 3] }] as const;
 
 const meta: Meta<typeof SectionPure> = {
   title: "Stearch/content/section/section.pure-component.vue",
@@ -22,9 +20,13 @@ const meta: Meta<typeof SectionPure> = {
     selectLabel: "Select",
     selectActions: SELECT_ACTIONS,
     prevLabel: "‹ Prev",
-    prevActions: [{ type: "view/jump", position: 0, isSmooth: true }],
+    prevActions: [
+      { type: "view/set", patch: { jump: { position: 0, isSmooth: true } } },
+    ],
     nextLabel: "Next ›",
-    nextActions: [{ type: "view/jump", position: 90, isSmooth: true }],
+    nextActions: [
+      { type: "view/set", patch: { jump: { position: 90, isSmooth: true } } },
+    ],
     onPress: fn(),
   },
 };

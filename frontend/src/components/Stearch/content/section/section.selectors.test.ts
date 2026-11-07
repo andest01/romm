@@ -30,7 +30,7 @@ describe("selectSectionProps", () => {
 
     // Assert
     expect(props?.prevActions).toEqual([
-      { type: "view/jump", position: 0, isSmooth: true },
+      { type: "view/set", patch: { jump: { position: 0, isSmooth: true } } },
     ]);
     expect(props?.nextActions).toBeNull();
   });
@@ -46,32 +46,30 @@ describe("selectSectionProps", () => {
     expect(props).toBeNull();
   });
 
+  it("selects the section's games", () => {
+    // Act
+    const props = selectSectionProps(STATE);
+
+    // Assert
+    expect(props?.selectActions).toEqual([
+      { type: "selection/add", ids: [12, 13] },
+    ]);
+  });
+
   it("offers Deselect once its section is selected", () => {
     // Arrange
     const state = stearchReducer(STATE, {
-      type: "selection/section",
-      start: 2,
-      size: 2,
+      type: "selection/add",
+      ids: [12, 13],
     });
 
     // Act
     const props = selectSectionProps(state);
 
     // Assert
-    expect(props?.selectLabel).toBe("Deselect");
-  });
-});
-
-describe("selection/section", () => {
-  it("clears a section that is fully selected", () => {
-    // Arrange
-    const action = { type: "selection/section", start: 2, size: 2 } as const;
-    const selected = stearchReducer(STATE, action);
-
-    // Act
-    const state = stearchReducer(selected, action);
-
-    // Assert
-    expect(state.attention.selectedIds).toEqual([]);
+    expect(props).toMatchObject({
+      selectLabel: "Deselect",
+      selectActions: [{ type: "selection/remove", ids: [12, 13] }],
+    });
   });
 });

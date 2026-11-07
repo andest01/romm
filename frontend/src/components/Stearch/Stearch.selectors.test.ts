@@ -35,20 +35,23 @@ describe("selectLoadedRoms", () => {
 });
 
 describe("selectRows", () => {
-  it("rebuilds selection without rebuilding row actions", () => {
+  it("presses to add an unselected row and remove a selected one", () => {
     // Arrange
-    const before = selectRows(LOADED_STEARCH_STATE);
     const state = {
       ...LOADED_STEARCH_STATE,
-      attention: { activeId: null, selectedIds: [1] },
+      attention: { activeId: null, selectedIds: [STEARCH_ROW.id] },
     };
 
     // Act
-    const after = selectRows(state);
+    const [selected, unselected] = selectRows(state);
 
     // Assert
-    expect(after).not.toBe(before);
-    expect(after[0]?.pressActions).toBe(before[0]?.pressActions);
+    expect(selected?.pressActions).toEqual([
+      { type: "selection/remove", ids: [STEARCH_ROW.id] },
+    ]);
+    expect(unselected?.pressActions).toEqual([
+      { type: "selection/add", ids: [SECOND_STEARCH_ROW.id] },
+    ]);
   });
 
   it("marks matched text, ignoring case", () => {

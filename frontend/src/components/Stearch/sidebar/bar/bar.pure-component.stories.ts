@@ -3,7 +3,9 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import type { StearchAction } from "../../Stearch.actions";
 import BarPure from "./bar.pure-component.vue";
 
-const CLOSE_ACTIONS: readonly StearchAction[] = [{ type: "advanced/toggle" }];
+const CLOSE_ACTIONS: readonly StearchAction[] = [
+  { type: "view/set", patch: { isAdvancedOpen: false } },
+];
 
 const meta: Meta<typeof BarPure> = {
   title: "Stearch/sidebar/bar/bar.pure-component.vue",

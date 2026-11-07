@@ -48,7 +48,7 @@ export function useScrollerJump(
     (scrollTop) => {
       const offset = bandOffsetFor(headTops.value, scrollTop, headHeight());
       if (offset === store.state.view.bandOffset) return;
-      store.dispatch([{ type: "view/band", offset }]);
+      store.dispatch([{ type: "view/set", patch: { bandOffset: offset } }]);
     },
   );
 

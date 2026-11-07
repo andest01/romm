@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { StearchAction } from "../Stearch.actions";
 import { INITIAL_STEARCH_STATE, stearchReducer } from "../Stearch.reducer";
 import { selectHeaderProps } from "./header.selectors";
 
@@ -30,15 +31,15 @@ describe("selectHeaderProps sort", () => {
 });
 
 describe("selectHeaderProps filters", () => {
-  const OPEN_GENRES = {
-    type: "field/open",
-    id: "selectedGenres",
-  } as const;
+  const OPEN_GENRES: StearchAction = {
+    type: "view/set",
+    patch: { openFieldId: "selectedGenres" },
+  };
 
   it("makes a pill for each field with a value", () => {
     // Arrange
     const state = stearchReducer(INITIAL_STEARCH_STATE, {
-      type: "query/toggle",
+      type: "query/add",
       key: "selectedRegions",
       value: "USA",
     });

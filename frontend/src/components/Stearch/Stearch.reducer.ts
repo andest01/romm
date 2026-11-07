@@ -1,4 +1,8 @@
-import type { StearchAction } from "./Stearch.actions";
+import {
+  reducerOf,
+  type Handlers,
+  type StearchAction,
+} from "./Stearch.actions";
 import { buildLabels } from "./Stearch.labels";
 import type { IStearchState, StearchQuery } from "./Stearch.state-props";
 
@@ -87,123 +91,95 @@ const isCurrentRequest = ({ results }: IStearchState, requestId: number) =>
   (results.status.kind === "loading" || results.status.kind === "ready") &&
   results.status.requestId === requestId;
 
-const toggled = <T>(list: readonly T[], value: T): T[] =>
-  list.includes(value)
-    ? list.filter((item) => item !== value)
-    : [...list, value];
+/** Appends what's missing, in order; adding twice changes nothing. */
+const added = <T>(list: readonly T[], values: readonly T[]): T[] => [
+  ...list,
+  ...values.filter((value) => !list.includes(value)),
+];
 
-export function stearchReducer(
+const removed = <T>(list: readonly T[], values: readonly T[]): T[] =>
+  list.filter((item) => !values.includes(item));
+
+/** One handler per action type. Each gets its own action, already narrowed. */
+const HANDLERS: Handlers<IStearchState, StearchAction> = {
+  "query/set": (state, { patch }) => ({
+    ...state,
+    query: { ...state.query, ...patch },
+  }),
+  "query/add": (state, { key, value }) => ({
+    ...state,
+    query: { ...state.query, [key]: added(state.query[key], [value]) },
+  }),
+  "query/remove": (state, { key, value }) => ({
+    ...state,
+    query: { ...state.query, [key]: removed(state.query[key], [value]) },
+  }),
+  "view/set": (state, { patch }) => ({
+    ...state,
+    view: { ...state.view, ...patch },
+  }),
+  "locale/set": (state, { labels }) => ({ ...state, labels }),
+  "attention/set": (state, { patch }) => ({
+    ...state,
+    attention: { ...state.attention, ...patch },
+  }),
+  "selection/add": (state, { ids }) => ({
+    ...state,
+    attention: {
+      ...state.attention,
+      selectedIds: added(state.attention.selectedIds, ids),
+    },
+  }),
+  "selection/remove": (state, { ids }) => ({
+    ...state,
+    attention: {
+      ...state.attention,
+      selectedIds: removed(state.attention.selectedIds, ids),
+    },
+  }),
+  // A request for an effect; it changes no state by itself.
+  "window/wanted": (state) => state,
+  // A new search starts at the top, so nothing from the old list carries over.
+  "window/requested": (state, { requestId }) => {
+    const loading = {
+      ...state,
+      results: { ...state.results, status: { kind: "loading", requestId } },
+    } satisfies IStearchState;
+    return HANDLERS["view/set"](loading, {
+      type: "view/set",
+      patch: { visiblePosition: 0, jump: { position: 0, isSmooth: false } },
+    });
+  },
+  "window/loaded": (state, { requestId, offset, page }) => {
+    if (!isCurrentRequest(state, requestId)) return state;
+    return {
+      ...state,
+      results:
+        offset === 0
+          ? {
+              status: { kind: "ready", requestId },
+              ids: page.rom_id_index,
+              charIndex: page.char_index,
+              filterValues: page.filter_values,
+              windows: { 0: page.items },
+            }
+          : {
+              ...state.results,
+              status: { kind: "ready", requestId },
+              windows: { ...state.results.windows, [offset]: page.items },
+            },
+    };
+  },
+  "window/failed": (state, { requestId, message }) => {
+    if (!isCurrentRequest(state, requestId)) return state;
+    return {
+      ...state,
+      results: { ...state.results, status: { kind: "failed", message } },
+    };
+  },
+};
+
+export const stearchReducer: (
   state: IStearchState,
   action: StearchAction,
-): IStearchState {
-  const { query, view, results, attention } = state;
-  switch (action.type) {
-    case "query/set":
-      return { ...state, query: { ...query, ...action.patch } };
-    case "query/toggle":
-      return {
-        ...state,
-        query: {
-          ...query,
-          [action.key]: toggled(query[action.key], action.value),
-        },
-      };
-    case "view/visible":
-      return { ...state, view: { ...view, visiblePosition: action.position } };
-    case "view/jump":
-      return {
-        ...state,
-        view: {
-          ...view,
-          jump: { position: action.position, isSmooth: action.isSmooth },
-        },
-      };
-    case "view/band":
-      return { ...state, view: { ...view, bandOffset: action.offset } };
-    case "view/set":
-      return { ...state, view: { ...view, mode: action.mode } };
-    case "advanced/toggle":
-      return {
-        ...state,
-        view: { ...view, isAdvancedOpen: !view.isAdvancedOpen },
-      };
-    case "field/open":
-      return { ...state, view: { ...view, openFieldId: action.id } };
-    case "locale/set":
-      return { ...state, labels: action.labels };
-    case "attention/active":
-      return { ...state, attention: { ...attention, activeId: action.id } };
-    case "selection/toggle":
-      return {
-        ...state,
-        attention: {
-          ...attention,
-          selectedIds: toggled(attention.selectedIds, action.id),
-        },
-      };
-    case "selection/all":
-      return {
-        ...state,
-        attention: { ...attention, selectedIds: results.ids },
-      };
-    case "selection/section": {
-      const ids = results.ids.slice(action.start, action.start + action.size);
-      const selected = new Set(attention.selectedIds);
-      const isAllSelected = ids.every((id) => selected.has(id));
-      ids.forEach((id) =>
-        isAllSelected ? selected.delete(id) : selected.add(id),
-      );
-      return {
-        ...state,
-        attention: { ...attention, selectedIds: [...selected] },
-      };
-    }
-    case "selection/clear":
-      return { ...state, attention: { ...attention, selectedIds: [] } };
-    // A request for an effect; it changes no state by itself.
-    case "window/wanted":
-      return state;
-    case "window/requested":
-      return {
-        ...state,
-        results: {
-          ...results,
-          status: { kind: "loading", requestId: action.requestId },
-        },
-      };
-    case "window/loaded": {
-      if (!isCurrentRequest(state, action.requestId)) return state;
-      const { page, offset, requestId } = action;
-      return {
-        ...state,
-        results:
-          offset === 0
-            ? {
-                status: { kind: "ready", requestId },
-                ids: page.rom_id_index,
-                charIndex: page.char_index,
-                filterValues: page.filter_values,
-                windows: { 0: page.items },
-              }
-            : {
-                ...results,
-                status: { kind: "ready", requestId },
-                windows: { ...results.windows, [offset]: page.items },
-              },
-      };
-    }
-    case "window/failed":
-      if (!isCurrentRequest(state, action.requestId)) return state;
-      return {
-        ...state,
-        results: {
-          ...results,
-          status: { kind: "failed", message: action.message },
-        },
-      };
-    default: {
-      const unhandled: never = action;
-      return unhandled;
-    }
-  }
-}
+) => IStearchState = reducerOf(HANDLERS);

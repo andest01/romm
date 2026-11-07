@@ -54,13 +54,18 @@ function multiPreview(
       selected.length > 0
         ? `${label}: ${logicWords(logic)}${selected.join(", ")}`
         : null,
-    choices: values[field.valuesFrom].map((value): ChoicePreview => ({
-      id: `${field.id}:${value}`,
-      label: value,
-      count: null,
-      state: selected.includes(value) ? "on" : "off",
-      actions: [{ type: "query/toggle", key: field.key, value }],
-    })),
+    choices: values[field.valuesFrom].map((value): ChoicePreview => {
+      const isOn = selected.includes(value);
+      return {
+        id: `${field.id}:${value}`,
+        label: value,
+        count: null,
+        state: isOn ? "on" : "off",
+        actions: [
+          { type: isOn ? "query/remove" : "query/add", key: field.key, value },
+        ],
+      };
+    }),
     logic: LOGIC_OPERATORS.map((operator) => ({
       id: `${field.id}:${operator}`,
       label: LOGIC_LABELS[operator],
@@ -70,7 +75,7 @@ function multiPreview(
       ],
     })),
     clearActions: [{ type: "query/set", patch: patchOf(field.key, []) }],
-    openActions: [{ type: "field/open", id: field.id }],
+    openActions: [{ type: "view/set", patch: { openFieldId: field.id } }],
   };
 }
 

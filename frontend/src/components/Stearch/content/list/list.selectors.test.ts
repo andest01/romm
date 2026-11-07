@@ -150,7 +150,7 @@ describe("buildWindowActions", () => {
 
     // Assert
     expect(actions).toEqual([
-      { type: "view/visible", position: 40 },
+      { type: "view/set", patch: { visiblePosition: 40 } },
       { type: "window/wanted", offset: 0 },
       { type: "window/wanted", offset: 48 },
     ]);

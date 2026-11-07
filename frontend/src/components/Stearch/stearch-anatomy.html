@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stearch anatomy</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;600&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: Geist, system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #2d3142;
+        padding: 3rem 2rem;
+        display: flex;
+        justify-content: center;
+      }
+      .frame {
+        max-width: 1240px;
+        width: 100%;
+      }
+      .eyebrow {
+        font:
+          500 0.66rem "Geist Mono",
+          monospace;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #4f5d75;
+        margin-bottom: 0.5rem;
+      }
+      h1 {
+        font:
+          400 2rem/1.15 "Instrument Serif",
+          serif;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.5rem;
+      }
+      .lede {
+        font:
+          italic 400 1.05rem "Instrument Serif",
+          serif;
+        color: #4f5d75;
+        margin-bottom: 1.5rem;
+      }
+      .diagram-container {
+        width: 100%;
+        overflow-x: auto;
+      }
+      svg {
+        width: 100%;
+        min-width: 1200px;
+        display: block;
+      }
+      .layout {
+        font:
+          600 12px Geist,
+          sans-serif;
+        fill: #bf4520;
+      }
+      .name {
+        font:
+          600 12px Geist,
+          sans-serif;
+        fill: #2d3142;
+      }
+      .path {
+        font:
+          400 10px "Geist Mono",
+          monospace;
+        fill: #4f5d75;
+      }
+      .path-accent {
+        font:
+          400 10px "Geist Mono",
+          monospace;
+        fill: #bf4520;
+      }
+      .legend {
+        font:
+          400 11px Geist,
+          sans-serif;
+        fill: #4f5d75;
+      }
+      @media print {
+        .diagram-container {
+          overflow-x: visible;
+        }
+        svg {
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <p class="eyebrow">Nested · Stearch page map</p>
+      <h1>Stearch anatomy</h1>
+      <p class="lede">
+        Find the problem on the page, then open the file under it. Paths are
+        relative to frontend/src/components/Stearch.
+      </p>
+      <div class="diagram-container">
+        <svg
+          viewBox="0 0 1200 840"
+          xmlns="http://www.w3.org/2000/svg"
+          role="img"
+          aria-labelledby="stearch-anatomy-title stearch-anatomy-desc"
+        >
+          <title id="stearch-anatomy-title">Stearch anatomy</title>
+          <desc id="stearch-anatomy-desc">
+            The Stearch page drawn as its layouts and parts, each labelled with
+            the file that draws it: a page layout holding the header, the filter
+            panel with its own layout, the content layout with band, items and
+            rail, and the footer.
+          </desc>
+          <rect width="100%" height="100%" fill="#f5f5f5" />
+
+          <!-- Page layout -->
+          <rect
+            x="24"
+            y="24"
+            width="1152"
+            height="740"
+            rx="8"
+            fill="none"
+            stroke="#bf4520"
+            stroke-width="1.4"
+          />
+          <text x="40" y="46" class="layout">Page layout</text>
+          <text x="132" y="46" class="path-accent">
+            Stearch.layout.vue · Stearch.container.vue · background: null
+          </text>
+
+          <!-- Header -->
+          <rect
+            x="40"
+            y="60"
+            width="1120"
+            height="92"
+            rx="6"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="52" y="80" class="name">Header</text>
+          <text x="110" y="80" class="path">
+            header/header.pure-component.vue · header.container.vue ·
+            header.selectors.ts
+          </text>
+          <rect x="52" y="92" width="300" height="48" rx="4" fill="#ececec" />
+          <text x="62" y="112" class="name">Search field and count</text>
+          <text x="62" y="128" class="path">in header.pure-component.vue</text>
+          <rect x="364" y="92" width="232" height="48" rx="4" fill="#ececec" />
+          <text x="374" y="112" class="name">Add a filter menu</text>
+          <text x="374" y="128" class="path">fields/field-picker/</text>
+          <rect x="608" y="92" width="232" height="48" rx="4" fill="#ececec" />
+          <text x="618" y="112" class="name">Filter pills</text>
+          <text x="618" y="128" class="path">fields/field-pill/</text>
+          <rect x="852" y="92" width="296" height="48" rx="4" fill="#ececec" />
+          <text x="862" y="112" class="name">Advanced, sort, view toggle</text>
+          <text x="862" y="128" class="path">in header.pure-component.vue</text>
+
+          <!-- Panel: sidebar layout -->
+          <rect
+            x="40"
+            y="164"
+            width="340"
+            height="536"
+            rx="6"
+            fill="none"
+            stroke="#bf4520"
+            stroke-dasharray="5,4"
+          />
+          <text x="52" y="184" class="layout">Panel layout</text>
+          <text x="52" y="198" class="path-accent">
+            sidebar/sidebar.layout.vue · sidebar.container.vue
+          </text>
+
+          <rect
+            x="52"
+            y="208"
+            width="316"
+            height="48"
+            rx="4"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="62" y="228" class="name">Header bar: Filters, Close</text>
+          <text x="62" y="244" class="path">
+            sidebar/sidebar-header.container.vue
+          </text>
+
+          <rect
+            x="52"
+            y="266"
+            width="316"
+            height="362"
+            rx="4"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="62" y="286" class="name">Body: field list</text>
+          <text x="62" y="302" class="path">
+            fields/field-list/field-list.container.vue
+          </text>
+          <rect x="64" y="314" width="292" height="44" rx="4" fill="#ececec" />
+          <text x="74" y="332" class="name">Platforms</text>
+          <text x="74" y="348" class="path">
+            fields/platform-field/ (PlatformSelect)
+          </text>
+          <rect x="64" y="366" width="292" height="44" rx="4" fill="#ececec" />
+          <text x="74" y="384" class="name">How Long to Beat</text>
+          <text x="74" y="400" class="path">fields/range-row/</text>
+          <rect x="64" y="418" width="292" height="96" rx="4" fill="#ececec" />
+          <text x="74" y="436" class="name">Multi-select field</text>
+          <text x="74" y="452" class="path">
+            fields/field-section/ → field-picker/
+          </text>
+          <text x="74" y="472" class="path">choices: fields/choice-row/</text>
+          <text x="74" y="488" class="path">
+            any / all / none: fields/logic-switch/
+          </text>
+          <text x="74" y="504" class="path">data: Stearch.fields.ts</text>
+          <rect x="64" y="522" width="292" height="44" rx="4" fill="#ececec" />
+          <text x="74" y="540" class="name">Properties (tri-state)</text>
+          <text x="74" y="556" class="path">fields/tri-state-row/</text>
+          <text x="74" y="590" class="path">
+            selectors: fields/fields.selectors.ts
+          </text>
+          <text x="74" y="606" class="path">
+            order: STEARCH_FIELDS in Stearch.fields.ts
+          </text>
+
+          <rect
+            x="52"
+            y="638"
+            width="316"
+            height="50"
+            rx="4"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="62" y="658" class="name">
+            Footer bar: Reset filters, Close
+          </text>
+          <text x="62" y="674" class="path">
+            sidebar/sidebar-footer.container.vue
+          </text>
+
+          <!-- Content layout -->
+          <rect
+            x="396"
+            y="164"
+            width="764"
+            height="536"
+            rx="6"
+            fill="none"
+            stroke="#bf4520"
+            stroke-dasharray="5,4"
+          />
+          <text x="408" y="184" class="layout">Content layout</text>
+          <text x="408" y="198" class="path-accent">
+            content/content.layout.vue · content.container.vue
+          </text>
+
+          <rect
+            x="408"
+            y="208"
+            width="696"
+            height="44"
+            rx="4"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="418" y="226" class="name">
+            Section band: F · 45 games · Select · Prev · Next
+          </text>
+          <text x="418" y="242" class="path">
+            content/section/ · pushed by headings via
+            content/use-scroller-jump.ts
+          </text>
+
+          <rect
+            x="408"
+            y="262"
+            width="696"
+            height="426"
+            rx="4"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="418" y="282" class="name">
+            Items, virtualised; headings are rows
+          </text>
+          <text x="418" y="298" class="path">
+            tiles: content/list/list.container.vue → list.pure-component.vue ·
+            rows: list.selectors.ts
+          </text>
+
+          <rect x="420" y="312" width="160" height="56" rx="4" fill="#ececec" />
+          <text x="430" y="332" class="name">Tile</text>
+          <text x="430" y="348" class="path">content/list/tile/</text>
+          <rect x="592" y="312" width="160" height="56" rx="4" fill="#ececec" />
+          <text x="602" y="332" class="name">Phone row</text>
+          <text x="602" y="348" class="path">content/list/phone-row/</text>
+          <rect x="764" y="312" width="160" height="56" rx="4" fill="#ececec" />
+          <text x="774" y="332" class="name">Phone cover</text>
+          <text x="774" y="348" class="path">content/list/phone-cover/</text>
+          <rect x="936" y="312" width="156" height="56" rx="4" fill="#ececec" />
+          <text x="946" y="332" class="name">Gallery row</text>
+          <text x="946" y="348" class="path">content/list/gallery-row/</text>
+
+          <text x="420" y="392" class="path">
+            which item draws: content/list/list.items.ts · contract:
+            content/list/item.props.ts
+          </text>
+
+          <rect x="420" y="408" width="672" height="56" rx="4" fill="#ececec" />
+          <text x="430" y="428" class="name">
+            ♡ and ⋯ on every item (GameActionBtn)
+          </text>
+          <text x="430" y="444" class="path">
+            content/list/verbs/verbs.container.vue
+          </text>
+
+          <rect x="420" y="476" width="672" height="96" rx="4" fill="#ececec" />
+          <text x="430" y="496" class="name">Table view</text>
+          <text x="430" y="512" class="path">
+            content/table/table.container.vue → table.pure-component.vue
+          </text>
+          <text x="430" y="532" class="path">
+            one row: content/table/row/ · sort clicks: table.selectors.ts
+          </text>
+          <text x="430" y="552" class="path">
+            on a phone, Table shows phone rows instead
+          </text>
+
+          <text x="420" y="600" class="path">
+            cover art: components/shared/GameCover.vue · data: Stearch.store.ts
+            → Stearch.schema.ts
+          </text>
+          <text x="420" y="616" class="path">
+            empty and error states: in list.pure-component.vue and
+            table.pure-component.vue
+          </text>
+
+          <rect
+            x="1116"
+            y="208"
+            width="32"
+            height="480"
+            rx="4"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="1132" y="232" text-anchor="middle" class="name">A</text>
+          <text x="1132" y="292" text-anchor="middle" class="name">F</text>
+          <text x="1132" y="372" text-anchor="middle" class="name">M</text>
+          <text x="1132" y="452" text-anchor="middle" class="name">S</text>
+          <text x="1132" y="532" text-anchor="middle" class="name">Z</text>
+          <text x="1104" y="718" text-anchor="end" class="name">
+            Rail: drag to scrub
+          </text>
+          <text x="1104" y="734" text-anchor="end" class="path">
+            content/rail/ · width: --stearch-rail-width in content.layout.vue
+          </text>
+
+          <!-- Footer -->
+          <rect
+            x="40"
+            y="712"
+            width="340"
+            height="44"
+            rx="6"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="52" y="730" class="name">
+            Footer: count, Select all, selection
+          </text>
+          <text x="52" y="746" class="path">footer/footer.container.vue</text>
+
+          <!-- Legend -->
+          <line
+            x1="24"
+            y1="784"
+            x2="1176"
+            y2="784"
+            stroke="rgba(45,49,66,0.12)"
+          />
+          <rect
+            x="24"
+            y="802"
+            width="16"
+            height="12"
+            rx="2"
+            fill="none"
+            stroke="#bf4520"
+            stroke-dasharray="5,4"
+          />
+          <text x="48" y="812" class="legend">
+            A layout: places parts, holds no logic
+          </text>
+          <rect
+            x="320"
+            y="802"
+            width="16"
+            height="12"
+            rx="2"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="344" y="812" class="legend">
+            A part, usually a container
+          </text>
+          <rect x="560" y="802" width="16" height="12" rx="2" fill="#ececec" />
+          <text x="584" y="812" class="legend">A pure component inside it</text>
+        </svg>
+      </div>
+    </div>
+  </body>
+</html>

@@ -179,8 +179,9 @@ const selectBaseRows = createSelector([selectPositionedRoms], (positioned) =>
       length: lengthOf(rom),
       languagesLabel: rom.languages.join(", "),
       regionsLabel: rom.regions.join(", "),
-      pressActions: [{ type: "selection/toggle", id: rom.id }] as const,
-      hoverActions: [{ type: "attention/active", id: rom.id }] as const,
+      hoverActions: [
+        { type: "attention/set", patch: { activeId: rom.id } },
+      ] as const,
     };
   }),
 );
@@ -190,12 +191,21 @@ export const selectRows = createSelector(
   (rows, selectedIds, searchTerm): readonly ListRow[] => {
     const term = searchTerm ?? "";
     const selected = new Set(selectedIds);
-    return rows.map((row) => ({
-      ...row,
-      titleParts: splitMatch(row.title, term),
-      fileNameParts: splitMatch(row.fs_name, term),
-      isSelected: selected.has(row.id),
-    }));
+    return rows.map((row) => {
+      const isSelected = selected.has(row.id);
+      return {
+        ...row,
+        titleParts: splitMatch(row.title, term),
+        fileNameParts: splitMatch(row.fs_name, term),
+        isSelected,
+        pressActions: [
+          {
+            type: isSelected ? "selection/remove" : "selection/add",
+            ids: [row.id],
+          },
+        ],
+      };
+    });
   },
 );
 

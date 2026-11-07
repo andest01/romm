@@ -31,7 +31,7 @@ describe("selectRailProps", () => {
 
     // Assert
     expect(actions).toEqual([
-      { type: "view/jump", position: 300, isSmooth: false },
+      { type: "view/set", patch: { jump: { position: 300, isSmooth: false } } },
     ]);
   });
 
@@ -41,7 +41,7 @@ describe("selectRailProps", () => {
 
     // Assert
     expect(actions).toEqual([
-      { type: "view/jump", position: 600, isSmooth: false },
+      { type: "view/set", patch: { jump: { position: 600, isSmooth: false } } },
     ]);
   });
 

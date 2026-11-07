@@ -29,5 +29,5 @@ export function buildScrubActions(
 ): readonly StearchAction[] {
   const clamped = Math.min(1, Math.max(0, fraction));
   const position = Math.min(total - 1, Math.floor(clamped * total));
-  return [{ type: "view/jump", position, isSmooth: false }];
+  return [{ type: "view/set", patch: { jump: { position, isSmooth: false } } }];
 }

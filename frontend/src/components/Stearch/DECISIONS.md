@@ -60,7 +60,10 @@ Why: one user gesture is one transition, selectors never see a half-applied stat
 
 ```ts
 // Clears search and closes the panel. To stop clearing, remove the first item.
-closeActions: [{ type: "search/set", term: "" }, { type: "advanced/toggle" }];
+closeActions: [
+  { type: "query/set", patch: { searchTerm: null } },
+  { type: "view/set", patch: { isAdvancedOpen: false } },
+];
 ```
 
 **App actions are a domain type.** `Stearch.actions.ts` holds one discriminated union per domain (`StearchQueryAction`, `StearchLayoutAction`, `StearchSelectionAction`, `StearchWindowAction`), and `StearchAction` is their union. They aren't global to the app, but they share a common domain so they are easy to use and refine. Why: VS Code becomes your friend. Autocomplete lists what can happen, the compiler checks each shape, and a prop can narrow to one domain when that helps. Add a new action to its domain's union, or start a new domain. Don't declare action shapes elsewhere.
@@ -76,7 +79,7 @@ closeActions: [{ type: "search/set", term: "" }, { type: "advanced/toggle" }];
 
 So our "actions" are what XState calls events: they say what happened. Two ideas to borrow when the code asks for them: turn `runEffect` into a table keyed by action type once a third effect appears, and move status checks to one place if more transitions depend on status.
 
-**Say what happened; the reducer decides what it means.** Actions carry ids and inputs, never computed results. `selection/toggle` is right. `selection/set` with a precomputed list is wrong: it splits the logic and can go stale between render and click.
+**Actions are idempotent; selectors choose the direction.** Replaces the earlier "say what happened" rule, which allowed toggles. A toggle sent twice undoes itself, and a replayed one flips state. Now the selector reads the state and offers `selection/add` or `selection/remove`, or a patch such as `{ isAdvancedOpen: !isOpen }`. Each domain has one `*/set` taking a `Partial` patch, lists have `*/add` and `*/remove`, and there are no reset or clear actions: a reset is a patch of defaults.
 
 ## Layers
 

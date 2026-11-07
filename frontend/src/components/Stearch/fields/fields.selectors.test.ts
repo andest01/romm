@@ -23,7 +23,7 @@ describe("selectFieldPreviews", () => {
   it("summarises a multi-select, with its logic in words", () => {
     // Arrange
     const actions: StearchAction[] = [
-      { type: "query/toggle", key: "selectedGenres", value: "RPG" },
+      { type: "query/add", key: "selectedGenres", value: "RPG" },
       { type: "query/set", patch: { genresLogic: "all" } },
     ];
 
@@ -73,7 +73,7 @@ describe("selectFieldPreviews", () => {
   it("clears a field with its own actions", () => {
     // Arrange
     const actions: StearchAction[] = [
-      { type: "query/toggle", key: "selectedGenres", value: "RPG" },
+      { type: "query/add", key: "selectedGenres", value: "RPG" },
     ];
     const set = previewAfter(actions, "selectedGenres");
 

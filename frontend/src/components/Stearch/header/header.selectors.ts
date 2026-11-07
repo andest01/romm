@@ -26,11 +26,8 @@ import type {
   HeaderView,
 } from "./header.props";
 
-const ADVANCED_ACTIONS: readonly StearchAction[] = [
-  { type: "advanced/toggle" },
-];
 const CLOSE_FIELD_ACTIONS: readonly StearchAction[] = [
-  { type: "field/open", id: null },
+  { type: "view/set", patch: { openFieldId: null } },
 ];
 
 // Stub labels: move to locale keys before this leaves the fork.
@@ -113,7 +110,9 @@ const selectFilters = createSelector(
 const selectView = createSelector([selectViewMode], (mode): HeaderView => ({
   mode,
   options: VIEW_OPTIONS,
-  actions: [{ type: "view/set", mode: mode === "table" ? "tiles" : "table" }],
+  actions: [
+    { type: "view/set", patch: { mode: mode === "table" ? "tiles" : "table" } },
+  ],
 }));
 
 export const selectHeaderProps = createSelector(
@@ -121,7 +120,11 @@ export const selectHeaderProps = createSelector(
   (search, filters, isOpen, sort, view): HeaderProps => ({
     search,
     filters,
-    advanced: { isOpen, label: ADVANCED_LABEL, actions: ADVANCED_ACTIONS },
+    advanced: {
+      isOpen,
+      label: ADVANCED_LABEL,
+      actions: [{ type: "view/set", patch: { isAdvancedOpen: !isOpen } }],
+    },
     sort,
     view,
   }),

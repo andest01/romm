@@ -33,7 +33,7 @@ This architecture exists so that behaviour changes in one place. Use that.
 Worked example, spec 001 V5. Wrong: a `Record<StearchView, ...>` of actions, a toggle table and a helper, across props, pure component and stories. Right: one array in `selectHeaderState`.
 
 ```ts
-viewActions: [{ type: "view/set", view: view === "table" ? "tiles" : "table" }],
+actions: [{ type: "view/set", patch: { mode: mode === "table" ? "tiles" : "table" } }],
 ```
 
 ## Layout
@@ -71,6 +71,25 @@ content/content.container.vue  items plus scroll: the one `content` the app sees
 5. **Selectors do the work.** Derived values and transformations belong in selectors, not templates or containers. Domain selectors build on core ones in `Stearch.selectors.ts`. A selector returns the same object until an input changes.
 6. **State stays immutable.** The store holds state in a `shallowRef`, so selectors can compare identity. Replace values; never edit them in place.
 7. **No silent fallbacks.** Don't use `!`, or an invented `??` default, on a value that can't be missing. See "Don't silence a type check" in the root `AGENTS.md`.
+
+## The reducer is a table
+
+The reducer is a readonly object with one handler per action type, typed `Handlers<IStearchState, StearchAction>` and turned into a function by `reducerOf`. No `switch`.
+
+```ts
+const HANDLERS: Handlers<IStearchState, StearchAction> = {
+  "view/set": (state, { mode }) => ({ ...state, view: { ...state.view, mode } }),
+  ...
+};
+export const stearchReducer = reducerOf(HANDLERS);
+```
+
+- **The compiler holds the table to the union.** A missing handler, an extra key, or a handler reading a field its action doesn't have are all compile errors. Adding an action means adding one union member and one handler.
+- **Each handler gets its own action, already narrowed,** so destructure it in the parameter list.
+- **Actions are idempotent.** Sending one twice changes nothing more. No toggles: the selector reads the state and picks the direction, such as `selection/add` or `selection/remove`, or `isAdvancedOpen: !isOpen` inside a patch.
+- **No reset or clear actions.** A domain's fields change through one `*/set` with a `Partial<T>` patch, and a reset is a patch of defaults. Before adding an action, check whether a patch already says it.
+- **Compose handlers for transitions.** When one change implies another, as a new search implies "back to the top", call the other handler, such as `HANDLERS["view/jump"](state, ...)`, instead of copying what it does.
+- **Tests stay one line per step.** `apply(state, ...actions)` folds actions just as `dispatch` does. Arrange is `apply(INITIAL, ...)`, act is `apply(before, ...)`, and small action builders such as `pick(7)` or `loaded(9, 0)` keep each line short.
 
 ## Stories
 

@@ -8,7 +8,9 @@ describe("selectFooterState", () => {
     const { selectAllActions } = selectFooterState(LOADED_STEARCH_STATE);
 
     // Assert
-    expect(selectAllActions).toEqual([{ type: "selection/all" }]);
+    expect(selectAllActions).toEqual([
+      { type: "selection/add", ids: LOADED_STEARCH_STATE.results.ids },
+    ]);
   });
 
   it("hides select all once everything is selected", () => {

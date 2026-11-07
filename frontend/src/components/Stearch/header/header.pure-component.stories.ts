@@ -5,13 +5,13 @@ import { MULTI_FIELD, TRI_STATE_FIELD } from "../fields/fields.story-args";
 import HeaderPure from "./header.pure-component.vue";
 
 const ADVANCED_ACTIONS: readonly StearchAction[] = [
-  { type: "advanced/toggle" },
+  { type: "view/set", patch: { isAdvancedOpen: true } },
 ];
 const SORT_ACTIONS: readonly StearchAction[] = [
   { type: "query/set", patch: { orderBy: "fs_size_bytes" } },
 ];
 const VIEW_ACTIONS: readonly StearchAction[] = [
-  { type: "view/set", mode: "tiles" },
+  { type: "view/set", patch: { mode: "tiles" } },
 ];
 
 const meta: Meta<typeof HeaderPure> = {
@@ -30,7 +30,7 @@ const meta: Meta<typeof HeaderPure> = {
       addFields: [MULTI_FIELD],
       openField: null,
       closeFieldLabel: "Back",
-      closeFieldActions: [{ type: "field/open", id: null }],
+      closeFieldActions: [{ type: "view/set", patch: { openFieldId: null } }],
       pills: [MULTI_FIELD, TRI_STATE_FIELD],
       clearLabel: "Clear all",
       clearActions: [{ type: "query/set", patch: { selectedGenres: [] } }],

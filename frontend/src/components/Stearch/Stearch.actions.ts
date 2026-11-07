@@ -1,42 +1,43 @@
 import type { StearchLabels } from "./Stearch.labels";
 import type {
+  AttentionCoreConcept,
+  IStearchState,
   MultiKey,
   StearchPage,
   StearchQuery,
-  StearchViewMode,
 } from "./Stearch.state-props";
+
+type StearchView = IStearchState["view"];
+
+/** Every action is a plain object named by what happened. */
+export interface Action<T extends string = string> {
+  readonly type: T;
+}
+
+// Every action is idempotent: sending it twice changes nothing more. Selectors
+// read the state and choose the direction, so there are no toggles.
 
 export type StearchQueryAction =
   | { readonly type: "query/set"; readonly patch: Partial<StearchQuery> }
   | {
-      readonly type: "query/toggle";
+      readonly type: "query/add" | "query/remove";
       readonly key: MultiKey;
       readonly value: string;
     };
 
 export type StearchViewAction =
-  | { readonly type: "view/set"; readonly mode: StearchViewMode }
-  | { readonly type: "view/visible"; readonly position: number }
-  | {
-      readonly type: "view/jump";
-      readonly position: number;
-      readonly isSmooth: boolean;
-    }
-  | { readonly type: "view/band"; readonly offset: number }
-  | { readonly type: "advanced/toggle" }
-  | { readonly type: "field/open"; readonly id: string | null }
+  | { readonly type: "view/set"; readonly patch: Partial<StearchView> }
   | { readonly type: "locale/set"; readonly labels: StearchLabels };
 
 export type StearchAttentionAction =
-  | { readonly type: "attention/active"; readonly id: number | null }
-  | { readonly type: "selection/toggle"; readonly id: number }
-  | { readonly type: "selection/all" }
   | {
-      readonly type: "selection/section";
-      readonly start: number;
-      readonly size: number;
+      readonly type: "attention/set";
+      readonly patch: Partial<AttentionCoreConcept>;
     }
-  | { readonly type: "selection/clear" };
+  | {
+      readonly type: "selection/add" | "selection/remove";
+      readonly ids: readonly number[];
+    };
 
 export type StearchWindowAction =
   | { readonly type: "window/wanted"; readonly offset: number }
@@ -58,3 +59,24 @@ export type StearchAction =
   | StearchViewAction
   | StearchAttentionAction
   | StearchWindowAction;
+
+/** The action with this `type`. */
+export type ActionOf<A extends Action, T extends A["type"]> = Extract<
+  A,
+  Action<T>
+>;
+
+/** One handler per action type, each handed exactly its own action. A missing
+ *  or extra key is a compile error. */
+export type Handlers<S, A extends Action> = {
+  readonly [T in A["type"]]: (state: S, action: ActionOf<A, T>) => S;
+};
+
+/** Turns a handler table into a reducer, with no switch and no cast. */
+export function reducerOf<S, A extends Action>(handlers: Handlers<S, A>) {
+  return <T extends A["type"]>(state: S, action: ActionOf<A, T>): S => {
+    const handle: (state: S, action: ActionOf<A, T>) => S =
+      handlers[action.type];
+    return handle(state, action);
+  };
+}

@@ -117,16 +117,16 @@ labels: Readonly<Record<LabelKey, string>>; // in root state
 
 ## 5. Clicking is a small state update
 
-Two actions cover all of search, replacing `search/set`, `sort/set`, `filter/toggle` and `filter/clear`:
+Three idempotent actions cover all of search, replacing `search/set`, `sort/set`, `filter/toggle` and `filter/clear`:
 
 ```ts
-| { type: "query/set"; patch: Partial<StearchQuery> }     // merged into the query
-| { type: "query/toggle"; key: MultiKey; value: string }  // a multi-select value
+| { type: "query/set"; patch: Partial<StearchQuery> }                  // merged into the query
+| { type: "query/add" | "query/remove"; key: MultiKey; value: string } // one multi-select value
 ```
 
 Clearing has no action of its own. It's a patch of defaults: `INITIAL_QUERY` resets everything, and "Clear all" keeps the term and sort.
 
-`query/toggle` stays separate because of our rule: actions say what happened, and never carry a computed list that could go stale. The store reloads on any `query/*`.
+A choice's selector reads whether the value is on and offers `query/add` or `query/remove`, so sending either twice changes nothing more. They carry one value, not a computed list, so they can't go stale. The store reloads on any `query/*`.
 
 ## 6. Components this implies
 

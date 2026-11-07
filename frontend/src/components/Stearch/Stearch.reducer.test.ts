@@ -3,82 +3,94 @@ import type { StearchAction } from "./Stearch.actions";
 import { LOADED_STEARCH_STATE } from "./Stearch.fixtures";
 import {
   INITIAL_QUERY,
-  INITIAL_STEARCH_STATE,
+  INITIAL_STEARCH_STATE as INITIAL,
   stearchReducer,
 } from "./Stearch.reducer";
 import { selectClearActions } from "./Stearch.selectors";
-import type { StearchPage } from "./Stearch.state-props";
+import type { IStearchState, StearchPage } from "./Stearch.state-props";
+
+/** Folds actions into a state, the same way `dispatch` does. */
+const apply = (state: IStearchState, ...actions: readonly StearchAction[]) =>
+  actions.reduce(stearchReducer, state);
 
 const page: StearchPage = {
   items: [],
   total: 0,
   char_index: {},
   rom_id_index: [],
-  filter_values: INITIAL_STEARCH_STATE.results.filterValues,
+  filter_values: INITIAL.results.filterValues,
 };
 const USA: StearchAction = {
-  type: "query/toggle",
+  type: "query/add",
   key: "selectedRegions",
   value: "USA",
 };
+const ZELDA: StearchAction = {
+  type: "query/set",
+  patch: { searchTerm: "zelda" },
+};
+const pick = (...ids: number[]): StearchAction => ({
+  type: "selection/add",
+  ids,
+});
+const unpick = (...ids: number[]): StearchAction => ({
+  type: "selection/remove",
+  ids,
+});
+const requested = (requestId: number): StearchAction => ({
+  type: "window/requested",
+  requestId,
+});
+const loaded = (requestId: number, offset: number): StearchAction => ({
+  type: "window/loaded",
+  requestId,
+  offset,
+  page,
+});
 
 describe("stearchReducer", () => {
   it("keeps the most recent selection last", () => {
-    // Arrange
-    const actions: StearchAction[] = [
-      { type: "selection/toggle", id: 7 },
-      { type: "selection/toggle", id: 3 },
-    ];
-
     // Act
-    const state = actions.reduce(stearchReducer, INITIAL_STEARCH_STATE);
+    const state = apply(INITIAL, pick(7), pick(3));
 
     // Assert
     expect(state.attention.selectedIds).toEqual([7, 3]);
   });
 
-  it("toggles a selected id off", () => {
-    // Arrange
-    const on = stearchReducer(INITIAL_STEARCH_STATE, {
-      type: "selection/toggle",
-      id: 7,
-    });
-
+  it("adds a selection only once", () => {
     // Act
-    const off = stearchReducer(on, { type: "selection/toggle", id: 7 });
+    const state = apply(INITIAL, pick(7), pick(7));
 
     // Assert
-    expect(off.attention.selectedIds).toEqual([]);
+    expect(state.attention.selectedIds).toEqual([7]);
   });
 
-  it("selects every result, not just loaded rows", () => {
+  it("removes a selection, and removing again changes nothing", () => {
+    // Arrange
+    const before = apply(INITIAL, pick(7, 3));
+
     // Act
-    const state = stearchReducer(LOADED_STEARCH_STATE, {
-      type: "selection/all",
-    });
+    const state = apply(before, unpick(7), unpick(7));
 
     // Assert
-    expect(state.attention.selectedIds).toHaveLength(1000);
+    expect(state.attention.selectedIds).toEqual([3]);
   });
 
   it("folds an array of actions into one result", () => {
-    // Arrange
-    const actions: StearchAction[] = [
-      { type: "query/set", patch: { searchTerm: "zelda" } },
-      { type: "advanced/toggle" },
-    ];
-
     // Act
-    const state = actions.reduce(stearchReducer, INITIAL_STEARCH_STATE);
+    const state = apply(INITIAL, ZELDA, {
+      type: "view/set",
+      patch: { isAdvancedOpen: false },
+    });
 
     // Assert
     expect(state.query.searchTerm).toBe("zelda");
     expect(state.view.isAdvancedOpen).toBe(false);
   });
 
-  it("toggles a multi-select value on", () => {
+  it("adds a multi-select value only once", () => {
     // Act
-    const state = stearchReducer(INITIAL_STEARCH_STATE, USA);
+    const state = apply(INITIAL, USA, USA);
 
     // Assert
     expect(state.query.selectedRegions).toEqual(["USA"]);
@@ -86,17 +98,10 @@ describe("stearchReducer", () => {
 
   it("resets the whole search with a patch of defaults", () => {
     // Arrange
-    const actions: StearchAction[] = [
-      USA,
-      { type: "query/set", patch: { searchTerm: "zelda" } },
-    ];
-    const before = actions.reduce(stearchReducer, INITIAL_STEARCH_STATE);
+    const before = apply(INITIAL, USA, ZELDA);
 
     // Act
-    const state = stearchReducer(before, {
-      type: "query/set",
-      patch: INITIAL_QUERY,
-    });
+    const state = apply(before, { type: "query/set", patch: INITIAL_QUERY });
 
     // Assert
     expect(state.query).toEqual(INITIAL_QUERY);
@@ -104,10 +109,10 @@ describe("stearchReducer", () => {
 
   it("leaves the search alone on an empty patch", () => {
     // Arrange
-    const before = stearchReducer(INITIAL_STEARCH_STATE, USA);
+    const before = apply(INITIAL, USA);
 
     // Act
-    const state = stearchReducer(before, { type: "query/set", patch: {} });
+    const state = apply(before, { type: "query/set", patch: {} });
 
     // Assert
     expect(state.query).toEqual(before.query);
@@ -115,48 +120,53 @@ describe("stearchReducer", () => {
 
   it("clears filters but keeps the search and sort", () => {
     // Arrange
-    const actions: StearchAction[] = [
-      USA,
-      { type: "query/set", patch: { searchTerm: "zelda", orderDir: "desc" } },
-    ];
-    const before = actions.reduce(stearchReducer, INITIAL_STEARCH_STATE);
+    const before = apply(INITIAL, USA, ZELDA, {
+      type: "query/set",
+      patch: { orderDir: "desc" },
+    });
 
     // Act
-    const state = selectClearActions(before).reduce(stearchReducer, before);
+    const state = apply(before, ...selectClearActions(before));
 
     // Assert
-    expect(state.query.selectedRegions).toEqual([]);
-    expect(state.query.searchTerm).toBe("zelda");
-    expect(state.query.orderDir).toBe("desc");
+    expect(state.query).toMatchObject({
+      selectedRegions: [],
+      searchTerm: "zelda",
+      orderDir: "desc",
+    });
+  });
+
+  it("starts a new search at the top", () => {
+    // Arrange
+    const before = apply(LOADED_STEARCH_STATE, {
+      type: "view/set",
+      patch: { visiblePosition: 300 },
+    });
+
+    // Act
+    const state = apply(before, requested(9));
+
+    // Assert
+    expect(state.view).toMatchObject({
+      visiblePosition: 0,
+      jump: { position: 0, isSmooth: false },
+    });
   });
 
   it("drops a response from an older request", () => {
     // Arrange
-    const loading = stearchReducer(INITIAL_STEARCH_STATE, {
-      type: "window/requested",
-      requestId: 2,
-    });
+    const before = apply(INITIAL, requested(2));
 
     // Act
-    const state = stearchReducer(loading, {
-      type: "window/loaded",
-      requestId: 1,
-      offset: 0,
-      page,
-    });
+    const state = apply(before, loaded(1, 0));
 
     // Assert
-    expect(state).toBe(loading);
+    expect(state).toBe(before);
   });
 
   it("accepts later windows of the same query while ready", () => {
     // Act
-    const state = stearchReducer(LOADED_STEARCH_STATE, {
-      type: "window/loaded",
-      requestId: 1,
-      offset: 48,
-      page,
-    });
+    const state = apply(LOADED_STEARCH_STATE, loaded(1, 48));
 
     // Assert
     expect(state.results.windows[0]).toBe(
@@ -167,33 +177,21 @@ describe("stearchReducer", () => {
 
   it("replaces everything when a new first window loads", () => {
     // Arrange
-    const loading = stearchReducer(LOADED_STEARCH_STATE, {
-      type: "window/requested",
-      requestId: 9,
-    });
+    const before = apply(LOADED_STEARCH_STATE, requested(9));
 
     // Act
-    const state = stearchReducer(loading, {
-      type: "window/loaded",
-      requestId: 9,
-      offset: 0,
-      page,
-    });
+    const state = apply(before, loaded(9, 0));
 
     // Assert
-    expect(state.results.windows).toEqual({ 0: [] });
-    expect(state.results.ids).toEqual([]);
+    expect(state.results).toMatchObject({ windows: { 0: [] }, ids: [] });
   });
 
   it("records a failure for the current request", () => {
     // Arrange
-    const loading = stearchReducer(INITIAL_STEARCH_STATE, {
-      type: "window/requested",
-      requestId: 3,
-    });
+    const before = apply(INITIAL, requested(3));
 
     // Act
-    const state = stearchReducer(loading, {
+    const state = apply(before, {
       type: "window/failed",
       requestId: 3,
       message: "Server unreachable",

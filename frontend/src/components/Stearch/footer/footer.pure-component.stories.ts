@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
+import type { StearchAction } from "../Stearch.actions";
 import FooterPure from "./footer.pure-component.vue";
+
+const CLEAR_ACTIONS: readonly StearchAction[] = [
+  { type: "attention/set", patch: { selectedIds: [] } },
+];
+const SELECT_ALL_ACTIONS: readonly StearchAction[] = [
+  { type: "selection/add", ids: [1, 2, 3] },
+];
 
 const meta: Meta<typeof FooterPure> = {
   title: "Stearch/footer/footer.pure-component.vue",
@@ -17,9 +25,9 @@ const meta: Meta<typeof FooterPure> = {
     resultsLabel: "games",
     selectedLabel: "selected",
     clearLabel: "Clear",
-    clearActions: [{ type: "selection/clear" }],
+    clearActions: CLEAR_ACTIONS,
     selectAllLabel: "Select all",
-    selectAllActions: [{ type: "selection/all" }],
+    selectAllActions: SELECT_ALL_ACTIONS,
   },
 };
 
@@ -39,9 +47,7 @@ export const SelectingAll: Story = {
     await userEvent.click(
       within(canvasElement).getByRole("button", { name: "Select all 601" }),
     );
-    await expect(args.onPress).toHaveBeenCalledWith([
-      { type: "selection/all" },
-    ]);
+    await expect(args.onPress).toHaveBeenCalledWith(SELECT_ALL_ACTIONS);
   },
 };
 
@@ -51,8 +57,6 @@ export const PressingHandsActionsBack: Story = {
     await userEvent.click(
       within(canvasElement).getByRole("button", { name: "Clear" }),
     );
-    await expect(args.onPress).toHaveBeenCalledWith([
-      { type: "selection/clear" },
-    ]);
+    await expect(args.onPress).toHaveBeenCalledWith(CLEAR_ACTIONS);
   },
 };

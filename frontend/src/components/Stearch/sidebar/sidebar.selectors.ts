@@ -8,7 +8,9 @@ const TITLE = "Filters";
 const CLOSE_LABEL = "Close";
 const RESET_LABEL = "Reset filters";
 
-const CLOSE_ACTIONS: readonly StearchAction[] = [{ type: "advanced/toggle" }];
+const CLOSE_ACTIONS: readonly StearchAction[] = [
+  { type: "view/set", patch: { isAdvancedOpen: false } },
+];
 const CLOSE_VERB: BarVerb = {
   id: "close",
   label: CLOSE_LABEL,

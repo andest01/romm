@@ -230,6 +230,21 @@ Nothing here is settled until the RomM side has been measured.
 - **Cost:** rows became a union of headings and items, which touched list, table, both containers and stories. The scrollbar width is a constant copied from `styles/scrollbar.css`, so overlay scrollbars will leave a gap.
 - **Not proven:** drag and push have only run as pure functions. Not seen in a browser.
 
+### 2026-11-07: the reducer became a table
+
+- **Dimension:** type safety, cost.
+- **Result:** the user's design. A `switch` with a `never` default became `Handlers<S, A>`, a mapped type with one handler per action type, and `reducerOf` turns it into a function with no cast. The user's draft typed handlers as `<T, G>(state: T, action: G) => T`, which picks fresh types at every call and binds nothing; the mapped type ties each key to its own action.
+- **Leash, tested with a throwaway file:** a missing handler, an extra key, a handler reading another action's field, and a malformed dispatched action were all rejected.
+- **Tests:** `apply` and small action builders made every arrange and act one line. The file went from 208 lines to 176, before one new test.
+- **Composition:** a handler can call other handlers, for example `HANDLERS["view/jump"](state, ...)`. A new request now runs `view/visible` and `view/jump` to the top, which fixed a real bug: the band named a section from the previous search. Reviewed and not composed: `query/toggle` (a computed key would skip the value check) and `selection/clear` (already one line).
+
+### 2026-11-07: idempotent actions, distilled
+
+- **Dimension:** cost, type safety, bug fixing.
+- **What went wrong:** I kept adding commands one at a time: `view/visible`, `view/jump`, `view/band`, `field/open`, `selection/clear`, `selection/section`. Each was fine alone, and together they were a pile, not a system. Three were toggles, so a repeated or replayed action flipped state back.
+- **Result:** the user's rule. 20 action types became 12. Each domain has one `*/set` with a `Partial` patch, and lists have `*/add` and `*/remove`. Selectors choose the direction. Toggles and resets are gone.
+- **Cost:** row press actions now depend on selection, so they rebuild when selection changes. The test that proved they didn't was replaced.
+
 ## Next measurements
 
 1. A shared 100k library for `/stearch` and `/search`.

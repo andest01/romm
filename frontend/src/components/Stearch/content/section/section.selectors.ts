@@ -1,3 +1,4 @@
+import type { StearchAction } from "../../Stearch.actions";
 import { createSelector } from "../../Stearch.create-selector";
 import {
   selectIds,
@@ -14,6 +15,11 @@ const DESELECT_LABEL = "Deselect";
 const PREV_LABEL = "‹ Prev";
 const NEXT_LABEL = "Next ›";
 
+const jumpTo = (position: number): StearchAction => ({
+  type: "view/set",
+  patch: { jump: { position, isSmooth: true } },
+});
+
 export const selectBandOffset = (state: IStearchState) => state.view.bandOffset;
 
 /** The section at the top of the list; `null` for sorts without sections. */
@@ -26,26 +32,22 @@ export const selectSectionProps = createSelector(
     const { key, start, size } = section;
     const next = sections[index + 1];
     const selected = new Set(selectedIds);
-    const isAllSelected = ids
-      .slice(start, start + size)
-      .every((id) => selected.has(id));
+    const sectionIds = ids.slice(start, start + size);
+    const isAllSelected = sectionIds.every((id) => selected.has(id));
     return {
       label: key,
       countLabel: `${size} ${size === 1 ? "game" : "games"}`,
       selectLabel: isAllSelected ? DESELECT_LABEL : SELECT_LABEL,
-      selectActions: [{ type: "selection/section", start, size }],
-      prevLabel: PREV_LABEL,
-      prevActions: [
+      selectActions: [
         {
-          type: "view/jump",
-          position: sections[index - 1]?.start ?? 0,
-          isSmooth: true,
+          type: isAllSelected ? "selection/remove" : "selection/add",
+          ids: sectionIds,
         },
       ],
+      prevLabel: PREV_LABEL,
+      prevActions: [jumpTo(sections[index - 1]?.start ?? 0)],
       nextLabel: NEXT_LABEL,
-      nextActions: next
-        ? [{ type: "view/jump", position: next.start, isSmooth: true }]
-        : null,
+      nextActions: next ? [jumpTo(next.start)] : null,
     };
   },
 );
