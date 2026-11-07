@@ -56,3 +56,7 @@ export interface ListProps {
   errorMessage: string | null;
   emptyMessage: string;
 }
+
+/** Rows kept mounted beyond the viewport. Read-ahead already fetches data
+ * ahead, so a wider ring only mounts tiles nobody sees. */
+export const SCROLLER_OVERSCAN = 2;

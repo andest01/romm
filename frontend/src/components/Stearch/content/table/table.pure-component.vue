@@ -2,7 +2,7 @@
 import { REmptyState, RSortHeader, RVirtualScroller } from "@/lib";
 import type { RTableSortPayload } from "@/lib";
 import type { ItemEmits } from "../list/item.props";
-import type { VisibleRange } from "../list/list.props";
+import { SCROLLER_OVERSCAN, type VisibleRange } from "../list/list.props";
 import type { TableProps } from "./table.props";
 
 defineProps<TableProps>();
@@ -55,6 +55,7 @@ defineEmits<
         <RVirtualScroller
           :ref="setScroller"
           :items="rows"
+          :overscan="SCROLLER_OVERSCAN"
           :get-item-height="
             (_, index) =>
               rows[index]?.kind === 'head' ? headHeight : rowHeight
@@ -76,8 +77,8 @@ defineEmits<
               <template v-else>
                 <component
                   :is="item"
-                  v-for="row in line.slots"
-                  :key="row?.id"
+                  v-for="(row, column) in line.slots"
+                  :key="column"
                   :row="row"
                   :verbs="verbs"
                   :grid-template="gridTemplate"
@@ -157,6 +158,10 @@ defineEmits<
   position: relative;
   flex: 1;
   min-height: 0;
+}
+/* One compositor layer per row made Layerize the top scroll cost. */
+.stearch-table__body :deep(.r-virtual-scroller__item) {
+  will-change: auto;
 }
 /* The band floats over the body, below the column header, clipped to its own
    height so a heading can push it out of view. */

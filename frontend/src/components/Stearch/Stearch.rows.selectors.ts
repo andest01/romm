@@ -69,12 +69,19 @@ export const coverUrlOf = <
   item: T,
 ): string | null => item.path_cover_small ?? item.url_cover;
 
+// Dates repeat across a library, and a Date round trip per row showed in scroll profiles.
+const releasedByTime = new Map<number, string>();
+
 export const releasedOf = <T extends Pick<StearchRom, "metadatum">>({
   metadatum: { first_release_date },
-}: T): string =>
-  first_release_date === null
-    ? EMPTY_VALUE
-    : new Date(first_release_date).toISOString().slice(0, 10);
+}: T): string => {
+  if (first_release_date === null) return EMPTY_VALUE;
+  const known = releasedByTime.get(first_release_date);
+  if (known !== undefined) return known;
+  const released = new Date(first_release_date).toISOString().slice(0, 10);
+  releasedByTime.set(first_release_date, released);
+  return released;
+};
 
 export const ratingOf = <T extends Pick<StearchRom, "metadatum">>({
   metadatum: { average_rating },

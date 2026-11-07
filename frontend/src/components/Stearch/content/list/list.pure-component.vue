@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { REmptyState, RVirtualScroller } from "@/lib";
 import type { ItemEmits } from "./item.props";
-import type { ListProps, VisibleRange } from "./list.props";
+import {
+  type ListProps,
+  SCROLLER_OVERSCAN,
+  type VisibleRange,
+} from "./list.props";
 
 defineProps<ListProps>();
 
@@ -28,6 +32,7 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
       :ref="setScroller"
       class="stearch-list__scroller"
       :items="rows"
+      :overscan="SCROLLER_OVERSCAN"
       :get-item-height="
         (_, index) => (rows[index]?.kind === 'head' ? headHeight : rowHeight)
       "
@@ -52,8 +57,8 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
           >
             <component
               :is="item"
-              v-for="row in line.slots"
-              :key="row?.id"
+              v-for="(row, column) in line.slots"
+              :key="column"
               :row="row"
               :verbs="verbs"
               @press="$emit('press', $event)"
@@ -84,6 +89,10 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
   position: relative;
   height: 100%;
   min-height: 0;
+}
+/* One compositor layer per row made Layerize the top scroll cost. */
+.stearch-list__scroller :deep(.r-virtual-scroller__item) {
+  will-change: auto;
 }
 /* Room for the rail only while there is one. */
 .stearch-list:has(> .stearch-list__rail) {

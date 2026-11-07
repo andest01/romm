@@ -295,6 +295,21 @@ Nothing here is settled until the RomM side has been measured.
 - **Also found:** every container story had a Docs page, because Storybook only reads `tags` written in the story file, and ours were spread in from a shared object.
 - **Still open:** a failed later window replaces the whole list with an error. That's a product bug; it goes to the spec before code.
 
+### 2026-11-07: scroll cost, measured in production profiles
+
+- **Dimension:** performance.
+- **How to measure again:** `npm run build -- --sourcemap && npm run preview`, record a Chrome profile of a load plus a scroll, and map the frames through `dist/*.map` (the `source-map` package is already in `node_modules`). To find which DOM writes Vue makes, wrap the property setters on `Element.prototype` from the console in a dev build, and count writes by property, element and `__vueParentComponent`. A high `unchanged` count means needless re-renders; zero means mounts.
+- **Run 1 (5 s scroll):** `patchDOMProp` 241 ms self time, forced layout 181 ms (from `RVirtualScroller.onScroll` reading `scrollTop`), 12.6 ms per scroll event. The tracer showed 4,239 tiles mounted with 0 unchanged writes: it was mounting, not patching.
+- **Cause 1, overscan.** `RVirtualScroller` defaults to 25 rows each side, about 300 hidden tiles at 6 columns, mounted and dropped as you scroll. Read-ahead already fetches data ahead, so the lists now pass `SCROLLER_OVERSCAN = 2` (in `list.props.ts`). If a fast fling shows blank rows, try 3 or 4.
+- **Cause 2, ghost keys.** Tiles were keyed `row?.id`, so every ghost was `undefined` and a loaded window remounted all its tiles. Tiles are now keyed by column inside a row keyed by position.
+- **Run 2 (27 s scroll):** forced layout 181 → 19 ms, 12.6 → 7.9 ms per scroll event, `patchDOMProp` out of the top 16. Tile mounts 4,239 → 2,106, but the scrolls differ in length, so per-event numbers compare best.
+- **Cause 3, a layer per row.** Run 2's top cost was Layerize, 1,194 ms, then Paint at 837 ms. `RVirtualScroller` puts `will-change: transform` on every item, so each row was its own compositor layer, re-planned on each scroll. The list and table now set `will-change: auto` on their items. The shared primitive is unchanged, because the gallery may want it for its animations; Stearch doesn't animate rows.
+- **Cause 4, dates.** `releasedOf` did a `Date` round trip per row (30 ms). It now caches by timestamp.
+- **Not ours:** a 64 ms `useRafFn` loop is the app-wide gamepad poll (`useGamepad`, installed in `AppLayout.vue`), about 2.4 ms per second whether or not you scroll. The cover spin (`useCoverAnimation`) never runs in Stearch, since tiles pass no `active` or `hoverMotion`.
+- **If we start over:** pick overscan, keys and layer promotion on purpose before any visual work. Each default from the shared scroller cost more here than all of Stearch's own code (about 5 ms per function).
+- **Run 3 (5.1 s: load, rail scrub, scroll), after the layer, date and gamepad changes:** the gamepad `useRafFn` loop is gone from the profile. Layerize is 924 ms (181 ms/s, against run 2's 44 ms/s), but this run includes page load and scrubbing, so it is not like for like. New costs: `onScrub` reads `getBoundingClientRect` on every pointermove (42 ms, plus 53 ms of forced layout), and VueUse `useScroll` (`setArrivedState`, 65 ms; AppNav's `useWindowScroll` is the suspect).
+- **Lesson:** record each run with the same script (load, wait, one long wheel scroll, stop), or the numbers can't be compared.
+
 ## Next measurements
 
 1. A shared 100k library for `/stearch` and `/search`.
