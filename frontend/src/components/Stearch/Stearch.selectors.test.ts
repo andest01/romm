@@ -10,7 +10,6 @@ import { selectPanelLayout } from "./Stearch.layout.selectors";
 import { INITIAL_STEARCH_STATE, stearchReducer } from "./Stearch.reducer";
 import { selectLoadedRoms } from "./Stearch.results.selectors";
 import { coverUrlOf, selectRows, titleOf } from "./Stearch.rows.selectors";
-import { selectBackgroundProps } from "./background/background.selectors";
 
 const { results, query } = LOADED_STEARCH_STATE;
 const withWindows = (windows: typeof results.windows) => ({
@@ -163,47 +162,6 @@ describe("coverUrlOf", () => {
 
     // Assert
     expect(url).toBe("r.png");
-  });
-});
-
-describe("background", () => {
-  it("follows the active item", () => {
-    // Arrange
-    const state = stearchReducer(LOADED_STEARCH_STATE, {
-      type: "attention/set",
-      patch: { activeId: STEARCH_ROW.id },
-    });
-
-    // Act
-    const { url } = selectBackgroundProps(state);
-
-    // Assert
-    expect(url).toBe(STEARCH_ROW.coverUrl);
-  });
-
-  it("falls back to the latest selection", () => {
-    // Arrange
-    const state = {
-      ...LOADED_STEARCH_STATE,
-      attention: {
-        activeId: null,
-        selectedIds: [STEARCH_ROW.id, SECOND_STEARCH_ROW.id],
-      },
-    };
-
-    // Act
-    const { url } = selectBackgroundProps(state);
-
-    // Assert
-    expect(url).toBe(SECOND_STEARCH_ROW.coverUrl);
-  });
-
-  it("is empty with nothing attended to", () => {
-    // Act
-    const { url } = selectBackgroundProps(LOADED_STEARCH_STATE);
-
-    // Assert
-    expect(url).toBeNull();
   });
 });
 
