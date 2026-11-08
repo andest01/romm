@@ -55,6 +55,7 @@ const ACTIONS_DISABLED_PATHS = new Set<string>(["/controller-debug"]);
 
 const INITIAL_DELAY_MS = 350;
 const REPEAT_MS = 120;
+const KEY_RATE_REPEAT_MS = 33;
 export const AXIS_THRESHOLD = 0.5;
 // Outlasts anything a game itself binds to Select+Start.
 export const EXIT_CHORD_HOLD_MS = 1500;
@@ -130,6 +131,41 @@ const padEvents = new WeakSet<Event>();
 /** True when `event` is a key useGamepad dispatched for the pad. */
 export function isPadEvent(event: Event): boolean {
   return padEvents.has(event);
+}
+
+const stickClaims = { x: 0, y: 0 };
+
+// Claims count, so two claimants don't release each other.
+function claimStickAxis(axis: "x" | "y"): () => void {
+  stickClaims[axis] += 1;
+  let isReleased = false;
+  return () => {
+    if (isReleased) return;
+    isReleased = true;
+    stickClaims[axis] -= 1;
+  };
+}
+
+/** A view that reads the left stick's up/down axis itself claims it, so the
+ *  stick stops sending ArrowUp and ArrowDown while it does. Returns the
+ *  release. */
+export const claimStickY = (): (() => void) => claimStickAxis("y");
+
+/** As `claimStickY`, for left and right. */
+export const claimStickX = (): (() => void) => claimStickAxis("x");
+
+let keyRateRepeatClaims = 0;
+
+/** A view that moves one cell per press claims this so a held D-pad repeats
+ *  as fast as a held key. Menus keep the slower repeat. Returns the release. */
+export function claimKeyRateRepeat(): () => void {
+  keyRateRepeatClaims += 1;
+  let isReleased = false;
+  return () => {
+    if (isReleased) return;
+    isReleased = true;
+    keyRateRepeatClaims -= 1;
+  };
 }
 
 /** Runs `fn` every frame only while a pad is connected, so a page without
@@ -314,11 +350,15 @@ export function useGamepad() {
         const y = pad.axes[1] ?? 0;
         tickAxis(st, "x", x, t, (dir) => {
           onAnyInput();
-          if (!gameOwnsInput) dispatchKey(dir < 0 ? ARROWS.left : ARROWS.right);
+          if (!gameOwnsInput && stickClaims.x === 0) {
+            dispatchKey(dir < 0 ? ARROWS.left : ARROWS.right);
+          }
         });
         tickAxis(st, "y", y, t, (dir) => {
           onAnyInput();
-          if (!gameOwnsInput) dispatchKey(dir < 0 ? ARROWS.up : ARROWS.down);
+          if (!gameOwnsInput && stickClaims.y === 0) {
+            dispatchKey(dir < 0 ? ARROWS.up : ARROWS.down);
+          }
         });
 
         // Buttons. Three tracks, evaluated in order:
@@ -359,7 +399,8 @@ export function useGamepad() {
             } else if (!gameOwnsInput && binding && t >= prev.nextRepeatAt) {
               // Only synthetic-key bindings repeat while held.
               dispatchKey(binding);
-              prev.nextRepeatAt = t + REPEAT_MS;
+              prev.nextRepeatAt =
+                t + (keyRateRepeatClaims > 0 ? KEY_RATE_REPEAT_MS : REPEAT_MS);
             }
           } else {
             prev.pressed = false;

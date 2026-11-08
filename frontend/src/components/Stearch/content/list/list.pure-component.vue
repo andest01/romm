@@ -3,19 +3,29 @@ import { REmptyState, RVirtualScroller } from "@/lib";
 import type { ItemEmits } from "./item.props";
 import {
   type ListProps,
+  markVariables,
   SCROLLER_OVERSCAN,
   type VisibleRange,
 } from "./list.props";
 
 defineProps<ListProps>();
 
-defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
+defineEmits<
+  ItemEmits & { range: [range: VisibleRange]; key: [event: KeyboardEvent] }
+>();
 </script>
 
 <template>
   <div
     class="stearch-list"
-    :style="{ '--stearch-scrollbar-width': `${scrollbarWidth}px` }"
+    role="grid"
+    :aria-label="gridLabel"
+    tabindex="0"
+    :style="{
+      '--stearch-scrollbar-width': `${scrollbarWidth}px`,
+      ...markVariables(marks),
+    }"
+    @keydown="$emit('key', $event)"
   >
     <REmptyState
       v-if="errorMessage"
@@ -61,6 +71,10 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
               :key="column"
               :row="row"
               :verbs="verbs"
+              class="stearch-mark"
+              :data-key-position="line.position + column === activePosition"
+              :data-current="row !== null && row.id === currentId"
+              :data-selected="row !== null && row.isSelected"
               @press="$emit('press', $event)"
             />
           </div>
@@ -87,12 +101,19 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
 .stearch-list {
   --stearch-rail-width: 0px;
   position: relative;
+  /* Items are picked, not read: Shift and drag must not select text. */
+  user-select: none;
   height: 100%;
   min-height: 0;
 }
 /* One compositor layer per row made Layerize the top scroll cost. */
 .stearch-list__scroller :deep(.r-virtual-scroller__item) {
   will-change: auto;
+}
+/* Ghosts hold still. Each skeleton's shimmer is a gradient repainted every
+   frame, and a screen of ghosts ran hundreds of them during a scroll. */
+.stearch-list__row :deep(.r-skeleton::after) {
+  content: none;
 }
 /* Room for the rail only while there is one. */
 .stearch-list:has(> .stearch-list__rail) {
@@ -137,3 +158,5 @@ defineEmits<ItemEmits & { range: [range: VisibleRange] }>();
   font-weight: 700;
 }
 </style>
+
+<style scoped src="./marks.css"></style>

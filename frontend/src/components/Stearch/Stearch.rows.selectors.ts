@@ -27,7 +27,10 @@ export type ListRow = StearchRom & {
   readonly languagesLabel: string;
   readonly regionsLabel: string;
   readonly isSelected: boolean;
+  /** A plain click: makes the item current (activates it). */
   readonly pressActions: readonly StearchAction[];
+  /** A Ctrl or ⌘ click: toggles the item in the selection. */
+  readonly selectActions: readonly StearchAction[];
   readonly hoverActions: readonly StearchAction[];
 };
 
@@ -114,9 +117,8 @@ const selectBaseRows = createSelector([selectPositionedRoms], (positioned) =>
       length: lengthOf(rom),
       languagesLabel: rom.languages.join(", "),
       regionsLabel: rom.regions.join(", "),
-      hoverActions: [
-        { type: "attention/set", patch: { activeId: rom.id } },
-      ] as const,
+      // As in a file browser, pointing at an item changes nothing.
+      hoverActions: [],
     };
   }),
 );
@@ -133,7 +135,10 @@ export const selectRows = createSelector(
         titleParts: splitMatch(row.title, term),
         fileNameParts: splitMatch(row.fs_name, term),
         isSelected,
-        pressActions: [
+        // Activating and selecting are separate gestures, as in a file
+        // browser: a click activates, as an arrow key does.
+        pressActions: [{ type: "attention/set", patch: { activeId: row.id } }],
+        selectActions: [
           {
             type: isSelected ? "selection/remove" : "selection/add",
             ids: [row.id],

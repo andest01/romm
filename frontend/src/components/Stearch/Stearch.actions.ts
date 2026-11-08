@@ -1,4 +1,5 @@
 import type { StearchLabels } from "./Stearch.labels";
+import type { LoadPace } from "./Stearch.read-ahead";
 import type {
   AttentionCoreConcept,
   IStearchState,
@@ -40,7 +41,11 @@ export type StearchAttentionAction =
     };
 
 export type StearchWindowAction =
-  | { readonly type: "window/wanted"; readonly offset: number }
+  | {
+      readonly type: "window/wanted";
+      readonly offset: number;
+      readonly pace: LoadPace;
+    }
   | { readonly type: "window/requested"; readonly requestId: number }
   | {
       readonly type: "window/loaded";

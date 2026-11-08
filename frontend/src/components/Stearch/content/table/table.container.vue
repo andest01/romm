@@ -2,7 +2,10 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { RTableColumn } from "@/lib";
-import { selectAnchorPosition } from "../../Stearch.attention.selectors";
+import {
+  selectAnchorPosition,
+  selectCurrentPosition,
+} from "../../Stearch.attention.selectors";
 import {
   selectErrorMessage,
   selectIsLoading,
@@ -10,11 +13,14 @@ import {
 } from "../../Stearch.results.selectors";
 import { selectSlots } from "../../Stearch.rows.selectors";
 import {
+  selectActiveId,
   selectSortDir,
   selectSortKey,
   selectVisiblePosition,
 } from "../../Stearch.selectors";
 import stearchStore from "../../Stearch.store";
+import { useContentView } from "../content.view";
+import { useFeel } from "../list/feel";
 import type { VisibleRange } from "../list/list.props";
 import {
   buildScrollRows,
@@ -23,6 +29,8 @@ import {
   itemsPerScreen,
   withGhosts,
 } from "../list/list.selectors";
+import { useKeyFocus } from "../list/use-key-focus";
+import { useListSpeed } from "../list/use-list-speed";
 import { useScrollerJump } from "../list/use-scroller-jump";
 import Verbs from "../list/verbs/verbs.container.vue";
 import RailContainer from "../rail/rail.container.vue";
@@ -50,6 +58,8 @@ const GRID_TEMPLATE =
   "minmax(0, 3fr) minmax(0, 1fr) 90px 100px 100px 80px 70px 90px 80px 64px";
 const { t } = useI18n();
 const store = stearchStore();
+const { isScrubbing } = useContentView();
+const feel = useFeel("table");
 const headHeight = headHeightFor(false);
 const rows = computed(() =>
   buildScrollRows(
@@ -64,17 +74,38 @@ const rows = computed(() =>
 );
 const sortKey = computed(() => selectSortKey(store.state));
 const sortDir = computed(() => selectSortDir(store.state));
-const { setScroller, box, scrollbarWidth, bandOffset } = useScrollerJump(
+const {
+  setScroller,
+  box,
+  scrollbarWidth,
+  bandOffset,
+  follow,
+  scrollerElement,
+} = useScrollerJump(
   () => rows.value,
   () => TABLE_ROW_HEIGHT,
   () => headHeight,
   () => selectAnchorPosition(store.state),
+  () => feel.value,
 );
 const band = computed(() =>
   selectSectionProps(store.state) ? SectionContainer : null,
 );
 const errorMessage = computed(() => selectErrorMessage(store.state));
+const currentId = computed(() => selectActiveId(store.state));
+const { activePosition, onKey } = useKeyFocus({
+  rows: () => rows.value,
+  start: () => selectAnchorPosition(store.state),
+  currentPosition: () => selectCurrentPosition(store.state),
+  feel: () => feel.value,
+  rowHeight: () => TABLE_ROW_HEIGHT,
+  headHeight: () => headHeight,
+  scroller: scrollerElement,
+  follow,
+  dispatch: store.dispatch,
+});
 
+const speedOf = useListSpeed();
 function onRange(range: VisibleRange): void {
   store.dispatch(
     buildWindowActions(range, rows.value, {
@@ -83,6 +114,8 @@ function onRange(range: VisibleRange): void {
         { columns: 1, rowHeight: TABLE_ROW_HEIGHT },
         box.value,
       ),
+      pace: isScrubbing.value ? "when-still" : "keep-up",
+      itemsPerSecond: speedOf(range, rows.value),
     }),
   );
 }
@@ -103,6 +136,9 @@ function onRange(range: VisibleRange): void {
     :row-height="TABLE_ROW_HEIGHT"
     :head-height="headHeight"
     :rows="rows"
+    :active-position="activePosition"
+    :current-id="currentId"
+    :marks="feel.marks"
     :sort-key="sortKey"
     :sort-dir="sortDir"
     :error-message="errorMessage"
@@ -110,5 +146,6 @@ function onRange(range: VisibleRange): void {
     @press="store.dispatch"
     @sort="(payload) => store.dispatch(buildSortActions(payload))"
     @range="onRange"
+    @key="onKey"
   />
 </template>

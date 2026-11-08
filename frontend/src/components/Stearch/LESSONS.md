@@ -310,6 +310,41 @@ Nothing here is settled until the RomM side has been measured.
 - **Run 3 (5.1 s: load, rail scrub, scroll), after the layer, date and gamepad changes:** the gamepad `useRafFn` loop is gone from the profile. Layerize is 924 ms (181 ms/s, against run 2's 44 ms/s), but this run includes page load and scrubbing, so it is not like for like. New costs: `onScrub` reads `getBoundingClientRect` on every pointermove (42 ms, plus 53 ms of forced layout), and VueUse `useScroll` (`setArrivedState`, 65 ms; AppNav's `useWindowScroll` is the suspect).
 - **Lesson:** record each run with the same script (load, wait, one long wheel scroll, stop), or the numbers can't be compared.
 
+### 2026-11-07: moving by keys, and how it should feel
+
+- **Dimension:** behaviour, input, performance.
+- **Holding ↓ spun out into the sidebar.** The app's arrow navigation picks targets from mounted elements, and a virtual list only mounts a few rows past the screen. Keys now move by position (`moveFor`), and only the first row and column let a key leave.
+- **Keys died at a load point.** A focused tile was unmounted as it scrolled away or turned from ghost to game, and focus fell to `<body>`. The list holds DOM focus itself and draws the active item with a ring.
+- **The browser's smooth scroll lurched.** Each press started a new smooth scroll before the last one ended, and the next press landed mid-animation.
+- **An eased glide pulsed.** A held key repeats about 30 times a second on a 60 Hz screen, so retargeting an ease-out on every repeat surged and sagged. It also lunged forward and then resettled.
+- **What worked, from the gallery's earlier `useGridCruise`:** a tap glides in a straight line over a fixed time; a hold stops listening to repeats and cruises at a steady, ramping speed; release finishes on the next row ahead.
+- **Loading looked queued during a cruise.** The store waited for 150 ms of quiet before fetching, and a cruise is never quiet. Each want now carries a pace: `keep-up` for keys, pad and wheel, `when-still` for a rail drag.
+- **Ghost shimmer cost paint.** Each skeleton repainted a moving gradient every frame: about 300 on a screen of table ghosts. Ghosts now hold still.
+- **The outcome: one interface, two settings.** `ScrollFeel` holds the band height, the tap glide, the cruise and the marks' fade timeline. Both read it through the same code, and the centre-band story drives every field. After trying glides, cruise and fades on tiles, the user chose jump cuts everywhere for both views, with a one-row band, so a selection is never late. The glide and cruise stay built, judged in the story's `GlideAndCruise` example.
+- **Still open:** a window of 48 ghosts turns into tiles in one frame; spreading that over a few frames is the next suspect if tiles still stutter. Moving in whole-pixel steps that divide the row height ("row lock") is designed but not built.
+
+## Live FSM on the 2D spike
+
+- **State was only computed during a push.** The readout went stale for keys, clicks and commands. It's now derived from the active cell, the band and the limit, so it's true for every input, and the hook lost its `states` output.
+- **The first play run found two bugs.** `role="grid"` can't hold bare buttons, which failed all 7 stories' accessibility check; it's now a listbox of options. And a log that grew on each command shrank the stage and moved the centre line by half the growth, so the log reserves its height.
+
+- **A held arrow could lose the view.** `step()` asked "was the cell in the band?" of `scroll`, which only updates on the scroll event. Two steps inside one frame read a stale view, skipped `follow`, and the cell walked off for good. The same lag showed `captured to free` and back on every step. The view copy now updates in the same moment as the scroll write. Proof: `StepsInOneFrameKeepFollowing` and `StepsNeverLeaveCaptured`, both failing before the fix.
+
+- **Commands now fly, cells are memoized.** `flyTo` eases to its target and stops if anything else moves the view. Each cell has a `v-memo`; the saving is not measured yet. A held key from the top (`HeldKeyKeepsFollowing`, 90 presses, some inside one frame) did not reproduce the reported escape.
+- **The escape was the rule, not a race.** "Free steps never scroll" meant the wheel could drop the cell out of the band and every later key walked away unfollowed. A step now follows whenever it lands at or past the centre in its direction, with no memory of the previous state. Proof: `KeyFollowsAfterWheel`, failing before the fix.
+
+- **The stick and the D-pad reach the grid differently.** The stick is polled and needs no focus; the D-pad is a synthetic key sent to the focused element. Once focus left the grid, the D-pad went silent while the stick kept working. The grid now hears arrows at the window. Proof: `DpadWorksWithoutGridFocus`, failing before the fix.
+
+### Rules from the input work
+
+1. **Keys and the D-pad are data to screen.** A step moves the active cell, then the view follows. It needs no memory of a previous state.
+2. **Only a limit can leave the cell behind.** A step at or past the centre always follows; a step heading for the band walks, so the view doesn't yank.
+3. **A crossing updates both sides at once.** Scroll events arrive a frame late, so whatever writes the scroll also updates our copy of it.
+4. **Input routes differ.** The stick is polled and needs no focus; keys and the D-pad go to the focused element. Listen where focus can't take the input away.
+5. **Keep `captured`, `pinned` and `free` for what needs them.** Keys didn't; the state machine made a one-sentence rule into a trap. The stick's two modes may be its only real use.
+6. **Don't allocate per frame into reactive state.** One new `{x, y}` each frame re-rendered the whole grid at idle: main thread 80% busy before, 22% after, across two different recordings.
+7. **Test the rule, not the arithmetic.** Each bug here passed review on paper and failed a story written from the report.
+
 ## Next measurements
 
 1. A shared 100k library for `/stearch` and `/search`.

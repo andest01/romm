@@ -2,7 +2,11 @@ import { defineStore } from "pinia";
 import { shallowRef } from "vue";
 import type { StearchAction } from "./Stearch.actions";
 import type { StearchSource } from "./Stearch.data-source";
-import { READ_AHEAD, type WindowRequest } from "./Stearch.read-ahead";
+import {
+  type LoadPace,
+  READ_AHEAD,
+  type WindowRequest,
+} from "./Stearch.read-ahead";
 import { INITIAL_STEARCH_STATE, stearchReducer } from "./Stearch.reducer";
 import { parsePage } from "./Stearch.schema";
 
@@ -79,21 +83,32 @@ export default defineStore("stearch", () => {
   }
 
   /** The latest range wins: older wants are dropped, and requests for
-   *  windows the user moved past are cancelled. */
-  function settleOn(offsets: readonly number[]): void {
-    clearTimeout(settleTimer);
+   *  windows the user moved past are cancelled. `keep-up` acts at most once
+   *  per settle period, on the newest range, so a held key loads as it
+   *  goes; `when-still` restarts the wait on every move, so a rail drag
+   *  loads only where it stops. */
+  let latestWanted: readonly number[] = [];
+  function settleOn(offsets: readonly number[], pace: LoadPace): void {
+    latestWanted = offsets;
+    if (pace === "when-still") {
+      clearTimeout(settleTimer);
+      settleTimer = undefined;
+    }
+    if (settleTimer !== undefined) return;
     settleTimer = setTimeout(() => {
-      const wanted = new Set(offsets);
+      settleTimer = undefined;
+      const wanted = new Set(latestWanted);
       for (const [offset, controller] of inFlight) {
         if (!wanted.has(offset)) controller.abort();
       }
-      queue = [...offsets];
+      queue = [...latestWanted];
       pump();
     }, READ_AHEAD.settleMillis);
   }
 
   function cancelAll(): void {
     clearTimeout(settleTimer);
+    settleTimer = undefined;
     queue = [];
     for (const controller of inFlight.values()) controller.abort();
     inFlight.clear();
@@ -119,9 +134,16 @@ export default defineStore("stearch", () => {
       queryTimer = setTimeout(runQuery, QUERY_DEBOUNCE_MS);
     }
     const wanted = actions.flatMap((action) =>
-      action.type === "window/wanted" ? [action.offset] : [],
+      action.type === "window/wanted" ? [action] : [],
     );
-    if (wanted.length > 0) settleOn(wanted);
+    if (wanted.length > 0) {
+      settleOn(
+        wanted.map(({ offset }) => offset),
+        wanted.some(({ pace }) => pace === "when-still")
+          ? "when-still"
+          : "keep-up",
+      );
+    }
   }
 
   /** Where pages come from. Nothing fetches until a source is connected. */

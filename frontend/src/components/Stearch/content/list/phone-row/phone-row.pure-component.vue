@@ -21,7 +21,9 @@ defineEmits<ItemEmits>();
       type="button"
       class="stearch-phone-row"
       :aria-pressed="row.isSelected"
-      @click="$emit('press', row.pressActions)"
+      @click.exact="$emit('press', row.pressActions)"
+      @click.ctrl.exact="$emit('press', row.selectActions)"
+      @click.meta.exact="$emit('press', row.selectActions)"
     >
       <GameCover
         class="stearch-phone-row__cover"

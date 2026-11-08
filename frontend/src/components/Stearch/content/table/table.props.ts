@@ -20,6 +20,9 @@ export interface TableProps {
   headHeight: number;
   /** Headings and one-slot rows. Only visible rows reach the DOM. */
   rows: readonly ScrollRow[];
+  activePosition: ListProps["activePosition"];
+  currentId: ListProps["currentId"];
+  marks: ListProps["marks"];
   sortKey: StearchSortKey;
   sortDir: StearchSortDir;
   errorMessage: string | null;

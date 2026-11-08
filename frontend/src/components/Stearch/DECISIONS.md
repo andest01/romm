@@ -150,6 +150,8 @@ attention: {
 
 Anything derivable stays out of it: the total is `ids.length`, and the background follows the active item, else the latest selection. `selectedIds` keeps the most recent last, so it reads as a stack.
 
+**Attention follows the file-browser model.** "Selected" is a set, like checkboxes, for batch actions. "Current" (`activeId`) is the one item the page is about right now. The key position is the keyboard cursor, a view fact that can rest on a ghost. They are three separate states, each drawn and printed on its own. See spec 007, "Attention states".
+
 One request id covers a query and all its windows, so scrolling can load several at once. The store tracks in-flight offsets.
 
 ## Content

@@ -27,12 +27,20 @@ export const Loading: Story = { args: { state: LOADING_STEARCH_STATE } };
 
 export const Failed: Story = { args: { state: FAILED_STEARCH_STATE } };
 
+/** A Ctrl-click selects; a plain click only makes the game current. */
 export const SelectingDispatches: Story = {
   args: { state: loaded },
   play: async ({ canvasElement }) => {
+    // Arrange
     const [tile] = await within(canvasElement).findAllByRole("button");
     if (!tile) throw new Error("No tile rendered");
+
+    // Act
+    await userEvent.keyboard("{Control>}");
     await userEvent.click(tile);
+    await userEvent.keyboard("{/Control}");
+
+    // Assert
     await expect(tile).toHaveAttribute("aria-pressed", "true");
   },
 };

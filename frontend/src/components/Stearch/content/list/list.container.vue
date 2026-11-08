@@ -1,19 +1,27 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { selectAnchorPosition } from "../../Stearch.attention.selectors";
+import {
+  selectAnchorPosition,
+  selectCurrentPosition,
+} from "../../Stearch.attention.selectors";
 import {
   selectErrorMessage,
   selectIsLoading,
   selectSections,
 } from "../../Stearch.results.selectors";
 import { selectSlots } from "../../Stearch.rows.selectors";
-import { selectViewMode, selectVisiblePosition } from "../../Stearch.selectors";
+import {
+  selectActiveId,
+  selectViewMode,
+  selectVisiblePosition,
+} from "../../Stearch.selectors";
 import stearchStore from "../../Stearch.store";
 import { useContentView } from "../content.view";
 import RailContainer from "../rail/rail.container.vue";
 import SectionContainer from "../section/section.container.vue";
 import { selectSectionProps } from "../section/section.selectors";
+import { useFeel } from "./feel";
 import type { VisibleRange } from "./list.props";
 import ListPure from "./list.pure-component.vue";
 import {
@@ -24,17 +32,30 @@ import {
   listFitFor,
   withGhosts,
 } from "./list.selectors";
+import { useKeyFocus } from "./use-key-focus";
+import { useListSpeed } from "./use-list-speed";
 import { useScrollerJump } from "./use-scroller-jump";
 import Verbs from "./verbs/verbs.container.vue";
 
+// Stub label: move to a locale key before this leaves the fork.
+const GRID_LABEL = "Games";
 const { t } = useI18n();
 const store = stearchStore();
 const view = useContentView();
-const { setScroller, box, scrollbarWidth, bandOffset } = useScrollerJump(
+const feel = useFeel("tiles");
+const {
+  setScroller,
+  box,
+  scrollbarWidth,
+  bandOffset,
+  follow,
+  scrollerElement,
+} = useScrollerJump(
   () => rows.value,
   () => fit.value.rowHeight,
   () => fit.value.headHeight,
   () => selectAnchorPosition(store.state),
+  () => feel.value,
 );
 const band = computed(() =>
   selectSectionProps(store.state) ? SectionContainer : null,
@@ -59,12 +80,27 @@ const rows = computed(() =>
   ),
 );
 const errorMessage = computed(() => selectErrorMessage(store.state));
+const currentId = computed(() => selectActiveId(store.state));
+const { activePosition, onKey } = useKeyFocus({
+  rows: () => rows.value,
+  start: () => selectAnchorPosition(store.state),
+  currentPosition: () => selectCurrentPosition(store.state),
+  feel: () => feel.value,
+  rowHeight: () => fit.value.rowHeight,
+  headHeight: () => fit.value.headHeight,
+  scroller: scrollerElement,
+  follow,
+  dispatch: store.dispatch,
+});
 
+const speedOf = useListSpeed();
 function onRange(range: VisibleRange): void {
   store.dispatch(
     buildWindowActions(range, rows.value, {
       previousPosition: selectVisiblePosition(store.state),
       itemsPerScreen: itemsPerScreen(fit.value, box.value),
+      pace: view.isScrubbing.value ? "when-still" : "keep-up",
+      itemsPerSecond: speedOf(range, rows.value),
     }),
   );
 }
@@ -80,9 +116,14 @@ function onRange(range: VisibleRange): void {
     :rail="RailContainer"
     :scrollbar-width="scrollbarWidth"
     :rows="rows"
+    :active-position="activePosition"
+    :current-id="currentId"
+    :marks="feel.marks"
+    :grid-label="GRID_LABEL"
     :error-message="errorMessage"
     :empty-message="t('rom.no-games-match')"
     @press="store.dispatch"
     @range="onRange"
+    @key="onKey"
   />
 </template>

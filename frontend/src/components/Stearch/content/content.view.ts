@@ -3,18 +3,27 @@ import {
   computed,
   inject,
   provide,
+  shallowRef,
   type ComputedRef,
   type InjectionKey,
+  type ShallowRef,
 } from "vue";
 import { useBreakpoint } from "@/composables/useBreakpoint";
 
 /** Which item family suits the device: phones get phone items. */
 export type StearchDevice = "phone" | "wide";
 
-/** Facts about the screen, not the job, so they stay out of the store. Every
- *  fact here is derived and read-only: nothing writes to the view. */
+/** Facts about the screen, not the job, so they stay out of the store. */
 export interface ContentView {
+  /** Derived and read-only. */
   device: ComputedRef<StearchDevice>;
+  /** Where arrow keys have put the ring, by position, so it can sit on a
+   *  ghost. Written only by `useKeyFocus` in the one view that is mounted;
+   *  living here, it survives a switch between tiles and table. */
+  activePosition: ShallowRef<number | null>;
+  /** True while the rail is being dragged, so windows load only where the
+   *  drag stops. Written only by the rail container. */
+  isScrubbing: ShallowRef<boolean>;
 }
 
 const CONTENT_VIEW: InjectionKey<ContentView> = Symbol("stearch-content-view");
@@ -27,6 +36,8 @@ function createContentView(): ContentView {
     device: computed(() =>
       xs.value || (smAndDown.value && isCoarsePointer.value) ? "phone" : "wide",
     ),
+    activePosition: shallowRef(null),
+    isScrubbing: shallowRef(false),
   };
 }
 

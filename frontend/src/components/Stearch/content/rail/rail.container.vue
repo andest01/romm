@@ -2,10 +2,12 @@
 import { computed } from "vue";
 import { selectTotal } from "../../Stearch.results.selectors";
 import stearchStore from "../../Stearch.store";
+import { useContentView } from "../content.view";
 import RailPure from "./rail.pure-component.vue";
 import { buildScrubActions, selectRailProps } from "./rail.selectors";
 
 const store = stearchStore();
+const { isScrubbing } = useContentView();
 const props = computed(() => selectRailProps(store.state));
 
 // Measured once per captured drag: each move's jump changes the DOM, so
@@ -15,6 +17,13 @@ let dragBox: DOMRect | null = null;
 function railBox(rail: HTMLElement, event: PointerEvent): DOMRect {
   if (event.type === "pointerdown") {
     rail.setPointerCapture(event.pointerId);
+    // A drag loads only where it stops; capture ends on release or cancel.
+    isScrubbing.value = true;
+    rail.addEventListener(
+      "lostpointercapture",
+      () => (isScrubbing.value = false),
+      { once: true },
+    );
     dragBox = rail.getBoundingClientRect();
     return dragBox;
   }

@@ -22,7 +22,9 @@ defineEmits<ItemEmits>();
       type="button"
       class="stearch-tile"
       :aria-pressed="row.isSelected"
-      @click="$emit('press', row.pressActions)"
+      @click.exact="$emit('press', row.pressActions)"
+      @click.ctrl.exact="$emit('press', row.selectActions)"
+      @click.meta.exact="$emit('press', row.selectActions)"
       @mouseenter="$emit('press', row.hoverActions)"
       @focus="$emit('press', row.hoverActions)"
     >

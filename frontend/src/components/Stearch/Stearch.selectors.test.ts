@@ -62,7 +62,7 @@ describe("selectLoadedRoms", () => {
 });
 
 describe("selectRows", () => {
-  it("presses to add an unselected row and remove a selected one", () => {
+  it("activates on press and toggles the selection on select", () => {
     // Arrange
     const state = {
       ...LOADED_STEARCH_STATE,
@@ -74,9 +74,12 @@ describe("selectRows", () => {
 
     // Assert
     expect(selected?.pressActions).toEqual([
+      { type: "attention/set", patch: { activeId: STEARCH_ROW.id } },
+    ]);
+    expect(selected?.selectActions).toEqual([
       { type: "selection/remove", ids: [STEARCH_ROW.id] },
     ]);
-    expect(unselected?.pressActions).toEqual([
+    expect(unselected?.selectActions).toEqual([
       { type: "selection/add", ids: [SECOND_STEARCH_ROW.id] },
     ]);
   });
@@ -166,10 +169,10 @@ describe("coverUrlOf", () => {
 describe("background", () => {
   it("follows the active item", () => {
     // Arrange
-    const state = STEARCH_ROW.hoverActions.reduce(
-      stearchReducer,
-      LOADED_STEARCH_STATE,
-    );
+    const state = stearchReducer(LOADED_STEARCH_STATE, {
+      type: "attention/set",
+      patch: { activeId: STEARCH_ROW.id },
+    });
 
     // Act
     const { url } = selectBackgroundProps(state);

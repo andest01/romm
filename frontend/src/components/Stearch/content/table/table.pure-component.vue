@@ -2,7 +2,11 @@
 import { REmptyState, RSortHeader, RVirtualScroller } from "@/lib";
 import type { RTableSortPayload } from "@/lib";
 import type { ItemEmits } from "../list/item.props";
-import { SCROLLER_OVERSCAN, type VisibleRange } from "../list/list.props";
+import {
+  markVariables,
+  SCROLLER_OVERSCAN,
+  type VisibleRange,
+} from "../list/list.props";
 import type { TableProps } from "./table.props";
 
 defineProps<TableProps>();
@@ -11,6 +15,7 @@ defineEmits<
   ItemEmits & {
     sort: [payload: RTableSortPayload];
     range: [range: VisibleRange];
+    key: [event: KeyboardEvent];
   }
 >();
 </script>
@@ -18,7 +23,10 @@ defineEmits<
 <template>
   <div
     class="stearch-table"
-    :style="{ '--stearch-scrollbar-width': `${scrollbarWidth}px` }"
+    :style="{
+      '--stearch-scrollbar-width': `${scrollbarWidth}px`,
+      ...markVariables(marks),
+    }"
   >
     <REmptyState
       v-if="errorMessage"
@@ -33,8 +41,10 @@ defineEmits<
     <div
       v-else
       class="stearch-table__grid"
-      role="table"
+      role="grid"
       :aria-label="tableLabel"
+      tabindex="0"
+      @keydown="$emit('key', $event)"
     >
       <div
         class="stearch-table__head"
@@ -83,6 +93,10 @@ defineEmits<
                   :verbs="verbs"
                   :grid-template="gridTemplate"
                   :cell-count="columns.length"
+                  class="stearch-mark"
+                  :data-key-position="line.position + column === activePosition"
+                  :data-current="row !== null && row.id === currentId"
+                  :data-selected="row !== null && row.isSelected"
                   @press="$emit('press', $event)"
                 />
               </template>
@@ -113,6 +127,8 @@ defineEmits<
 .stearch-table {
   --stearch-rail-width: 0px;
   height: 100%;
+  /* Items are picked, not read: Shift and drag must not select text. */
+  user-select: none;
   min-height: 0;
 }
 /* Room for the rail only while there is one. */
@@ -159,6 +175,11 @@ defineEmits<
   flex: 1;
   min-height: 0;
 }
+/* Ghosts hold still. Each skeleton's shimmer is a gradient repainted every
+   frame, and a screen of ghost rows ran hundreds of them during a scroll. */
+.stearch-table__body :deep(.r-skeleton::after) {
+  content: none;
+}
 /* One compositor layer per row made Layerize the top scroll cost. */
 .stearch-table__body :deep(.r-virtual-scroller__item) {
   will-change: auto;
@@ -177,3 +198,5 @@ defineEmits<
   background: var(--r-color-surface);
 }
 </style>
+
+<style scoped src="../list/marks.css"></style>

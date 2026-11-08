@@ -24,9 +24,10 @@ defineEmits<ItemEmits>();
     class="stearch-row"
     role="row"
     tabindex="0"
-    :data-selected="row.isSelected"
     :style="{ gridTemplateColumns: gridTemplate }"
-    @click="$emit('press', row.pressActions)"
+    @click.exact="$emit('press', row.pressActions)"
+    @click.ctrl.exact="$emit('press', row.selectActions)"
+    @click.meta.exact="$emit('press', row.selectActions)"
     @keydown.enter="$emit('press', row.pressActions)"
     @mouseenter="$emit('press', row.hoverActions)"
     @focus="$emit('press', row.hoverActions)"
@@ -63,9 +64,6 @@ defineEmits<ItemEmits>();
   padding-inline: var(--r-row-pad) calc(var(--stearch-rail-width, 0px) + 6px);
   border-bottom: 1px solid var(--r-color-border);
   cursor: pointer;
-}
-.stearch-row[data-selected="true"] {
-  background: var(--r-color-surface);
 }
 .stearch-row__cell {
   overflow: hidden;
