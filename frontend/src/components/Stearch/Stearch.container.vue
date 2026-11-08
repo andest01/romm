@@ -11,6 +11,8 @@ import FooterContainer from "./footer/footer.container.vue";
 import HeaderContainer from "./header/header.container.vue";
 import SidebarContainer from "./sidebar/sidebar.container.vue";
 
+// Stub labels: move to locale keys before this leaves the fork.
+const SKIP_LABEL = "Skip to results";
 const { t } = useI18n();
 const store = stearchStore();
 const panelLayout = computed(() => selectPanelLayout(store.state));
@@ -36,5 +38,6 @@ onMounted(store.start);
     :footer="FooterContainer"
     :background="null"
     :panel-layout="panelLayout"
+    :skip-label="SKIP_LABEL"
   />
 </template>

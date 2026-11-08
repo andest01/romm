@@ -11,6 +11,7 @@ defineProps<StearchLayoutProps>();
     :data-panel-axis="panelLayout.panelAxis"
     :data-panel-position="panelLayout.panelPosition"
   >
+    <a class="stearch-layout__skip" href="#stearch-results">{{ skipLabel }}</a>
     <div v-if="background" class="stearch-layout__background">
       <component :is="background" />
     </div>
@@ -21,7 +22,7 @@ defineProps<StearchLayoutProps>();
     >
       <component :is="panel" />
     </aside>
-    <section class="stearch-layout__content">
+    <section id="stearch-results" class="stearch-layout__content" tabindex="-1">
       <component :is="content" v-if="content" />
     </section>
     <footer v-if="footer" class="stearch-layout__footer">
@@ -31,6 +32,21 @@ defineProps<StearchLayoutProps>();
 </template>
 
 <style scoped>
+/* Off screen until the first Tab reaches it. */
+.stearch-layout__skip {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: var(--r-space-2);
+  inset-inline-start: var(--r-space-2);
+  padding: var(--r-space-2) var(--r-space-3);
+  border-radius: var(--r-radius-sm);
+  background: var(--r-color-brand-primary);
+  color: var(--r-color-brand-on-primary);
+  transform: translateY(-200%);
+}
+.stearch-layout__skip:focus {
+  transform: none;
+}
 /* Props become data attributes; everything visual follows from them here.
    Regions are named grid areas; only the panel's transform animates. */
 .stearch-layout {

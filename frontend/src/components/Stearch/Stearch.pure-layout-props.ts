@@ -16,4 +16,6 @@ export interface StearchLayoutProps {
   footer: Component | null;
   background: Component | null;
   panelLayout: StearchPanelLayout;
+  /** The first Tab's link, past the header and filters to the results. */
+  skipLabel: string;
 }
