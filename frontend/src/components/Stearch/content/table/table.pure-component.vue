@@ -45,12 +45,14 @@ defineEmits<
         role="grid"
         :aria-label="tableLabel"
         :aria-activedescendant="activeDescendantId ?? undefined"
+        :aria-rowcount="rows.length + 1"
         tabindex="0"
         @keydown="$emit('key', $event)"
       >
         <div
           class="stearch-table__head"
           role="row"
+          :aria-rowindex="1"
           :style="{ gridTemplateColumns: gridTemplate }"
         >
           <RSortHeader
@@ -84,6 +86,7 @@ defineEmits<
                   v-if="line.kind === 'head'"
                   class="stearch-table__section"
                   role="row"
+                  :aria-rowindex="index + 2"
                   :style="{ height: `${headHeight}px` }"
                 >
                   <span role="gridcell">{{ line.label }}</span>
@@ -95,6 +98,7 @@ defineEmits<
                     :id="itemDomId(line.position + column)"
                     :key="column"
                     :aria-selected="row !== null && row.isSelected"
+                    :aria-rowindex="index + 2"
                     :row="row"
                     :verbs="verbs"
                     :grid-template="gridTemplate"

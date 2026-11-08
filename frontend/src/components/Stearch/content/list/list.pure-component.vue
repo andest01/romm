@@ -41,6 +41,7 @@ defineEmits<
       role="grid"
       :aria-label="gridLabel"
       :aria-activedescendant="activeDescendantId ?? undefined"
+      :aria-rowcount="rows.length"
       tabindex="0"
       :items="rows"
       :overscan="SCROLLER_OVERSCAN"
@@ -56,6 +57,7 @@ defineEmits<
             v-if="line.kind === 'head'"
             class="stearch-list__head"
             role="row"
+            :aria-rowindex="index + 1"
             :style="{ height: `${headHeight}px` }"
           >
             <span role="gridcell">{{ line.label }}</span>
@@ -64,6 +66,7 @@ defineEmits<
             v-else
             class="stearch-list__row"
             role="row"
+            :aria-rowindex="index + 1"
             :style="{
               height: `${rowHeight}px`,
               gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
