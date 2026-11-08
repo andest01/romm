@@ -22,7 +22,7 @@ import RailContainer from "../rail/rail.container.vue";
 import SectionContainer from "../section/section.container.vue";
 import { selectSectionProps } from "../section/section.selectors";
 import { useFeel } from "./feel";
-import type { VisibleRange } from "./list.props";
+import { RESULTS_HELP, type VisibleRange } from "./list.props";
 import ListPure from "./list.pure-component.vue";
 import {
   activeDescendantId,
@@ -127,6 +127,7 @@ function onRange(range: VisibleRange): void {
     :marks="feel.marks"
     :grid-label="GRID_LABEL"
     :active-descendant-id="describedItem"
+    :grid-help="RESULTS_HELP"
     :error-message="errorMessage"
     :empty-message="t('rom.no-games-match')"
     @press="store.dispatch"

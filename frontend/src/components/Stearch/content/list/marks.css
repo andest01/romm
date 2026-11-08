@@ -1,3 +1,13 @@
+/* Read by screen readers, not drawn. */
+.stearch-results-help {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* The attention marks (spec 007, "Attention states"), shared by tiles, the
    table and the centre-band story. One visual channel each, so they can
    overlap and still read apart: selected is a green tint, current purple

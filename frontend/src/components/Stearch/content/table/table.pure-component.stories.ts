@@ -125,6 +125,7 @@ const meta: Meta<Args> = {
           :rows="rows"
           :active-position="activePosition"
           :active-descendant-id="null"
+          grid-help="Arrow keys move between games."
           :current-id="currentId"
           :marks="marks"
           :row-height="rowHeight"

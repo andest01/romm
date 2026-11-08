@@ -21,7 +21,7 @@ import {
 import stearchStore from "../../Stearch.store";
 import { useContentView } from "../content.view";
 import { useFeel } from "../list/feel";
-import type { VisibleRange } from "../list/list.props";
+import { RESULTS_HELP, type VisibleRange } from "../list/list.props";
 import {
   activeDescendantId,
   buildScrollRows,
@@ -138,6 +138,7 @@ function onRange(range: VisibleRange): void {
     :scrollbar-width="scrollbarWidth"
     :table-label="TABLE_LABEL"
     :active-descendant-id="describedItem"
+    :grid-help="RESULTS_HELP"
     :columns="COLUMNS"
     :grid-template="GRID_TEMPLATE"
     :row-height="TABLE_ROW_HEIGHT"

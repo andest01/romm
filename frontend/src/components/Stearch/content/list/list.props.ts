@@ -65,9 +65,16 @@ export interface ListProps {
   /** The active item's id, so a screen reader follows it. `null` when it
    *  isn't in the DOM. */
   activeDescendantId: string | null;
+  /** How to move around, read once on arrival. */
+  gridHelp: string;
   errorMessage: string | null;
   emptyMessage: string;
 }
+
+// Stub label: move to a locale key before this leaves the fork.
+export const RESULTS_HELP =
+  "Use the arrow keys or D-pad to move between games. Tab leaves the list.";
+export const RESULTS_HELP_ID = "stearch-results-help";
 
 /** Rows kept mounted beyond the viewport. Read-ahead already fetches data
  * ahead, so a wider ring only mounts tiles nobody sees. */

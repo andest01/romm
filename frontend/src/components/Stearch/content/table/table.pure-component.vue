@@ -4,6 +4,7 @@ import type { RTableSortPayload } from "@/lib";
 import type { ItemEmits } from "../list/item.props";
 import {
   markVariables,
+  RESULTS_HELP_ID,
   SCROLLER_OVERSCAN,
   type VisibleRange,
 } from "../list/list.props";
@@ -46,6 +47,7 @@ defineEmits<
         :aria-label="tableLabel"
         :aria-activedescendant="activeDescendantId ?? undefined"
         :aria-rowcount="rows.length + 1"
+        :aria-describedby="RESULTS_HELP_ID"
         tabindex="0"
         @keydown="$emit('key', $event)"
       >
@@ -129,6 +131,7 @@ defineEmits<
           <component :is="band" />
         </div>
       </div>
+      <p :id="RESULTS_HELP_ID" class="stearch-results-help">{{ gridHelp }}</p>
       <div v-if="rail" class="stearch-table__rail">
         <component :is="rail" />
       </div>

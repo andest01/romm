@@ -106,6 +106,7 @@ const meta: Meta<Args> = {
           :marks="marks"
           grid-label="Games"
           :active-descendant-id="null"
+          grid-help="Arrow keys move between games."
           :error-message="args.errorMessage"
           :empty-message="args.emptyMessage"
           @press="args.onPress"

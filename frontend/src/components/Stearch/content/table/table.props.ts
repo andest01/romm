@@ -15,6 +15,7 @@ export interface TableProps {
   scrollbarWidth: ListProps["scrollbarWidth"];
   tableLabel: string;
   activeDescendantId: ListProps["activeDescendantId"];
+  gridHelp: ListProps["gridHelp"];
   columns: readonly RTableColumn[];
   gridTemplate: string;
   rowHeight: number;

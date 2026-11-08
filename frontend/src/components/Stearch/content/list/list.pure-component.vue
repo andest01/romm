@@ -4,6 +4,7 @@ import type { ItemEmits } from "./item.props";
 import {
   type ListProps,
   markVariables,
+  RESULTS_HELP_ID,
   SCROLLER_OVERSCAN,
   type VisibleRange,
 } from "./list.props";
@@ -42,6 +43,7 @@ defineEmits<
       :aria-label="gridLabel"
       :aria-activedescendant="activeDescendantId ?? undefined"
       :aria-rowcount="rows.length"
+      :aria-describedby="RESULTS_HELP_ID"
       tabindex="0"
       :items="rows"
       :overscan="SCROLLER_OVERSCAN"
@@ -107,6 +109,7 @@ defineEmits<
         <component :is="band" />
       </div>
     </div>
+    <p :id="RESULTS_HELP_ID" class="stearch-results-help">{{ gridHelp }}</p>
     <div v-if="rail" class="stearch-list__rail"><component :is="rail" /></div>
   </div>
 </template>
