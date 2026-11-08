@@ -347,6 +347,8 @@ Nothing here is settled until the RomM side has been measured.
 
 - **Screen reader pass.** The grids announce the active item and row position, carry move instructions, and the page has a skip link and named landmarks. The rail's letters are buttons: a press navigates, a drag past 4 px scrubs. Not yet heard in a real screen reader. A letter whose first game isn't loaded flies without setting active.
 
+- **The honest audit.** The state machine is still mostly a readout: states are derived, keys bypass it, and Table and Tiles have none. `specs/010-magic-scroll-grid.md` describes the held machine and a DOM-only harness for the rewrite. Cruise is specified there, not built, because the spike is being replaced.
+
 ### Rules from the input work
 
 1. **Keys and the D-pad are data to screen.** A step moves the active cell, then the view follows. It needs no memory of a previous state.
