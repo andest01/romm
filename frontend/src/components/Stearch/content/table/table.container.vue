@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, shallowRef } from "vue";
 import { useI18n } from "vue-i18n";
 import type { RTableColumn } from "@/lib";
 import {
@@ -23,6 +23,7 @@ import { useContentView } from "../content.view";
 import { useFeel } from "../list/feel";
 import type { VisibleRange } from "../list/list.props";
 import {
+  activeDescendantId,
   buildScrollRows,
   buildWindowActions,
   headHeightFor,
@@ -106,7 +107,12 @@ const { activePosition, onKey } = useKeyFocus({
 });
 
 const speedOf = useListSpeed();
+const visibleRange = shallowRef<VisibleRange | null>(null);
+const describedItem = computed(() =>
+  activeDescendantId(rows.value, activePosition.value, visibleRange.value),
+);
 function onRange(range: VisibleRange): void {
+  visibleRange.value = range;
   store.dispatch(
     buildWindowActions(range, rows.value, {
       previousPosition: selectVisiblePosition(store.state),
@@ -131,6 +137,7 @@ function onRange(range: VisibleRange): void {
     :rail="RailContainer"
     :scrollbar-width="scrollbarWidth"
     :table-label="TABLE_LABEL"
+    :active-descendant-id="describedItem"
     :columns="COLUMNS"
     :grid-template="GRID_TEMPLATE"
     :row-height="TABLE_ROW_HEIGHT"

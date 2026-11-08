@@ -365,6 +365,25 @@ export function moveFor(
   };
 }
 
+/** The DOM id of the item at a position. */
+export const itemDomId = (position: number): string =>
+  `stearch-item-${position}`;
+
+/** The active item's DOM id for `aria-activedescendant`, or `null` when it
+ *  isn't there to point at: a ghost, or a row the scroller hasn't mounted. */
+export function activeDescendantId(
+  rows: readonly ScrollRow[],
+  position: number | null,
+  visible: VisibleRange | null,
+): string | null {
+  if (position === null || visible === null) return null;
+  const index = itemRowIndexOf(rows, position);
+  if (index < visible.first || index > visible.last) return null;
+  const row = rows[index];
+  if (row?.kind !== "items" || !row.slots[position - row.position]) return null;
+  return itemDomId(position);
+}
+
 /** Whether a step moves the view. A row out of view always comes back. In
  *  view, a step heading for the centre just walks, so the view doesn't yank;
  *  at or past the centre it follows. Sideways steps (`direction` 0) stay put. */

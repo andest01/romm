@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, shallowRef } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   selectAnchorPosition,
@@ -25,6 +25,7 @@ import { useFeel } from "./feel";
 import type { VisibleRange } from "./list.props";
 import ListPure from "./list.pure-component.vue";
 import {
+  activeDescendantId,
   buildScrollRows,
   buildWindowActions,
   itemKindFor,
@@ -94,7 +95,12 @@ const { activePosition, onKey } = useKeyFocus({
 });
 
 const speedOf = useListSpeed();
+const visibleRange = shallowRef<VisibleRange | null>(null);
+const describedItem = computed(() =>
+  activeDescendantId(rows.value, activePosition.value, visibleRange.value),
+);
 function onRange(range: VisibleRange): void {
+  visibleRange.value = range;
   store.dispatch(
     buildWindowActions(range, rows.value, {
       previousPosition: selectVisiblePosition(store.state),
@@ -120,6 +126,7 @@ function onRange(range: VisibleRange): void {
     :current-id="currentId"
     :marks="feel.marks"
     :grid-label="GRID_LABEL"
+    :active-descendant-id="describedItem"
     :error-message="errorMessage"
     :empty-message="t('rom.no-games-match')"
     @press="store.dispatch"

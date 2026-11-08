@@ -7,6 +7,7 @@ import {
   SCROLLER_OVERSCAN,
   type VisibleRange,
 } from "./list.props";
+import { itemDomId } from "./list.selectors";
 
 defineProps<ListProps>();
 
@@ -39,6 +40,7 @@ defineEmits<
       class="stearch-list__scroller"
       role="grid"
       :aria-label="gridLabel"
+      :aria-activedescendant="activeDescendantId ?? undefined"
       tabindex="0"
       :items="rows"
       :overscan="SCROLLER_OVERSCAN"
@@ -69,9 +71,11 @@ defineEmits<
           >
             <div
               v-for="(row, column) in line.slots"
+              :id="itemDomId(line.position + column)"
               :key="column"
               class="stearch-list__cell"
               role="gridcell"
+              :aria-selected="row !== null && row.isSelected"
             >
               <component
                 :is="item"

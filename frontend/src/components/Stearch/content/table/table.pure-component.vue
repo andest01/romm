@@ -7,6 +7,7 @@ import {
   SCROLLER_OVERSCAN,
   type VisibleRange,
 } from "../list/list.props";
+import { itemDomId } from "../list/list.selectors";
 import type { TableProps } from "./table.props";
 
 defineProps<TableProps>();
@@ -43,6 +44,7 @@ defineEmits<
         class="stearch-table__grid"
         role="grid"
         :aria-label="tableLabel"
+        :aria-activedescendant="activeDescendantId ?? undefined"
         tabindex="0"
         @keydown="$emit('key', $event)"
       >
@@ -90,7 +92,9 @@ defineEmits<
                   <component
                     :is="item"
                     v-for="(row, column) in line.slots"
+                    :id="itemDomId(line.position + column)"
                     :key="column"
+                    :aria-selected="row !== null && row.isSelected"
                     :row="row"
                     :verbs="verbs"
                     :grid-template="gridTemplate"

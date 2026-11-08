@@ -124,6 +124,7 @@ const meta: Meta<Args> = {
           :scrollbar-width="0"
           :rows="rows"
           :active-position="activePosition"
+          :active-descendant-id="null"
           :current-id="currentId"
           :marks="marks"
           :row-height="rowHeight"

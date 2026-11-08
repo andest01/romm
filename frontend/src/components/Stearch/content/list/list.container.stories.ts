@@ -44,6 +44,27 @@ export const ArrowsWorkWithoutFocus: Story = {
   },
 };
 
+/** A screen reader follows the active item while focus stays on the grid. */
+export const ArrowsNameTheActiveItem: Story = {
+  tags: ["!dev"],
+  args: { state: loaded },
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const grid = await within(canvasElement).findByRole("grid");
+
+    // Act
+    await fireEvent.keyDown(grid, { key: "ArrowRight" });
+    await fireEvent.keyDown(grid, { key: "ArrowRight" });
+
+    // Assert
+    await waitFor(() => {
+      const id = grid.getAttribute("aria-activedescendant");
+      if (!id) throw new Error("No active descendant");
+      return expect(document.getElementById(id)).not.toBeNull();
+    });
+  },
+};
+
 /** A Ctrl-click selects; a plain click only makes the game current. */
 export const SelectingDispatches: Story = {
   args: { state: loaded },

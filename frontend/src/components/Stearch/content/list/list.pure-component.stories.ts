@@ -105,6 +105,7 @@ const meta: Meta<Args> = {
           :current-id="currentId"
           :marks="marks"
           grid-label="Games"
+          :active-descendant-id="null"
           :error-message="args.errorMessage"
           :empty-message="args.emptyMessage"
           @press="args.onPress"

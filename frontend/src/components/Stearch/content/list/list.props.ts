@@ -62,6 +62,9 @@ export interface ListProps {
   marks: MarkMotion;
   /** The grid's accessible name. */
   gridLabel: string;
+  /** The active item's id, so a screen reader follows it. `null` when it
+   *  isn't in the DOM. */
+  activeDescendantId: string | null;
   errorMessage: string | null;
   emptyMessage: string;
 }

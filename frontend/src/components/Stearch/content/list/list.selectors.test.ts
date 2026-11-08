@@ -3,8 +3,9 @@ import type { StearchAction } from "../../Stearch.actions";
 import { LOADED_STEARCH_STATE } from "../../Stearch.fixtures";
 import { INITIAL_STEARCH_STATE } from "../../Stearch.reducer";
 import { selectSlots } from "../../Stearch.rows.selectors";
-import type { CruiseFeel } from "./list.props";
+import type { CruiseFeel, ScrollRow } from "./list.props";
 import {
+  activeDescendantId,
   bandOffsetFor,
   buildScrollRows,
   buildWindowActions,
@@ -25,6 +26,37 @@ import {
   stickRowsPerSecond,
   withGhosts,
 } from "./list.selectors";
+
+describe("activeDescendantId", () => {
+  const SLOT = selectSlots(LOADED_STEARCH_STATE)[0] ?? null;
+  const ROWS = [
+    { kind: "items", key: "a", position: 0, slots: [SLOT, null] },
+  ] as const satisfies readonly ScrollRow[];
+
+  it("names a mounted item", () => {
+    // Act
+    const id = activeDescendantId(ROWS, 0, { first: 0, last: 0 });
+
+    // Assert
+    expect(id).toBe("stearch-item-0");
+  });
+
+  it("is null on a ghost", () => {
+    // Act
+    const id = activeDescendantId(ROWS, 1, { first: 0, last: 0 });
+
+    // Assert
+    expect(id).toBeNull();
+  });
+
+  it("is null for a row that isn't mounted", () => {
+    // Act
+    const id = activeDescendantId(ROWS, 0, { first: 5, last: 9 });
+
+    // Assert
+    expect(id).toBeNull();
+  });
+});
 
 describe("stepFollows", () => {
   const VIEW = { scrollTop: 1000, height: 600 };
