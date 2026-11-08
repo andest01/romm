@@ -345,6 +345,8 @@ Nothing here is settled until the RomM side has been measured.
 
 - **Table and Tiles lacked the walk rule, and I said they had it.** They followed every step, so moving toward the band from the first item yanked the view to the middle. `stepFollows` now applies the spike's rule. Reported by the user after a sweep marked it done.
 
+- **Screen reader pass.** The grids announce the active item and row position, carry move instructions, and the page has a skip link and named landmarks. The rail's letters are buttons: a press navigates, a drag past 4 px scrubs. Not yet heard in a real screen reader. A letter whose first game isn't loaded flies without setting active.
+
 ### Rules from the input work
 
 1. **Keys and the D-pad are data to screen.** A step moves the active cell, then the view follows. It needs no memory of a previous state.

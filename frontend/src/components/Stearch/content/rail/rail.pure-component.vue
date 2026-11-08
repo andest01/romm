@@ -9,19 +9,26 @@ defineEmits<RailEmits>();
 <template>
   <div
     class="stearch-rail"
+    role="toolbar"
+    aria-orientation="vertical"
+    :aria-label="label"
     @pointerdown="$emit('scrub', $event)"
     @pointermove="$event.buttons > 0 && $emit('scrub', $event)"
   >
-    <div
+    <button
       v-for="bucket in buckets"
       :key="bucket.key"
+      type="button"
       class="stearch-rail__bucket"
+      :tabindex="bucket.isCurrent ? 0 : -1"
       :data-current="bucket.isCurrent"
       :style="{ flexGrow: bucket.share }"
       :title="bucket.label"
+      @click="$emit('press', bucket.navigateActions)"
+      @keydown="$emit('key', $event)"
     >
       {{ bucket.label }}
-    </div>
+    </button>
     <div
       class="stearch-rail__thumb"
       :style="{
@@ -62,6 +69,10 @@ defineEmits<RailEmits>();
   flex-basis: 0;
   overflow: hidden;
   min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: inherit;
   color: var(--r-color-brand-primary);
   font-size: 10px;
   font-weight: 650;

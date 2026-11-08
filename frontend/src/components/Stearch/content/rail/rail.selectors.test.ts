@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { INITIAL_STEARCH_STATE } from "../../Stearch.reducer";
 import {
+  buildNavigateActions,
   buildScrubActions,
   railThumb,
   selectRailProps,
@@ -40,10 +41,31 @@ describe("selectRailProps", () => {
     const { buckets } = selectRailProps(state);
 
     // Assert
-    expect(buckets).toEqual([
+    expect(buckets).toMatchObject([
       { key: "A", label: "A", share: 0.5, isCurrent: true },
       { key: "C", label: "C", share: 0.3, isCurrent: false },
       { key: "Z", label: "Z", share: 0.2, isCurrent: false },
+    ]);
+  });
+
+  it("flies to a loaded game and makes it current", () => {
+    // Act
+    const actions = buildNavigateActions(40, 7);
+
+    // Assert
+    expect(actions).toEqual([
+      { type: "attention/set", patch: { activeId: 7 } },
+      { type: "view/set", patch: { jump: { position: 40, isSmooth: true } } },
+    ]);
+  });
+
+  it("only flies when the game isn't loaded yet", () => {
+    // Act
+    const actions = buildNavigateActions(40, null);
+
+    // Assert
+    expect(actions).toEqual([
+      { type: "view/set", patch: { jump: { position: 40, isSmooth: true } } },
     ]);
   });
 
