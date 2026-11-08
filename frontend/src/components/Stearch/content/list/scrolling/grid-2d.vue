@@ -4,15 +4,7 @@
 // active cell one step; the left stick pans and the active cell catches up
 // inside the centre box; Space or Enter toggles the selection.
 import { useElementSize, useEventListener } from "@vueuse/core";
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  reactive,
-  ref,
-  shallowRef,
-  watch,
-} from "vue";
+import { computed, onMounted, reactive, ref, shallowRef, watch } from "vue";
 import { PAD_BUTTON } from "@/composables/useGamepad";
 import { RBtn } from "@/lib";
 import { focusFromInput } from "@/utils/autofocus";
@@ -40,8 +32,6 @@ const props = defineProps<
     rows: number;
     cols: number;
     cellSize: number;
-    /** How long a command's flight takes. 0 is a jump cut. */
-    flyMs: number;
     /** Stand in for a pad's stick, -1 to 1 each. 0 and 0 read a real pad. */
     standInX: number;
     standInY: number;
@@ -246,41 +236,13 @@ function addSelected(cell: Cell): void {
   selected.value = new Set(selected.value).add(keyOf(cell));
 }
 
-let flight = 0;
-const stopFlight = (): void => cancelAnimationFrame(flight);
-onBeforeUnmount(stopFlight);
-
-// Eases out to the target. Anything else moving the view ends the flight.
 function flyTo(target: Vector): void {
-  const element = viewport.value;
-  if (!element) return;
-  stopFlight();
   const isReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const durationMs = isReduced.matches ? 0 : props.flyMs;
-  const from = { x: element.scrollLeft, y: element.scrollTop };
-  const to = {
-    x: Math.min(target.x, element.scrollWidth - element.clientWidth),
-    y: Math.min(target.y, element.scrollHeight - element.clientHeight),
-  };
-  const startedAt = performance.now();
-  let written = from;
-  const tick = (now: number): void => {
-    if (
-      Math.abs(element.scrollLeft - written.x) > 1 ||
-      Math.abs(element.scrollTop - written.y) > 1
-    ) {
-      return;
-    }
-    const progress =
-      durationMs <= 0 ? 1 : Math.min(1, (now - startedAt) / durationMs);
-    const eased = 1 - (1 - progress) ** 3;
-    element.scrollLeft = from.x + (to.x - from.x) * eased;
-    element.scrollTop = from.y + (to.y - from.y) * eased;
-    written = { x: element.scrollLeft, y: element.scrollTop };
-    syncScroll();
-    if (progress < 1) flight = requestAnimationFrame(tick);
-  };
-  flight = requestAnimationFrame(tick);
+  viewport.value?.scrollTo({
+    left: target.x,
+    top: target.y,
+    behavior: isReduced.matches ? "instant" : "smooth",
+  });
 }
 
 function flyToCentre(cell: Cell): void {
@@ -312,36 +274,50 @@ const targets = computed(() => {
 });
 
 // What the outside world can ask for: data only, screen only, or both.
-const COMMANDS = [
+type GridAction =
+  | { type: "attention/set"; patch: { active: Cell } }
+  | { type: "selection/add"; cell: Cell }
+  | { type: "view/flyTo"; cell: Cell };
+
+const setActiveAction = (cell: Cell): GridAction => ({
+  type: "attention/set",
+  patch: { active: cell },
+});
+const flyToAction = (cell: Cell): GridAction => ({ type: "view/flyTo", cell });
+const addSelectedAction = (cell: Cell): GridAction => ({
+  type: "selection/add",
+  cell,
+});
+
+const COMMANDS: readonly {
+  name: string;
+  actions: (cell: Cell) => GridAction[];
+}[] = [
   {
     name: "navigateTo",
-    dispatches: "setActive(cell), flyTo(centreTarget(cell))",
-    run: (cell: Cell) => {
-      setActive(cell);
-      flyToCentre(cell);
-    },
+    actions: (cell) => [setActiveAction(cell), flyToAction(cell)],
   },
-  {
-    name: "setActive",
-    dispatches: "setActive(cell); the view stays",
-    run: setActive,
-  },
-  {
-    name: "flyTo",
-    dispatches: "flyTo(centreTarget(cell)); active stays",
-    run: flyToCentre,
-  },
-  {
-    name: "addSelected",
-    dispatches: "addSelected(cell); active and the view stay",
-    run: addSelected,
-  },
-] as const;
+  { name: "setActive", actions: (cell) => [setActiveAction(cell)] },
+  { name: "flyTo", actions: (cell) => [flyToAction(cell)] },
+  { name: "addSelected", actions: (cell) => [addSelectedAction(cell)] },
+];
+
+const actionTypes = (actions: GridAction[]): string =>
+  actions.map(({ type }) => type).join(", ");
+
+function dispatch(actions: GridAction[]): void {
+  for (const action of actions) {
+    if (action.type === "attention/set") setActive(action.patch.active);
+    else if (action.type === "selection/add") addSelected(action.cell);
+    else flyToCentre(action.cell);
+  }
+}
 
 function runCommand(command: (typeof COMMANDS)[number], cell: Cell): void {
+  const actions = command.actions(cell);
   stick.cancel();
-  command.run(cell);
-  note(`command: ${command.name}(${nameOf(cell)})`);
+  dispatch(actions);
+  note(`command: ${nameOf(cell)}: ${actionTypes(actions)}`);
   focusFromInput(viewport.value, { preventScroll: true });
 }
 
@@ -458,7 +434,9 @@ const feelAsCode = computed(() => JSON.stringify(feel.value, null, 2));
           :aria-label="command.name"
         >
           <code>{{ command.name }}</code>
-          <span class="grid-2d__dispatches">{{ command.dispatches }}</span>
+          <span class="grid-2d__dispatches">{{
+            actionTypes(command.actions(active))
+          }}</span>
           <div class="grid-2d__targets">
             <RBtn
               v-for="target in targets"

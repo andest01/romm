@@ -23,7 +23,6 @@ const meta: Meta<typeof Grid2d> = {
     rows: { control: { type: "range", min: 24, max: 512, step: 8 } },
     cols: { control: { type: "range", min: 24, max: 512, step: 8 } },
     cellSize: { control: { type: "range", min: 16, max: 96, step: 4 } },
-    flyMs: { control: { type: "range", min: 0, max: 2000, step: 50 } },
     standInX: { control: { type: "range", min: -1, max: 1, step: 0.05 } },
     standInY: { control: { type: "range", min: -1, max: 1, step: 0.05 } },
   },
@@ -37,7 +36,6 @@ const meta: Meta<typeof Grid2d> = {
     rows: 128,
     cols: 128,
     cellSize: 32,
-    flyMs: 450,
     standInX: 0,
     standInY: 0,
   },
@@ -222,6 +220,31 @@ export const DpadWorksWithoutGridFocus: Story = {
     await waitFor(() =>
       expect(canvas.getByTestId("active")).toHaveTextContent("r0 c1"),
     );
+  },
+};
+
+/** A flight passes through the space between, rather than cutting to it. */
+export const FlyToAnimates: Story = {
+  tags: ["!dev"],
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const canvas = within(canvasElement);
+    const list = canvas.getByRole("listbox");
+    const seen = new Set<number>();
+
+    // Act
+    await userEvent.click(canvas.getByRole("button", { name: "flyTo middle" }));
+    await waitFor(
+      async () => {
+        seen.add(list.scrollTop);
+        await expect(list.scrollTop).toBeGreaterThan(1500);
+        await expect(seen.size).toBeGreaterThan(5);
+      },
+      { interval: 16, timeout: 4000 },
+    );
+
+    // Assert
+    await expect(seen.size).toBeGreaterThan(5);
   },
 };
 

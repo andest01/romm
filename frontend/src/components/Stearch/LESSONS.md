@@ -335,6 +335,9 @@ Nothing here is settled until the RomM side has been measured.
 
 - **The stick and the D-pad reach the grid differently.** The stick is polled and needs no focus; the D-pad is a synthetic key sent to the focused element. Once focus left the grid, the D-pad went silent while the stick kept working. The grid now hears arrows at the window. Proof: `DpadWorksWithoutGridFocus`, failing before the fix.
 
+- **The browser's `scrollTo` replaced a hand-written flight.** About 35 lines of rAF easing became one `scrollTo({ behavior: "smooth" })`. The cost is no control over duration. Only the cells are virtual; the scroller is a normal DOM scroller. A map would swap only what `view/flyTo` calls.
+- **Commands became action lists.** Buttons build plain actions for one `dispatch`, and their labels come from those actions, so the label can't drift from what runs.
+
 ### Rules from the input work
 
 1. **Keys and the D-pad are data to screen.** A step moves the active cell, then the view follows. It needs no memory of a previous state.
