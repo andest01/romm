@@ -39,5 +39,7 @@ onMounted(store.start);
     :background="null"
     :panel-layout="panelLayout"
     :skip-label="SKIP_LABEL"
+    panel-label="Filters"
+    results-label="Results"
   />
 </template>

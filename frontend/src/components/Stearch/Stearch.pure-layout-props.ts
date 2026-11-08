@@ -18,4 +18,7 @@ export interface StearchLayoutProps {
   panelLayout: StearchPanelLayout;
   /** The first Tab's link, past the header and filters to the results. */
   skipLabel: string;
+  /** Names for the regions a screen reader jumps between. */
+  panelLabel: string;
+  resultsLabel: string;
 }

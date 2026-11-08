@@ -68,6 +68,8 @@ const meta: Meta<Args> = {
             panelPosition: args.panelPosition,
           }"
           skip-label="Skip to results"
+          panel-label="Filters"
+          results-label="Results"
         />
       </div>
     `,

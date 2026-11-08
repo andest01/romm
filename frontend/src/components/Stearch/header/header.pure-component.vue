@@ -15,7 +15,11 @@ defineEmits<{
 
 <template>
   <div class="stearch-header">
-    <div class="stearch-header__row">
+    <div
+      class="stearch-header__row"
+      role="search"
+      :aria-label="search.placeholder"
+    >
       <RTextField
         class="stearch-header__field"
         :model-value="search.term"

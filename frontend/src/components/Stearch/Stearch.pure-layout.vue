@@ -18,11 +18,17 @@ defineProps<StearchLayoutProps>();
     <header class="stearch-layout__header"><component :is="header" /></header>
     <aside
       class="stearch-layout__panel"
+      :aria-label="panelLabel"
       :inert="panelLayout.panelState === 'hidden'"
     >
       <component :is="panel" />
     </aside>
-    <section id="stearch-results" class="stearch-layout__content" tabindex="-1">
+    <section
+      id="stearch-results"
+      class="stearch-layout__content"
+      :aria-label="resultsLabel"
+      tabindex="-1"
+    >
       <component :is="content" v-if="content" />
     </section>
     <footer v-if="footer" class="stearch-layout__footer">
