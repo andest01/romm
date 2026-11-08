@@ -38,86 +38,91 @@ defineEmits<
       icon="mdi-magnify-close"
       :title="emptyMessage"
     />
-    <div
-      v-else
-      class="stearch-table__grid"
-      role="grid"
-      :aria-label="tableLabel"
-      tabindex="0"
-      @keydown="$emit('key', $event)"
-    >
+    <div v-else class="stearch-table__frame">
       <div
-        class="stearch-table__head"
-        role="row"
-        :style="{ gridTemplateColumns: gridTemplate }"
+        class="stearch-table__grid"
+        role="grid"
+        :aria-label="tableLabel"
+        tabindex="0"
+        @keydown="$emit('key', $event)"
       >
-        <RSortHeader
-          v-for="column in columns"
-          :key="column.key"
-          :label="column.label"
-          :sortable="column.sortable"
-          :active="column.key === sortKey"
-          :dir="sortDir"
-          @sort="$emit('sort', { key: column.key, dir: $event })"
-        />
-      </div>
-      <div class="stearch-table__body">
-        <RVirtualScroller
-          :ref="setScroller"
-          :items="rows"
-          :overscan="SCROLLER_OVERSCAN"
-          :get-item-height="
-            (_, index) =>
-              rows[index]?.kind === 'head' ? headHeight : rowHeight
-          "
-          @update:viewport-range="$emit('range', $event)"
+        <div
+          class="stearch-table__head"
+          role="row"
+          :style="{ gridTemplateColumns: gridTemplate }"
         >
-          <template #default="{ index }">
-            <template
-              v-for="line in rows.slice(index, index + 1)"
-              :key="line.key"
-            >
-              <div
-                v-if="line.kind === 'head'"
-                class="stearch-table__section"
-                :style="{ height: `${headHeight}px` }"
+          <RSortHeader
+            v-for="column in columns"
+            :key="column.key"
+            :label="column.label"
+            :hide-label="column.key === 'verbs'"
+            :sortable="column.sortable"
+            :active="column.key === sortKey"
+            :dir="sortDir"
+            @sort="$emit('sort', { key: column.key, dir: $event })"
+          />
+        </div>
+        <div class="stearch-table__body">
+          <RVirtualScroller
+            :ref="setScroller"
+            :items="rows"
+            :overscan="SCROLLER_OVERSCAN"
+            :get-item-height="
+              (_, index) =>
+                rows[index]?.kind === 'head' ? headHeight : rowHeight
+            "
+            @update:viewport-range="$emit('range', $event)"
+          >
+            <template #default="{ index }">
+              <template
+                v-for="line in rows.slice(index, index + 1)"
+                :key="line.key"
               >
-                {{ line.label }}
-              </div>
-              <template v-else>
-                <component
-                  :is="item"
-                  v-for="(row, column) in line.slots"
-                  :key="column"
-                  :row="row"
-                  :verbs="verbs"
-                  :grid-template="gridTemplate"
-                  :cell-count="columns.length"
-                  class="stearch-mark"
-                  :data-key-position="line.position + column === activePosition"
-                  :data-current="row !== null && row.id === currentId"
-                  :data-selected="row !== null && row.isSelected"
-                  @press="$emit('press', $event)"
-                />
+                <div
+                  v-if="line.kind === 'head'"
+                  class="stearch-table__section"
+                  role="row"
+                  :style="{ height: `${headHeight}px` }"
+                >
+                  <span role="gridcell">{{ line.label }}</span>
+                </div>
+                <template v-else>
+                  <component
+                    :is="item"
+                    v-for="(row, column) in line.slots"
+                    :key="column"
+                    :row="row"
+                    :verbs="verbs"
+                    :grid-template="gridTemplate"
+                    :cell-count="columns.length"
+                    class="stearch-mark"
+                    :data-key-position="
+                      line.position + column === activePosition
+                    "
+                    :data-current="row !== null && row.id === currentId"
+                    :data-selected="row !== null && row.isSelected"
+                    @press="$emit('press', $event)"
+                  />
+                </template>
               </template>
             </template>
-          </template>
-        </RVirtualScroller>
+          </RVirtualScroller>
+        </div>
+      </div>
+      <div
+        v-if="band"
+        class="stearch-table__band"
+        :style="{ blockSize: `${headHeight}px` }"
+      >
         <div
-          v-if="band"
-          class="stearch-table__band"
-          :style="{ blockSize: `${headHeight}px` }"
+          class="stearch-table__band-part"
+          :style="{ transform: `translateY(${bandOffset}px)` }"
         >
-          <div
-            class="stearch-table__band-part"
-            :style="{ transform: `translateY(${bandOffset}px)` }"
-          >
-            <component :is="band" />
-          </div>
+          <component :is="band" />
         </div>
-        <div v-if="rail" class="stearch-table__rail">
-          <component :is="rail" />
-        </div>
+      </div>
+      <div v-if="rail" class="stearch-table__rail">
+        <component :is="rail" />
       </div>
     </div>
   </div>
@@ -126,6 +131,7 @@ defineEmits<
 <style scoped>
 .stearch-table {
   --stearch-rail-width: 0px;
+  --stearch-table-head-height: 30px;
   height: 100%;
   /* Items are picked, not read: Shift and drag must not select text. */
   user-select: none;
@@ -140,7 +146,7 @@ defineEmits<
 .stearch-table__rail {
   position: absolute;
   z-index: 2;
-  inset-block: 0;
+  inset-block: var(--stearch-table-head-height) 0;
   inset-inline-end: var(--stearch-scrollbar-width);
   inline-size: var(--stearch-rail-width);
 }
@@ -157,6 +163,12 @@ defineEmits<
   font-size: 0.75em;
   font-weight: 700;
 }
+/* The rail and band sit beside the grid: a grid may only own rows. */
+.stearch-table__frame {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
 .stearch-table__grid {
   display: flex;
   flex-direction: column;
@@ -167,7 +179,7 @@ defineEmits<
   display: grid;
   flex: none;
   gap: var(--r-space-2);
-  block-size: 30px;
+  block-size: var(--stearch-table-head-height);
   align-items: center;
 }
 .stearch-table__body {
@@ -190,7 +202,7 @@ defineEmits<
   position: absolute;
   z-index: 1;
   overflow: hidden;
-  inset-block-start: 0;
+  inset-block-start: var(--stearch-table-head-height);
   inset-inline: 0 var(--stearch-scrollbar-width);
 }
 .stearch-table__band-part {

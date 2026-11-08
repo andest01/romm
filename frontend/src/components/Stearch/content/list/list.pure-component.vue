@@ -18,14 +18,10 @@ defineEmits<
 <template>
   <div
     class="stearch-list"
-    role="grid"
-    :aria-label="gridLabel"
-    tabindex="0"
     :style="{
       '--stearch-scrollbar-width': `${scrollbarWidth}px`,
       ...markVariables(marks),
     }"
-    @keydown="$emit('key', $event)"
   >
     <REmptyState
       v-if="errorMessage"
@@ -41,42 +37,53 @@ defineEmits<
       v-else
       :ref="setScroller"
       class="stearch-list__scroller"
+      role="grid"
+      :aria-label="gridLabel"
+      tabindex="0"
       :items="rows"
       :overscan="SCROLLER_OVERSCAN"
       :get-item-height="
         (_, index) => (rows[index]?.kind === 'head' ? headHeight : rowHeight)
       "
       @update:viewport-range="$emit('range', $event)"
+      @keydown="$emit('key', $event)"
     >
       <template #default="{ index }">
         <template v-for="line in rows.slice(index, index + 1)" :key="line.key">
           <div
             v-if="line.kind === 'head'"
             class="stearch-list__head"
+            role="row"
             :style="{ height: `${headHeight}px` }"
           >
-            {{ line.label }}
+            <span role="gridcell">{{ line.label }}</span>
           </div>
           <div
             v-else
             class="stearch-list__row"
+            role="row"
             :style="{
               height: `${rowHeight}px`,
               gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
             }"
           >
-            <component
-              :is="item"
+            <div
               v-for="(row, column) in line.slots"
               :key="column"
-              :row="row"
-              :verbs="verbs"
-              class="stearch-mark"
-              :data-key-position="line.position + column === activePosition"
-              :data-current="row !== null && row.id === currentId"
-              :data-selected="row !== null && row.isSelected"
-              @press="$emit('press', $event)"
-            />
+              class="stearch-list__cell"
+              role="gridcell"
+            >
+              <component
+                :is="item"
+                :row="row"
+                :verbs="verbs"
+                class="stearch-mark"
+                :data-key-position="line.position + column === activePosition"
+                :data-current="row !== null && row.id === currentId"
+                :data-selected="row !== null && row.isSelected"
+                @press="$emit('press', $event)"
+              />
+            </div>
           </div>
         </template>
       </template>
@@ -98,6 +105,10 @@ defineEmits<
 </template>
 
 <style scoped>
+/* A role wrapper only: the item stays the row's grid child. */
+.stearch-list__cell {
+  display: contents;
+}
 .stearch-list {
   --stearch-rail-width: 0px;
   position: relative;

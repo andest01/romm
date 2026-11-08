@@ -338,6 +338,13 @@ Nothing here is settled until the RomM side has been measured.
 - **The browser's `scrollTo` replaced a hand-written flight.** About 35 lines of rAF easing became one `scrollTo({ behavior: "smooth" })`. The cost is no control over duration. Only the cells are virtual; the scroller is a normal DOM scroller. A map would swap only what `view/flyTo` calls.
 - **Commands became action lists.** Buttons build plain actions for one `dispatch`, and their labels come from those actions, so the label can't drift from what runs.
 
+- **Table and Tiles took the input lessons.** Both already followed on every key and read the real scroller. Two rules were missing, both in `use-key-focus.ts`: arrows are heard when focus falls to the page, and the D-pad repeats at key rate while the results have focus. Proof: `ArrowsWorkWithoutFocus` on both containers; the list's failed before the fix.
+- **The D-pad's speed is measured, not guessed.** The OS owns keyboard repeat and JS can't read it, so the first real key hold sets the delay and interval the D-pad uses. Repeats count from the due time, so frame polling can't drift.
+
+- **The results are real grids now.** In tiles the grid role moved to the scroller, with rows and gridcells around items. In the table the rail and band moved beside the grid, because a grid may only own rows.
+
+- **Table and Tiles lacked the walk rule, and I said they had it.** They followed every step, so moving toward the band from the first item yanked the view to the middle. `stepFollows` now applies the spike's rule. Reported by the user after a sweep marked it done.
+
 ### Rules from the input work
 
 1. **Keys and the D-pad are data to screen.** A step moves the active cell, then the view follows. It needs no memory of a previous state.

@@ -31,7 +31,7 @@ const meta: Meta<typeof Grid2d> = {
     boxCols: 1,
     deadzone: 0.12,
     minCellsPerSecond: 0.5,
-    maxCellsPerSecond: 10,
+    maxCellsPerSecond: 30,
     gamma: 1,
     rows: 128,
     cols: 128,

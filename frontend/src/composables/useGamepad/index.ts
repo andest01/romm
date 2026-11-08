@@ -56,6 +56,7 @@ const ACTIONS_DISABLED_PATHS = new Set<string>(["/controller-debug"]);
 const INITIAL_DELAY_MS = 350;
 const REPEAT_MS = 120;
 const KEY_RATE_REPEAT_MS = 33;
+const MAX_KEY_REPEAT_GAP_MS = 150;
 export const AXIS_THRESHOLD = 0.5;
 // Outlasts anything a game itself binds to Select+Start.
 export const EXIT_CHORD_HOLD_MS = 1500;
@@ -155,16 +156,41 @@ export const claimStickY = (): (() => void) => claimStickAxis("y");
 export const claimStickX = (): (() => void) => claimStickAxis("x");
 
 let keyRateRepeatClaims = 0;
+// The OS owns the keyboard's repeat and JS can't read it, so it's measured.
+const keyRate = { delayMs: INITIAL_DELAY_MS, repeatMs: KEY_RATE_REPEAT_MS };
+let lastKeyAt = 0;
+let isFirstRepeat = true;
+
+function measureKeyRepeat(event: KeyboardEvent): void {
+  if (isPadEvent(event)) return;
+  const now = performance.now();
+  const gap = now - lastKeyAt;
+  lastKeyAt = now;
+  if (!event.repeat) {
+    isFirstRepeat = true;
+    return;
+  }
+  if (isFirstRepeat) keyRate.delayMs = gap;
+  else if (gap < MAX_KEY_REPEAT_GAP_MS) keyRate.repeatMs = gap;
+  isFirstRepeat = false;
+}
 
 /** A view that moves one cell per press claims this so a held D-pad repeats
- *  as fast as a held key. Menus keep the slower repeat. Returns the release. */
+ *  at the keyboard's own measured rate. Menus keep the slower repeat. Returns
+ *  the release. */
 export function claimKeyRateRepeat(): () => void {
+  if (keyRateRepeatClaims === 0) {
+    window.addEventListener("keydown", measureKeyRepeat, true);
+  }
   keyRateRepeatClaims += 1;
   let isReleased = false;
   return () => {
     if (isReleased) return;
     isReleased = true;
     keyRateRepeatClaims -= 1;
+    if (keyRateRepeatClaims === 0) {
+      window.removeEventListener("keydown", measureKeyRepeat, true);
+    }
   };
 }
 
@@ -395,12 +421,17 @@ export function useGamepad() {
                 }
               }
               prev.pressed = true;
-              prev.nextRepeatAt = t + INITIAL_DELAY_MS;
+              prev.nextRepeatAt =
+                t +
+                (keyRateRepeatClaims > 0 ? keyRate.delayMs : INITIAL_DELAY_MS);
             } else if (!gameOwnsInput && binding && t >= prev.nextRepeatAt) {
               // Only synthetic-key bindings repeat while held.
               dispatchKey(binding);
+              // Counts from the due time, so polling on frames can't drift.
               prev.nextRepeatAt =
-                t + (keyRateRepeatClaims > 0 ? KEY_RATE_REPEAT_MS : REPEAT_MS);
+                keyRateRepeatClaims > 0
+                  ? Math.max(t, prev.nextRepeatAt + keyRate.repeatMs)
+                  : t + REPEAT_MS;
             }
           } else {
             prev.pressed = false;

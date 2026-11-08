@@ -21,9 +21,46 @@ import {
   rowForPosition,
   spanOf,
   stickCurrentRow,
+  stepFollows,
   stickRowsPerSecond,
   withGhosts,
 } from "./list.selectors";
+
+describe("stepFollows", () => {
+  const VIEW = { scrollTop: 1000, height: 600 };
+
+  it("walks a step heading for the centre, so the view doesn't jump", () => {
+    // Act
+    const follows = stepFollows(1100, 100, 1, VIEW);
+
+    // Assert
+    expect(follows).toBe(false);
+  });
+
+  it("follows a step past the centre", () => {
+    // Act
+    const follows = stepFollows(1400, 100, 1, VIEW);
+
+    // Assert
+    expect(follows).toBe(true);
+  });
+
+  it("leaves the view alone on a sideways step", () => {
+    // Act
+    const follows = stepFollows(1100, 100, 0, VIEW);
+
+    // Assert
+    expect(follows).toBe(false);
+  });
+
+  it("brings back a row that is out of view", () => {
+    // Act
+    const follows = stepFollows(5000, 100, 0, VIEW);
+
+    // Assert
+    expect(follows).toBe(true);
+  });
+});
 
 describe("itemFit", () => {
   it("fits four tiles beside the open panel on a 1920 screen", () => {

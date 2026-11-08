@@ -47,7 +47,7 @@ const COLUMNS: TableProps["columns"] = [
   { key: "length", label: "Length" },
   { key: "languages", label: "Languages" },
   { key: "regions", label: "Regions" },
-  { key: "verbs", label: "" },
+  { key: "verbs", label: "Actions" },
 ];
 const FEELS = { table: TABLE_FEEL, tiles: TILES_FEEL } as const;
 

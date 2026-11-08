@@ -1,12 +1,18 @@
 import { useEventListener } from "@vueuse/core";
-import { readonly } from "vue";
-import { isPadEvent } from "@/composables/useGamepad";
+import { onBeforeUnmount, readonly } from "vue";
+import { claimKeyRateRepeat, isPadEvent } from "@/composables/useGamepad";
 import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import type { StearchAction } from "../../Stearch.actions";
 import { useContentView } from "../content.view";
 import type { ScrollFeel, ScrollRow } from "./list.props";
-import { isArrowKey, itemRowIndexOf, moveFor } from "./list.selectors";
+import {
+  isArrowKey,
+  itemRowIndexOf,
+  moveFor,
+  rowTopOf,
+  stepFollows,
+} from "./list.selectors";
 import { useCruise } from "./use-cruise";
 import { readStickY, useStickScroll } from "./use-stick-scroll";
 
@@ -118,8 +124,31 @@ export function useKeyFocus(options: {
     return { position: options.start(), isFresh: true };
   }
 
+  const gridElement = (): Element | null | undefined =>
+    options.scroller()?.closest('[role="grid"]');
+
+  // The D-pad's arrows go to whatever has focus. A tile that unmounts drops
+  // focus to the page, where nothing else would hear them.
+  useEventListener(window, "keydown", (event: KeyboardEvent) => {
+    if (document.activeElement === document.body) onKey(event);
+  });
+
+  // Fast repeat only while the results have focus: menus need the slow one.
+  let releaseRepeat: (() => void) | null = null;
+  function syncRepeatClaim(): void {
+    const isInside = !!gridElement()?.contains(document.activeElement);
+    if (isInside && !releaseRepeat) releaseRepeat = claimKeyRateRepeat();
+    if (!isInside && releaseRepeat) {
+      releaseRepeat();
+      releaseRepeat = null;
+    }
+  }
+  useEventListener(document, "focusin", syncRepeatClaim);
+  useEventListener(document, "focusout", syncRepeatClaim);
+  onBeforeUnmount(() => releaseRepeat?.());
+
   function onKey(event: KeyboardEvent): void {
-    const grid = event.currentTarget;
+    const grid = gridElement();
     if (!(grid instanceof HTMLElement) || !isArrowKey(event.key)) return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
       return;
@@ -153,7 +182,25 @@ export function useKeyFocus(options: {
     }
     if (move.kind === "stay") return;
     activate(move.position);
-    options.follow(itemRowIndexOf(options.rows(), move.position));
+    const rowIndex = itemRowIndexOf(options.rows(), move.position);
+    const element = options.scroller();
+    if (
+      element &&
+      !stepFollows(
+        rowTopOf(
+          options.rows(),
+          rowIndex,
+          options.rowHeight(),
+          options.headHeight(),
+        ),
+        options.rowHeight(),
+        event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0,
+        { scrollTop: element.scrollTop, height: element.clientHeight },
+      )
+    ) {
+      return;
+    }
+    options.follow(rowIndex);
   }
 
   return { activePosition: readonly(activePosition), onKey };

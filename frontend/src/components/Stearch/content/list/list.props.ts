@@ -145,7 +145,7 @@ const JUMP_CUT_MARKS: MarkMotion = Object.freeze({
 const STICK: StickFeel = Object.freeze({
   deadzone: 0.12,
   minRowsPerSecond: 0.5,
-  maxRowsPerSecond: 10,
+  maxRowsPerSecond: 30,
   gamma: 1,
 });
 

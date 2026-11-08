@@ -365,6 +365,24 @@ export function moveFor(
   };
 }
 
+/** Whether a step moves the view. A row out of view always comes back. In
+ *  view, a step heading for the centre just walks, so the view doesn't yank;
+ *  at or past the centre it follows. Sideways steps (`direction` 0) stay put. */
+export function stepFollows(
+  rowTop: number,
+  rowHeight: number,
+  direction: -1 | 0 | 1,
+  view: { scrollTop: number; height: number },
+): boolean {
+  const isInView =
+    rowTop >= view.scrollTop &&
+    rowTop + rowHeight <= view.scrollTop + view.height;
+  if (!isInView) return true;
+  if (direction === 0) return false;
+  const centre = view.scrollTop + view.height / 2;
+  return direction * (rowTop + rowHeight / 2 - centre) >= 0;
+}
+
 /** The top of a scroller row, in content pixels. */
 export const rowTopOf = (
   rows: readonly ScrollRow[],

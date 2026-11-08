@@ -189,6 +189,34 @@ describe("useGamepad", () => {
     expect(keys).toEqual(["ArrowDown", "ArrowDown", "ArrowDown"]);
   });
 
+  it("repeats a held d-pad at the keyboard's measured rate", () => {
+    // Arrange
+    const now = vi.spyOn(performance, "now").mockReturnValue(0);
+    const release = claimKeyRateRepeat();
+    const press = (at: number, repeat: boolean) => {
+      now.mockReturnValue(at);
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "a", repeat }));
+    };
+    press(0, false);
+    press(300, true);
+    press(350, true);
+    installOnMouse(padHolding(PAD_BUTTON["dpad-down"]));
+    now.mockReturnValue(1000);
+    step();
+    now.mockReturnValue(1300);
+    step();
+    now.mockReturnValue(1349);
+    step();
+    now.mockReturnValue(1350);
+
+    // Act
+    step();
+    release();
+
+    // Assert
+    expect(keys.filter((key) => key === "ArrowDown")).toHaveLength(3);
+  });
+
   it("ignores a stick resting below the threshold", () => {
     installOnMouse(padWithStick(AXIS_THRESHOLD - 0.1, 0));
 

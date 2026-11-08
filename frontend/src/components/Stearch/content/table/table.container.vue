@@ -52,7 +52,7 @@ const COLUMNS: readonly RTableColumn[] = [
   { key: "length", label: "Length" },
   { key: "languages", label: "Languages" },
   { key: "regions", label: "Regions" },
-  { key: "verbs", label: "" },
+  { key: "verbs", label: "Actions" },
 ];
 const GRID_TEMPLATE =
   "minmax(0, 3fr) minmax(0, 1fr) 90px 100px 100px 80px 70px 90px 80px 64px";
