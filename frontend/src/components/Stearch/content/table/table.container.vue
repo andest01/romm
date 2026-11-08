@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { RTableColumn } from "@/lib";
 import {
@@ -23,7 +23,6 @@ import { useContentView } from "../content.view";
 import { useFeel } from "../list/feel";
 import { RESULTS_HELP, type VisibleRange } from "../list/list.props";
 import {
-  activeDescendantId,
   buildScrollRows,
   buildWindowActions,
   headHeightFor,
@@ -94,7 +93,7 @@ const band = computed(() =>
 );
 const errorMessage = computed(() => selectErrorMessage(store.state));
 const currentId = computed(() => selectActiveId(store.state));
-const { activePosition, onKey } = useKeyFocus({
+const { activePosition, activeDescendant, noteRange, onKey } = useKeyFocus({
   rows: () => rows.value,
   start: () => selectAnchorPosition(store.state),
   currentPosition: () => selectCurrentPosition(store.state),
@@ -107,12 +106,8 @@ const { activePosition, onKey } = useKeyFocus({
 });
 
 const speedOf = useListSpeed();
-const visibleRange = shallowRef<VisibleRange | null>(null);
-const describedItem = computed(() =>
-  activeDescendantId(rows.value, activePosition.value, visibleRange.value),
-);
 function onRange(range: VisibleRange): void {
-  visibleRange.value = range;
+  noteRange(range);
   store.dispatch(
     buildWindowActions(range, rows.value, {
       previousPosition: selectVisiblePosition(store.state),
@@ -137,7 +132,7 @@ function onRange(range: VisibleRange): void {
     :rail="RailContainer"
     :scrollbar-width="scrollbarWidth"
     :table-label="TABLE_LABEL"
-    :active-descendant-id="describedItem"
+    :active-descendant-id="activeDescendant"
     :grid-help="RESULTS_HELP"
     :columns="COLUMNS"
     :grid-template="GRID_TEMPLATE"

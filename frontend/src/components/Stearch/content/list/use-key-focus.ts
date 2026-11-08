@@ -1,12 +1,13 @@
 import { useEventListener } from "@vueuse/core";
-import { onBeforeUnmount, readonly } from "vue";
+import { computed, onBeforeUnmount, readonly, shallowRef } from "vue";
 import { claimKeyRateRepeat, isPadEvent } from "@/composables/useGamepad";
 import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import type { StearchAction } from "../../Stearch.actions";
 import { useContentView } from "../content.view";
-import type { ScrollFeel, ScrollRow } from "./list.props";
+import type { ScrollFeel, ScrollRow, VisibleRange } from "./list.props";
 import {
+  activeDescendantId,
   isArrowKey,
   itemRowIndexOf,
   moveFor,
@@ -203,5 +204,22 @@ export function useKeyFocus(options: {
     options.follow(rowIndex);
   }
 
-  return { activePosition: readonly(activePosition), onKey };
+  const visibleRange = shallowRef<VisibleRange | null>(null);
+  const activeDescendant = computed(() =>
+    activeDescendantId(
+      options.rows(),
+      activePosition.value,
+      visibleRange.value,
+    ),
+  );
+  const noteRange = (range: VisibleRange): void => {
+    visibleRange.value = range;
+  };
+
+  return {
+    activePosition: readonly(activePosition),
+    activeDescendant,
+    noteRange,
+    onKey,
+  };
 }

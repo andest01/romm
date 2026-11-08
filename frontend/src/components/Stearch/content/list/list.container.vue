@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   selectAnchorPosition,
@@ -25,7 +25,6 @@ import { useFeel } from "./feel";
 import { RESULTS_HELP, type VisibleRange } from "./list.props";
 import ListPure from "./list.pure-component.vue";
 import {
-  activeDescendantId,
   buildScrollRows,
   buildWindowActions,
   itemKindFor,
@@ -82,7 +81,7 @@ const rows = computed(() =>
 );
 const errorMessage = computed(() => selectErrorMessage(store.state));
 const currentId = computed(() => selectActiveId(store.state));
-const { activePosition, onKey } = useKeyFocus({
+const { activePosition, activeDescendant, noteRange, onKey } = useKeyFocus({
   rows: () => rows.value,
   start: () => selectAnchorPosition(store.state),
   currentPosition: () => selectCurrentPosition(store.state),
@@ -95,12 +94,8 @@ const { activePosition, onKey } = useKeyFocus({
 });
 
 const speedOf = useListSpeed();
-const visibleRange = shallowRef<VisibleRange | null>(null);
-const describedItem = computed(() =>
-  activeDescendantId(rows.value, activePosition.value, visibleRange.value),
-);
 function onRange(range: VisibleRange): void {
-  visibleRange.value = range;
+  noteRange(range);
   store.dispatch(
     buildWindowActions(range, rows.value, {
       previousPosition: selectVisiblePosition(store.state),
@@ -126,7 +121,7 @@ function onRange(range: VisibleRange): void {
     :current-id="currentId"
     :marks="feel.marks"
     :grid-label="GRID_LABEL"
-    :active-descendant-id="describedItem"
+    :active-descendant-id="activeDescendant"
     :grid-help="RESULTS_HELP"
     :error-message="errorMessage"
     :empty-message="t('rom.no-games-match')"
