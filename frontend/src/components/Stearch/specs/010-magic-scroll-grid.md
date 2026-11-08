@@ -153,3 +153,14 @@ See "Rules from the input work" in `LESSONS.md`. Bugs to keep as regression test
 - A step from the first item yanked the view to the middle.
 - One new object per frame re-rendered the grid at idle.
 - A growing debug log shrank the stage and moved the centre line.
+
+## Open, from the user's pad run (2026-11-08)
+
+| Case                                | Result         | Open question or requirement                                                                              |
+| ----------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------- |
+| Active far off screen, stick pushed | Works          | Should the view snap back, or be pulled back animated to active? Undecided; it may be hard to tell apart. |
+| Stick at the bottom limit           | Stops          | A future table footer could take this input, so the bottom limit may become a way out, like the top.      |
+| Key or D-pad during a stick push    | Works          | Needs a test, and the rule documented at the code that does it.                                           |
+| Full push from `free`               | Not judged yet | Is 30 steps per second too fast to stop where you mean to?                                                |
+| Rail letter                         | Works          | Must be exactly one call, `navigateTo`: animated, and sets active, even when the game isn't loaded yet.   |
+| Tiles and Table switch              | Works          | Must keep the active item centred.                                                                        |
