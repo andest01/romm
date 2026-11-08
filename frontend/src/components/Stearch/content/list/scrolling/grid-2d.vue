@@ -14,8 +14,10 @@ import {
   canPan,
   isInsideBox,
 } from "../axis-machine";
+import { createAxisStore } from "../axis-store";
 import { type ArrowKey, followScrollTop, landingOf } from "../list.selectors";
-import { useAxisMachine } from "../use-axis-machine";
+import { useKeyDriver } from "../use-key-driver";
+import { useStickDriver } from "../use-stick-driver";
 import FsmLive from "./fsm-live.vue";
 import {
   type Cell,
@@ -27,7 +29,7 @@ import {
   stickVelocity,
   type Vector,
 } from "./grid-2d.selectors";
-import { readStick, useStickScroll2d } from "./use-stick-scroll-2d";
+import { createGridStickDriver, readStick } from "./grid-stick-driver";
 
 const props = defineProps<
   Grid2dFeel & {
@@ -112,7 +114,7 @@ const inBands = computed(() => ({
 const isActiveInBox = computed(() => inBands.value.x && inBands.value.y);
 
 // One machine per axis. Everything below only sends them events.
-const machines = { x: useAxisMachine(), y: useAxisMachine() };
+const machines = { x: createAxisStore(), y: createAxisStore() };
 const stateX = computed(() => machines.x.state.value.axis);
 const stateY = computed(() => machines.y.state.value.axis);
 const axisStates = computed((): { x: AxisState; y: AxisState } => ({
@@ -170,7 +172,7 @@ watch(axisStates, (now, before) => {
   }
 });
 
-useStickScroll2d({
+const stickDriver = createGridStickDriver({
   machines,
   feel: () => feel.value,
   scroller: () => viewport.value,
@@ -192,8 +194,8 @@ useStickScroll2d({
     }
     return stickReading.value;
   },
-  loop: "always",
 });
+useStickDriver(stickDriver, "always");
 
 for (const axis of ["y", "x"] as const) {
   machines[axis].onEffect((effect) => {
@@ -396,11 +398,18 @@ function onKey(event: KeyboardEvent): void {
   });
 }
 
-// The pad's synthetic keyup comes with every press; its holds end by gap.
-useEventListener(window, "keyup", (event: KeyboardEvent) => {
-  if (isPadEvent(event)) return;
-  machines.x.dispatch({ type: "key/released" });
-  machines.y.dispatch({ type: "key/released" });
+useKeyDriver({
+  // On the window: the D-pad's arrow keys land on whatever has focus, and a
+  // panning stick can unmount the focused cell, dropping focus to the page.
+  keyDown: onKey,
+  // The pad's synthetic keyup comes with every press; its holds end by gap.
+  keyUp(event) {
+    if (isPadEvent(event)) return;
+    machines.x.dispatch({ type: "key/released" });
+    machines.y.dispatch({ type: "key/released" });
+  },
+  focusChanged: () => undefined,
+  dispose: () => undefined,
 });
 
 const stepKey = (axis: "x" | "y", direction: number): ArrowKey => {
@@ -433,10 +442,6 @@ function step(key: ArrowKey, source: string) {
   measure();
   note(`${source}: step to ${nameOf(active.value)}`);
 }
-
-// On the window: the D-pad's arrow keys land on whatever has focus, and a
-// panning stick can unmount the focused cell, dropping focus to the page.
-useEventListener(window, "keydown", onKey);
 
 // The pad's A selects, as Space does.
 useEventListener(window, "gamepad:buttondown", (event) => {

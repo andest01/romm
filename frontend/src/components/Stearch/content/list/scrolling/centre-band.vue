@@ -3,16 +3,17 @@
 // it keeps view-only state. It runs the same code as tiles and table
 // (followScrollTop, useGlide, useCruise), configured by one ScrollFeel.
 import { computed, onBeforeUnmount, ref, shallowRef } from "vue";
+import { createAxisStore } from "../axis-store";
 import { markVariables } from "../list.props";
 import {
   buildScrollRows,
   followScrollTop,
   stickRowsPerSecond,
 } from "../list.selectors";
-import { useAxisMachine } from "../use-axis-machine";
+import { createListStickDriver, readStickY } from "../stick-driver";
 import { useCruise } from "../use-cruise";
 import { useGlide } from "../use-glide";
-import { readStickY, useStickScroll } from "../use-stick-scroll";
+import { useStickDriver } from "../use-stick-driver";
 import { type FeelArgs, feelFromArgs } from "./feel.story-args";
 
 const props = defineProps<
@@ -87,14 +88,14 @@ const deflection = (): number => {
   return stickReading.value;
 };
 const isSticking = ref(false);
-const machine = useAxisMachine();
+const machine = createAxisStore();
 machine.onEffect((effect) => {
   if (effect.type !== "step") return;
   for (let count = 0; count < effect.count; count++) {
     step(effect.direction > 0 ? 1 : -1);
   }
 });
-useStickScroll({
+const stickDriver = createListStickDriver({
   machine,
   feel: () => (props.follow === "feel" ? feel.value.stick : null),
   bandRows: () => props.bandRows,
@@ -104,7 +105,6 @@ useStickScroll({
   headHeight: () => 0,
   currentRow: () => active.value,
   deflection,
-  loop: "always",
   onRow: (rowIndex) => {
     isSticking.value = true;
     active.value = rowIndex;
@@ -113,6 +113,7 @@ useStickScroll({
     isSticking.value = false;
   },
 });
+useStickDriver(stickDriver, "always");
 const stickSpeed = computed(() =>
   feel.value.stick
     ? stickRowsPerSecond(stickReading.value, feel.value.stick)

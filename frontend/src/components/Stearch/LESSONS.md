@@ -353,6 +353,8 @@ Nothing here is settled until the RomM side has been measured.
 
 - **Cruise was one state.** `cruising` joined the shared machine with `step` as its mode, so Tiles, Table and the grid got it from one change. The hold timer is the machine's first remembered value.
 
+- **One machine, two drivers.** `transition` makes every input decision. A stick driver and a key driver (the D-pad arrives as keys) turn input into events and carry out effects. The input hooks are `useStickDriver`, `useKeyDriver` and `useKeyFocus`, each under 20 lines; a list or grid's DOM mapping is plain code in `list-input.ts`, `stick-driver.ts` and `grid-stick-driver.ts`.
+
 ### Rules from the input work
 
 1. **Keys and the D-pad are data to screen.** A step moves the active cell, then the view follows. It needs no memory of a previous state.
