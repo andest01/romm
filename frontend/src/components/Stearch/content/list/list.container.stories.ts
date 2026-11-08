@@ -2,15 +2,15 @@ import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
 import { gamepadFixture } from "@/utils/gamepad.fixtures";
 import {
-  FAILED_STEARCH_STATE,
-  LOADED_STEARCH_STATE as loaded,
-  LOADING_STEARCH_STATE,
-} from "../../Stearch.fixtures";
-import {
   CONTAINER_STORY_META,
   renderContainer,
   type ContainerStoryArgs,
 } from "../../Stearch.story-helpers";
+import {
+  FAILED_STEARCH_STATE,
+  LOADED_STEARCH_STATE as loaded,
+  LOADING_STEARCH_STATE,
+} from "../../store/fixtures";
 import ListContainer from "./list.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {

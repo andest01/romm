@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { computed } from "vue";
-import { STEARCH_ROW, stearchSlots } from "../../Stearch.fixtures";
-import { STEARCH_SORT_KEYS } from "../../Stearch.state-props";
+import { STEARCH_ROW, stearchSlots } from "../../store/fixtures";
+import { STEARCH_SORT_KEYS } from "../../store/state-props";
 import { ITEM_VERBS } from "../list/item.story-args";
 import { TABLE_FEEL, TILES_FEEL } from "../list/list.props";
 import { buildScrollRows, headHeightFor } from "../list/list.selectors";

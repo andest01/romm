@@ -1,7 +1,7 @@
 // The input state machine for one axis (specs 009, 010): `transition` takes a
 // state and an event and returns the next state and effects. The list runs it
 // once; the 2D grid runs it per axis.
-import { type Handlers, reducerOf } from "../../Stearch.actions";
+import { type Handlers, reducerOf } from "../../store/actions";
 import { type ArrowKey, stickCurrentRow } from "./list.selectors";
 
 /** Where the active cell stands on one axis, against the band and the view.

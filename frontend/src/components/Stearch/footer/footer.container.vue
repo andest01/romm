@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import stearchStore from "../Stearch.store";
+import stearchStore from "../store/store";
 import FooterPure from "./footer.pure-component.vue";
 import { selectFooterState } from "./footer.selectors";
 

@@ -1,6 +1,6 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
-import { STEARCH_ROW } from "../../../Stearch.fixtures";
+import { STEARCH_ROW } from "../../../store/fixtures";
 import Verbs from "./verbs.container.vue";
 
 const actionsShown = (isCompact: boolean) =>

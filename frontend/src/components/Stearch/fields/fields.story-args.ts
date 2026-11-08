@@ -1,4 +1,4 @@
-import { LOADED_STEARCH_STATE } from "../Stearch.fixtures";
+import { LOADED_STEARCH_STATE } from "../store/fixtures";
 import type {
   FieldPreview,
   MultiFieldPreview,

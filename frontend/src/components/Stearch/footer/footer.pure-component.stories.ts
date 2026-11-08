@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
-import type { StearchAction } from "../Stearch.actions";
+import type { StearchAction } from "../store/actions";
 import FooterPure from "./footer.pure-component.vue";
 
 const CLEAR_ACTIONS: readonly StearchAction[] = [

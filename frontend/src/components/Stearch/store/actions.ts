@@ -1,12 +1,12 @@
-import type { StearchLabels } from "./Stearch.labels";
-import type { LoadPace } from "./Stearch.read-ahead";
+import type { StearchLabels } from "./labels";
+import type { LoadPace } from "./read-ahead";
 import type {
   AttentionCoreConcept,
   IStearchState,
   MultiKey,
   StearchPage,
   StearchQuery,
-} from "./Stearch.state-props";
+} from "./state-props";
 
 type StearchView = IStearchState["view"];
 

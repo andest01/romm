@@ -1,6 +1,6 @@
 import type { RTableSortPayload } from "@/lib";
-import type { StearchAction } from "../../Stearch.actions";
-import { STEARCH_SORT_KEYS } from "../../Stearch.state-props";
+import type { StearchAction } from "../../store/actions";
+import { STEARCH_SORT_KEYS } from "../../store/state-props";
 
 export const TABLE_ROW_HEIGHT = 30;
 

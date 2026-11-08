@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { computed } from "vue";
-import { STEARCH_ROW, stearchSlots } from "../../Stearch.fixtures";
+import { STEARCH_ROW, stearchSlots } from "../../store/fixtures";
 import { ITEM_VERBS } from "./item.story-args";
 import { LIST_ITEMS } from "./list.items";
 import {

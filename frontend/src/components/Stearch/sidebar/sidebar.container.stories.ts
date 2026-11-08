@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
-import { LOADED_STEARCH_STATE as loaded } from "../Stearch.fixtures";
 import {
   CONTAINER_STORY_META,
   renderContainer,
   type ContainerStoryArgs,
 } from "../Stearch.story-helpers";
+import { LOADED_STEARCH_STATE as loaded } from "../store/fixtures";
 import SidebarContainer from "./sidebar.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {

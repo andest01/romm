@@ -3,7 +3,7 @@ import type { CustomLimitOffsetPage_SimpleRomSchema_ as GetRomsResponse } from "
 import type { SimpleRomSchema } from "@/__generated__/models/SimpleRomSchema";
 import type { GetRomsParams } from "@/services/api/rom";
 import type { GalleryOrderKey } from "@/stores/galleryRoms";
-import type { StearchLabels } from "./Stearch.labels";
+import type { StearchLabels } from "./labels";
 
 export type StearchViewMode = "tiles" | "table" | "swarm";
 

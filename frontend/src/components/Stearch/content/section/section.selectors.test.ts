@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { LOADED_STEARCH_STATE } from "../../Stearch.fixtures";
-import { stearchReducer } from "../../Stearch.reducer";
-import type { IStearchState } from "../../Stearch.state-props";
+import { LOADED_STEARCH_STATE } from "../../store/fixtures";
+import { stearchReducer } from "../../store/reducer";
+import type { IStearchState } from "../../store/state-props";
 import { selectSectionProps } from "./section.selectors";
 
 const { results, view } = LOADED_STEARCH_STATE;

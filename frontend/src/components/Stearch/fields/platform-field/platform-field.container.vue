@@ -3,8 +3,8 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import PlatformSelect from "@/components/shared/PlatformSelect.vue";
 import storePlatforms from "@/stores/platforms";
-import { selectPlatformIds } from "../../Stearch.selectors";
-import stearchStore from "../../Stearch.store";
+import { selectPlatformIds } from "../../store/selectors";
+import stearchStore from "../../store/store";
 
 defineProps<{ label: string }>();
 

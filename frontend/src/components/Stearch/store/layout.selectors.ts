@@ -1,6 +1,6 @@
-import { createSelector } from "./Stearch.create-selector";
-import type { StearchPanelLayout } from "./Stearch.pure-layout-props";
-import { selectIsAdvancedOpen } from "./Stearch.selectors";
+import type { StearchPanelLayout } from "../Stearch.pure-layout-props";
+import { createSelector } from "./create-selector";
+import { selectIsAdvancedOpen } from "./selectors";
 
 export const selectPanelLayout = createSelector(
   [selectIsAdvancedOpen],

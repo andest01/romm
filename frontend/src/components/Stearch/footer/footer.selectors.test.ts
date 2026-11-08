@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOADED_STEARCH_STATE } from "../Stearch.fixtures";
+import { LOADED_STEARCH_STATE } from "../store/fixtures";
 import { selectFooterState } from "./footer.selectors";
 
 describe("selectFooterState", () => {

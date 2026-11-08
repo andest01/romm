@@ -1,14 +1,10 @@
 import { defineStore } from "pinia";
 import { shallowRef } from "vue";
-import type { StearchAction } from "./Stearch.actions";
-import type { StearchSource } from "./Stearch.data-source";
-import {
-  type LoadPace,
-  READ_AHEAD,
-  type WindowRequest,
-} from "./Stearch.read-ahead";
-import { INITIAL_STEARCH_STATE, stearchReducer } from "./Stearch.reducer";
-import { parsePage } from "./Stearch.schema";
+import type { StearchSource } from "../Stearch.data-source";
+import { parsePage } from "../Stearch.schema";
+import type { StearchAction } from "./actions";
+import { type LoadPace, READ_AHEAD, type WindowRequest } from "./read-ahead";
+import { INITIAL_STEARCH_STATE, stearchReducer } from "./reducer";
 
 const QUERY_DEBOUNCE_MS = 200;
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StearchAction } from "../../Stearch.actions";
+import type { StearchAction } from "../../store/actions";
 import ChoiceRow from "../choice-row/choice-row.pure-component.vue";
 import type { MultiFieldPreview } from "../fields.props";
 import LogicSwitch from "../logic-switch/logic-switch.pure-component.vue";

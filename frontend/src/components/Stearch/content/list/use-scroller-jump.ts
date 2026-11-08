@@ -2,8 +2,8 @@ import { useElementSize, usePreferredReducedMotion } from "@vueuse/core";
 import { computed, nextTick, readonly, shallowRef, watch } from "vue";
 import { focusFromInput } from "@/utils/autofocus";
 import { isEditable } from "@/utils/editable";
-import { selectJump } from "../../Stearch.selectors";
-import stearchStore from "../../Stearch.store";
+import { selectJump } from "../../store/selectors";
+import stearchStore from "../../store/store";
 import type {
   JumpScroller,
   ScrollerRef,

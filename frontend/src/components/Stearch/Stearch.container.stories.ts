@@ -2,17 +2,17 @@ import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import StearchContainer from "./Stearch.container.vue";
 import {
-  EMPTY_STEARCH_STATE,
-  FAILED_STEARCH_STATE,
-  LOADED_STEARCH_STATE as loaded,
-  LOADING_STEARCH_STATE,
-} from "./Stearch.fixtures";
-import { INITIAL_STEARCH_STATE } from "./Stearch.reducer";
-import {
   CONTAINER_STORY_META,
   renderContainer,
   type ContainerStoryArgs,
 } from "./Stearch.story-helpers";
+import {
+  EMPTY_STEARCH_STATE,
+  FAILED_STEARCH_STATE,
+  LOADED_STEARCH_STATE as loaded,
+  LOADING_STEARCH_STATE,
+} from "./store/fixtures";
+import { INITIAL_STEARCH_STATE } from "./store/reducer";
 
 // The whole page: any app state is one arg away.
 const meta: Meta<ContainerStoryArgs> = {

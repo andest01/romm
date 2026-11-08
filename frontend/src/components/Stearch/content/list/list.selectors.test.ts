@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { StearchAction } from "../../Stearch.actions";
-import { LOADED_STEARCH_STATE } from "../../Stearch.fixtures";
-import { INITIAL_STEARCH_STATE } from "../../Stearch.reducer";
-import { selectSlots } from "../../Stearch.rows.selectors";
+import type { StearchAction } from "../../store/actions";
+import { LOADED_STEARCH_STATE } from "../../store/fixtures";
+import { INITIAL_STEARCH_STATE } from "../../store/reducer";
+import { selectSlots } from "../../store/rows.selectors";
 import type { CruiseFeel, ScrollRow } from "./list.props";
 import {
   activeDescendantId,

@@ -1,9 +1,9 @@
 import { formatBytes } from "@/utils";
-import type { StearchAction } from "./Stearch.actions";
-import { createSelector } from "./Stearch.create-selector";
-import { selectPositionedRoms, selectTotal } from "./Stearch.results.selectors";
-import { selectSearchTerm, selectSelectedIds } from "./Stearch.selectors";
-import type { StearchRom } from "./Stearch.state-props";
+import type { StearchAction } from "./actions";
+import { createSelector } from "./create-selector";
+import { selectPositionedRoms, selectTotal } from "./results.selectors";
+import { selectSearchTerm, selectSelectedIds } from "./selectors";
+import type { StearchRom } from "./state-props";
 
 export interface TextPart {
   text: string;

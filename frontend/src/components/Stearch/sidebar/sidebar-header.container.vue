@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import stearchStore from "../Stearch.store";
+import stearchStore from "../store/store";
 import BarPure from "./bar/bar.pure-component.vue";
 import { SIDEBAR_HEADER_PROPS } from "./sidebar.selectors";
 

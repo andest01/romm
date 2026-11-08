@@ -1,8 +1,8 @@
 import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { STEARCH_ROW } from "../../../Stearch.fixtures";
-import type { ListSlot } from "../../../Stearch.rows.selectors";
+import { STEARCH_ROW } from "../../../store/fixtures";
+import type { ListSlot } from "../../../store/rows.selectors";
 import GalleryRow from "./gallery-row.container.vue";
 
 vi.mock("vue-i18n");

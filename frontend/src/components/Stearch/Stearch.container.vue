@@ -2,15 +2,15 @@
 import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import romApi from "@/services/api/rom";
-import { buildLabels } from "./Stearch.labels";
-import { selectPanelLayout } from "./Stearch.layout.selectors";
 import StearchLayout from "./Stearch.pure-layout.vue";
-import stearchStore from "./Stearch.store";
 import ContentContainer from "./content/content.container.vue";
 import FooterContainer from "./footer/footer.container.vue";
 import HeaderContainer from "./header/header.container.vue";
 import SidebarContainer from "./sidebar/sidebar.container.vue";
 import SkipLinkContainer from "./skip-link/skip-link.container.vue";
+import { buildLabels } from "./store/labels";
+import { selectPanelLayout } from "./store/layout.selectors";
+import stearchStore from "./store/store";
 
 const { t } = useI18n();
 const store = stearchStore();

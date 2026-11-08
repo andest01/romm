@@ -1,13 +1,13 @@
 import { LIST_ROW_HEIGHT_PX } from "@/components/Gallery/listColumns";
-import type { StearchAction } from "../../Stearch.actions";
+import type { StearchAction } from "../../store/actions";
 import {
   itemsAheadAt,
   type LoadPace,
   READ_AHEAD,
   type ReadAheadPolicy,
-} from "../../Stearch.read-ahead";
-import type { ListSlot } from "../../Stearch.rows.selectors";
-import type { StearchViewMode, VisibleSpan } from "../../Stearch.state-props";
+} from "../../store/read-ahead";
+import type { ListSlot } from "../../store/rows.selectors";
+import type { StearchViewMode, VisibleSpan } from "../../store/state-props";
 import type { StearchDevice } from "../content.view";
 import { LIST_ITEMS } from "./list.items";
 import type {

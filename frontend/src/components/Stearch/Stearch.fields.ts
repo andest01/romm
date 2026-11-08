@@ -1,10 +1,10 @@
-import type { StearchLabelKey } from "./Stearch.labels";
+import type { StearchLabelKey } from "./store/labels";
 import type {
   LogicKeyFor,
   MultiKey,
   StearchFilterValues,
   TriStateKey,
-} from "./Stearch.state-props";
+} from "./store/state-props";
 
 type ValuesKey = Exclude<keyof StearchFilterValues, "platforms" | "game_modes">;
 

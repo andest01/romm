@@ -5,9 +5,9 @@ import { computed } from "vue";
 import {
   selectCurrentGame,
   selectSelectedGames,
-} from "../Stearch.attention.selectors";
-import { selectActiveId, selectSelectedIds } from "../Stearch.selectors";
-import stearchStore from "../Stearch.store";
+} from "../store/attention.selectors";
+import { selectActiveId, selectSelectedIds } from "../store/selectors";
+import stearchStore from "../store/store";
 import { useContentView } from "./content.view";
 
 const store = stearchStore();

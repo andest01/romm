@@ -5,9 +5,9 @@ import {
   LOADED_STEARCH_STATE,
   STEARCH_ROM,
   STEARCH_ROW,
-} from "../../Stearch.fixtures";
-import { selectRows } from "../../Stearch.rows.selectors";
-import type { ListSlot } from "../../Stearch.rows.selectors";
+} from "../../store/fixtures";
+import { selectRows } from "../../store/rows.selectors";
+import type { ListSlot } from "../../store/rows.selectors";
 import type { ItemProps } from "./item.props";
 
 const REGIONS = ["USA", "Japan", "Europe"];

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RBtn, RIcon } from "@/lib";
-import type { StearchAction } from "../../Stearch.actions";
+import type { StearchAction } from "../../store/actions";
 import type { ChoicePreview } from "../fields.props";
 
 defineProps<{ choice: ChoicePreview }>();

@@ -1,7 +1,7 @@
 import { h, watchEffect, type Component, type CSSProperties } from "vue";
 import { fakeGetRoms } from "./Stearch.fake-api";
-import type { IStearchState } from "./Stearch.state-props";
-import stearchStore from "./Stearch.store";
+import type { IStearchState } from "./store/state-props";
+import stearchStore from "./store/store";
 
 export interface ContainerStoryArgs {
   state: IStearchState;

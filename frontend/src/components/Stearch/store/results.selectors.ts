@@ -1,10 +1,10 @@
-import { createSelector } from "./Stearch.create-selector";
+import { createSelector } from "./create-selector";
 import {
   selectCharIndex,
   selectIds,
   selectStatus,
   selectWindows,
-} from "./Stearch.selectors";
+} from "./selectors";
 
 export const selectTotal = createSelector([selectIds], (ids) => ids.length);
 

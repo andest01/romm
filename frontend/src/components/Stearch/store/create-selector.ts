@@ -1,4 +1,4 @@
-import type { IStearchState } from "./Stearch.state-props";
+import type { IStearchState } from "./state-props";
 
 type InputSelector = (state: IStearchState) => unknown;
 

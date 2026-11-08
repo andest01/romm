@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { selectAnchorPosition } from "./Stearch.attention.selectors";
+import { selectAnchorPosition } from "./attention.selectors";
 import {
   LOADED_STEARCH_STATE,
   SECOND_STEARCH_ROW,
   STEARCH_ROM,
   STEARCH_ROW,
-} from "./Stearch.fixtures";
-import { selectPanelLayout } from "./Stearch.layout.selectors";
-import { INITIAL_STEARCH_STATE, stearchReducer } from "./Stearch.reducer";
-import { selectLoadedRoms } from "./Stearch.results.selectors";
-import { coverUrlOf, selectRows, titleOf } from "./Stearch.rows.selectors";
+} from "./fixtures";
+import { selectPanelLayout } from "./layout.selectors";
+import { INITIAL_STEARCH_STATE, stearchReducer } from "./reducer";
+import { selectLoadedRoms } from "./results.selectors";
+import { coverUrlOf, selectRows, titleOf } from "./rows.selectors";
 
 const { results, query } = LOADED_STEARCH_STATE;
 const withWindows = (windows: typeof results.windows) => ({

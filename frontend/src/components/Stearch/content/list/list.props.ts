@@ -1,5 +1,5 @@
 import type { Component, ComponentPublicInstance } from "vue";
-import type { ListSlot } from "../../Stearch.rows.selectors";
+import type { ListSlot } from "../../store/rows.selectors";
 import type { ItemPart, ItemProps } from "./item.props";
 
 /** The scroller methods a jump needs. */

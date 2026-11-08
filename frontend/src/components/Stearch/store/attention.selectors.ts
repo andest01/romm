@@ -1,13 +1,10 @@
-import { createSelector } from "./Stearch.create-selector";
-import {
-  selectLoadedRoms,
-  selectPositionedRoms,
-} from "./Stearch.results.selectors";
+import { createSelector } from "./create-selector";
+import { selectLoadedRoms, selectPositionedRoms } from "./results.selectors";
 import {
   selectActiveId,
   selectSelectedIds,
   selectVisiblePosition,
-} from "./Stearch.selectors";
+} from "./selectors";
 
 /** The current game's position, or `null` when none is current or loaded. */
 export const selectCurrentPosition = createSelector(

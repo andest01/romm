@@ -1,13 +1,13 @@
-import type { StearchAction } from "../Stearch.actions";
-import { createSelector } from "../Stearch.create-selector";
 import { STEARCH_FIELDS, type FieldCoreConcept } from "../Stearch.fields";
-import type { StearchLabels } from "../Stearch.labels";
+import type { StearchAction } from "../store/actions";
+import { createSelector } from "../store/create-selector";
+import type { StearchLabels } from "../store/labels";
 import {
   selectFilterValues,
   selectLabels,
   selectQuery,
-} from "../Stearch.selectors";
-import type { StearchFilterValues, StearchQuery } from "../Stearch.state-props";
+} from "../store/selectors";
+import type { StearchFilterValues, StearchQuery } from "../store/state-props";
 import type {
   ChoicePreview,
   ChoiceState,

@@ -1,4 +1,4 @@
-import type { StearchAction } from "../../Stearch.actions";
+import type { StearchAction } from "../../store/actions";
 
 export interface SectionProps {
   label: string;

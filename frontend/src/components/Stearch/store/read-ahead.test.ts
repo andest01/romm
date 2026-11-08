@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { itemsAheadAt, READ_AHEAD } from "./Stearch.read-ahead";
+import { itemsAheadAt, READ_AHEAD } from "./read-ahead";
 
 describe("itemsAheadAt", () => {
   it("reads the fixed screens ahead when still", () => {

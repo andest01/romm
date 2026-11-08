@@ -1,7 +1,9 @@
-import type { StearchAction } from "../Stearch.actions";
-import { createSelector } from "../Stearch.create-selector";
-import { selectClearActions } from "../Stearch.query.selectors";
-import { selectTotal } from "../Stearch.results.selectors";
+import type { MultiFieldPreview } from "../fields/fields.props";
+import { selectFieldPreviews } from "../fields/fields.selectors";
+import type { StearchAction } from "../store/actions";
+import { createSelector } from "../store/create-selector";
+import { selectClearActions } from "../store/query.selectors";
+import { selectTotal } from "../store/results.selectors";
 import {
   selectIsAdvancedOpen,
   selectLabels,
@@ -10,14 +12,12 @@ import {
   selectSortDir,
   selectSortKey,
   selectViewMode,
-} from "../Stearch.selectors";
+} from "../store/selectors";
 import {
   STEARCH_SORT_KEYS,
   type StearchSortDir,
   type StearchSortKey,
-} from "../Stearch.state-props";
-import type { MultiFieldPreview } from "../fields/fields.props";
-import { selectFieldPreviews } from "../fields/fields.selectors";
+} from "../store/state-props";
 import type {
   HeaderFilters,
   HeaderProps,

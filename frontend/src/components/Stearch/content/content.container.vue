@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { selectViewMode } from "../Stearch.selectors";
-import stearchStore from "../Stearch.store";
+import { selectViewMode } from "../store/selectors";
+import stearchStore from "../store/store";
 import AttentionDebug from "./attention-debug.container.vue";
 import { provideContentView } from "./content.view";
 import ListContainer from "./list/list.container.vue";

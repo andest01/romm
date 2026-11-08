@@ -23,15 +23,15 @@ export default [
         {
           zones: [
             {
-              target: `./${STEARCH}/Stearch.selectors.ts`,
+              target: `./${STEARCH}/store/selectors.ts`,
               from: `./${STEARCH}`,
-              except: ["./Stearch.state-props.ts"],
+              except: ["./store/state-props.ts"],
               message:
                 "The trunk reads state only. It imports nothing else from Stearch.",
             },
             {
-              target: `./${STEARCH}/Stearch.*.selectors.ts`,
-              from: `./${STEARCH}/*/**`,
+              target: `./${STEARCH}/store/*.selectors.ts`,
+              from: `./${STEARCH}/!(store)/**`,
               message: UP_ONLY,
             },
             {
@@ -89,7 +89,7 @@ export default [
           ],
           patterns: [
             {
-              group: ["@/stores/*", "**/*.store", "@/composables/*"],
+              group: ["@/stores/*", "**/store/store", "@/composables/*"],
               message:
                 "Pure components have no state. Connect it in the container.",
             },
@@ -98,14 +98,15 @@ export default [
       ],
     },
   },
-  // The trunk: only Stearch.selectors.ts (and the reducer and store that write
+  // The trunk: only store/selectors.ts (and the reducer and store that write
   // state) may read IStearchState's branches. Everything else goes through it.
   {
     files: [`${STEARCH}/**/*.{ts,vue}`],
     ignores: [
-      `${STEARCH}/Stearch.selectors.ts`,
-      `${STEARCH}/Stearch.reducer.ts`,
-      `${STEARCH}/Stearch.store.ts`,
+      `${STEARCH}/store/selectors.ts`,
+      `${STEARCH}/store/reducer.ts`,
+      `${STEARCH}/store/store.ts`,
+      `${STEARCH}/store/fixtures.ts`,
       `${STEARCH}/**/*.test.ts`,
       `${STEARCH}/**/*.stories.ts`,
       `${STEARCH}/**/*.fixtures.ts`,
@@ -136,7 +137,7 @@ export default [
           selector:
             "MemberExpression[property.name=/^(query|view|results|attention|labels)$/]:matches([object.name='state'], [object.property.name='state'])",
           message:
-            "Read state through a selector in Stearch.selectors.ts, the only file that touches IStearchState.",
+            "Read state through a selector in store/selectors.ts, the only file that touches IStearchState.",
         },
       ],
     },

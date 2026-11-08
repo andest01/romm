@@ -4,19 +4,19 @@ import { useI18n } from "vue-i18n";
 import {
   selectAnchorPosition,
   selectCurrentPosition,
-} from "../../Stearch.attention.selectors";
+} from "../../store/attention.selectors";
 import {
   selectErrorMessage,
   selectIsLoading,
   selectSections,
-} from "../../Stearch.results.selectors";
-import { selectSlots } from "../../Stearch.rows.selectors";
+} from "../../store/results.selectors";
+import { selectSlots } from "../../store/rows.selectors";
 import {
   selectActiveId,
   selectViewMode,
   selectVisiblePosition,
-} from "../../Stearch.selectors";
-import stearchStore from "../../Stearch.store";
+} from "../../store/selectors";
+import stearchStore from "../../store/store";
 import { useContentView } from "../content.view";
 import RailContainer from "../rail/rail.container.vue";
 import SectionContainer from "../section/section.container.vue";

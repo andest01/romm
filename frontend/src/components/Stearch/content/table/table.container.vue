@@ -5,20 +5,20 @@ import type { RTableColumn } from "@/lib";
 import {
   selectAnchorPosition,
   selectCurrentPosition,
-} from "../../Stearch.attention.selectors";
+} from "../../store/attention.selectors";
 import {
   selectErrorMessage,
   selectIsLoading,
   selectSections,
-} from "../../Stearch.results.selectors";
-import { selectSlots } from "../../Stearch.rows.selectors";
+} from "../../store/results.selectors";
+import { selectSlots } from "../../store/rows.selectors";
 import {
   selectActiveId,
   selectSortDir,
   selectSortKey,
   selectVisiblePosition,
-} from "../../Stearch.selectors";
-import stearchStore from "../../Stearch.store";
+} from "../../store/selectors";
+import stearchStore from "../../store/store";
 import { useContentView } from "../content.view";
 import { useFeel } from "../list/feel";
 import { RESULTS_HELP, type VisibleRange } from "../list/list.props";
