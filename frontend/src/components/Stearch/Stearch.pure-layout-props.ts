@@ -16,9 +16,9 @@ export interface StearchLayoutProps {
   footer: Component | null;
   background: Component | null;
   panelLayout: StearchPanelLayout;
-  /** The first Tab's link, past the header and filters to the results. */
-  skipLabel: string;
-  /** Names for the regions a screen reader jumps between. */
-  panelLabel: string;
-  resultsLabel: string;
+  /** The first Tab's stop, placed ahead of every other part. */
+  skipLink: Component | null;
 }
+
+/** The content region's id: what a skip link aims at. */
+export const RESULTS_REGION_ID = "stearch-results";

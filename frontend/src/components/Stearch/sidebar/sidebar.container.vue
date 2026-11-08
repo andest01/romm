@@ -7,6 +7,8 @@ import SidebarLayout from "./sidebar.pure-layout.vue";
 
 <template>
   <SidebarLayout
+    role="region"
+    aria-label="Filters"
     :header="SidebarHeader"
     :body="FieldList"
     :footer="SidebarFooter"

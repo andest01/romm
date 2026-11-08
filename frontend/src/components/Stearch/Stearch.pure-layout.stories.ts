@@ -67,9 +67,7 @@ const meta: Meta<Args> = {
             panelAxis: args.panelAxis,
             panelPosition: args.panelPosition,
           }"
-          skip-label="Skip to results"
-          panel-label="Filters"
-          results-label="Results"
+          :skip-link="null"
         />
       </div>
     `,
