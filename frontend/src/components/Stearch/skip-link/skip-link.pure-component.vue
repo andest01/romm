@@ -15,8 +15,9 @@ defineProps<{ label: string; target: string }>();
   inset-inline-start: var(--r-space-2);
   padding: var(--r-space-2) var(--r-space-3);
   border-radius: var(--r-radius-sm);
-  background: var(--r-color-brand-primary);
-  color: var(--r-color-brand-on-primary);
+  outline: 2px solid var(--r-color-brand-primary);
+  background: var(--r-color-bg);
+  color: var(--r-color-fg);
   transform: translateY(-200%);
 }
 .stearch-skip-link:focus {

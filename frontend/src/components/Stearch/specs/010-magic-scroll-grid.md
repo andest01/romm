@@ -35,19 +35,22 @@ One machine per axis. **State is held, not recalculated.** Input and geometry be
 | `cruising` | full push held while captured                      | steps at key rate, view follows |
 | `flying`   | a commanded move is under way                      | yields; any input ends it       |
 
-| Event                                             | From               | To                                       |
-| ------------------------------------------------- | ------------------ | ---------------------------------------- |
-| `step` (lands at or past the centre)              | captured, cruising | same; view follows                       |
-| `step` (heading for the band)                     | free               | free, or captured on arrival; view stays |
-| `step` (past the centre)                          | free               | captured; view jumps once                |
-| `viewMoved` (active left the band)                | captured, pinned   | free                                     |
-| `limitReached`                                    | captured, cruising | pinned                                   |
-| `limitLeft`                                       | pinned             | captured                                 |
-| `stickFull` (at or above `enterAt` for `dwellMs`) | captured           | cruising                                 |
-| `stickEased` (below `exitAt`)                     | cruising           | captured                                 |
-| `navigateTo`                                      | any                | flying                                   |
-| `arrived`                                         | flying             | captured, or pinned at a limit           |
-| `interrupted`                                     | flying             | by geometry                              |
+| Event                                             | From                       | To                                       |
+| ------------------------------------------------- | -------------------------- | ---------------------------------------- |
+| `step` (lands at or past the centre)              | captured, cruising         | same; view follows                       |
+| `step` (heading for the band)                     | free                       | free, or captured on arrival; view stays |
+| `step` (past the centre)                          | free                       | captured; view jumps once                |
+| `viewMoved` (active left the band)                | captured, pinned, cruising | free                                     |
+| `keyPressed` (a real key or D-pad press)          | cruising                   | captured; stick ignored until released   |
+| `limitReached`                                    | captured, cruising         | pinned                                   |
+| `limitLeft`                                       | pinned                     | captured                                 |
+| `stickFull` (at or above `enterAt` for `dwellMs`) | captured                   | cruising                                 |
+| `stickEased` (below `exitAt`)                     | cruising                   | captured                                 |
+| `navigateTo`                                      | any                        | flying                                   |
+| `arrived`                                         | flying                     | captured, or pinned at a limit           |
+| `interrupted`                                     | flying                     | by geometry                              |
+
+`cruising` is entered only from `captured`. The `dwellMs` timer counts full push in any state, so a stick already held full enters `cruising` the moment a walk reaches `captured`.
 
 Rules every transition keeps:
 
