@@ -4,22 +4,13 @@ import {
   claimKeyRateRepeat,
   claimStickX,
   claimStickY,
+  keyRepeatMs,
   usePadRafFn,
 } from "@/composables/useGamepad";
+import type { AxisGeometry } from "../axis-machine";
+import { isStickPushed, leadingPoint } from "../list.selectors";
+import type { AxisMachine } from "../use-axis-machine";
 import {
-  axisMode,
-  axisState,
-  canPan,
-  isInsideBox,
-  stepsOwed,
-} from "../axis-machine";
-import {
-  isStickPushed,
-  leadingPoint,
-  stickCurrentRow,
-} from "../list.selectors";
-import {
-  type Cell,
   type Grid2dFeel,
   indexAt,
   pushLength,
@@ -30,20 +21,7 @@ import {
 /** Frames longer than this (a stall, a hidden tab) don't jump the scroll. */
 const MAX_FRAME_MS = 50;
 
-type StepKey = "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight";
-
-/** The D-pad key a step sends, by axis, for -1 and +1. */
-const STEP_KEYS = {
-  x: ["ArrowLeft", "ArrowRight"],
-  y: ["ArrowUp", "ArrowDown"],
-} as const satisfies Record<"x" | "y", readonly [StepKey, StepKey]>;
-
-interface AxisGeometry {
-  cell: number;
-  boxCells: number;
-  count: number;
-  index: number;
-}
+type Axis = "x" | "y";
 
 /** The left stick of whichever pad is pushed hardest. */
 export function readStick(): Vector {
@@ -55,116 +33,85 @@ export function readStick(): Vector {
   return hardest;
 }
 
-/** The left stick pans a 2D grid (spec 009). The view leads; on each axis
- *  the active cell hands over once its middle leaves the centre box, which
- *  is `stickCurrentRow` from the list, run per axis. Letting go leaves the
- *  view where it is. While mounted, the stick sends no arrow keys. */
+/** The left stick's adapter for a 2D grid: samples it each frame into both
+ *  axes' machines, and carries out their pans. While mounted, the stick
+ *  sends no arrow keys. */
 export function useStickScroll2d(options: {
+  machines: Record<Axis, AxisMachine>;
   feel: () => Grid2dFeel;
   scroller: () => HTMLElement | null;
   cellSize: () => number;
   size: () => { rows: number; cols: number };
-  current: () => Cell;
+  index: (axis: Axis) => number;
+  geometry: (axis: Axis) => AxisGeometry;
   deflection: () => Vector;
-  /** A step the stick sends where it can't pan: handled exactly as the
-   *  D-pad's arrow key. */
-  onStep: (key: StepKey) => void;
   /** "pad" runs only while a pad is connected; "always" lets a story drive
    *  it without one. */
   loop: "pad" | "always";
-  onCell: (cell: Cell) => void;
 }) {
-  let isActive = false;
-  let isHandedOver = false;
+  const { machines } = options;
   let lastFrame = 0;
-  // Part of a step owed on each axis, carried between frames in step mode.
-  const carried = { x: 0, y: 0 };
 
   function frame(): void {
+    if (!options.scroller()) return;
     const now = performance.now();
     const frameMs = Math.min(now - lastFrame, MAX_FRAME_MS);
     lastFrame = now;
-    const element = options.scroller();
-    if (!element) return;
     const feel = options.feel();
     const stick = options.deflection();
-    const isPushed = isStickPushed(
-      pushLength(stick),
-      feel.deadzone,
-      isActive || isHandedOver,
+    const wasPushed = (["x", "y"] as const).some(
+      (axis) => machines[axis].state.value.phase !== "idle",
     );
-    if (!isPushed) {
-      isActive = false;
-      isHandedOver = false;
-      return;
-    }
-    // Another input took over mid-push: wait for the stick to come back.
-    if (isHandedOver) return;
-    isActive = true;
-    const cell = options.cellSize();
+    const isPushed = isStickPushed(pushLength(stick), feel.deadzone, wasPushed);
     const velocity = stickVelocity(stick, feel);
-    const { rows, cols } = options.size();
-    const y = runAxis(element, "y", velocity.y, frameMs, {
-      cell,
-      boxCells: feel.boxRows,
-      count: rows,
-      index: options.current().row,
-    });
-    const x = runAxis(element, "x", velocity.x, frameMs, {
-      cell,
-      boxCells: feel.boxCols,
-      count: cols,
-      index: options.current().col,
-    });
-    const current = options.current();
-    const next: Cell = { row: y, col: x };
-    if (next.row !== current.row || next.col !== current.col) {
-      options.onCell(next);
+    for (const axis of ["y", "x"] as const) {
+      machines[axis].dispatch({
+        type: "stick/sampled",
+        isPushed,
+        // Per axis, so a true diagonal, short of full on both, never cruises.
+        push: Math.abs(stick[axis]),
+        cellsPerSecond: velocity[axis],
+        keyCellsPerSecond: 1000 / keyRepeatMs(),
+        frameMs,
+        now,
+        geometry: isPushed
+          ? options.geometry(axis)
+          : machines[axis].state.value.geometry,
+      });
     }
   }
 
-  // One axis, one frame: work out its state, then pan the view or send
-  // D-pad steps. Returns the active index on this axis.
-  function runAxis(
-    element: HTMLElement,
-    axis: "x" | "y",
-    speed: number,
-    frameMs: number,
-    { cell, boxCells, count, index }: AxisGeometry,
-  ): number {
-    const isY = axis === "y";
-    const view = isY ? element.clientHeight : element.clientWidth;
-    const content = isY ? element.scrollHeight : element.scrollWidth;
-    const scroll = () => (isY ? element.scrollTop : element.scrollLeft);
-    const centre = () => scroll() + view / 2;
-    const direction = Math.sign(speed);
-    const state = axisState(
-      isInsideBox(index, centre(), cell, boxCells),
-      canPan(scroll(), view, content, direction),
-    );
-    if (direction === 0) return index;
-    if (axisMode(state) === "step") {
-      const owed = stepsOwed(carried[axis], speed, frameMs);
-      carried[axis] = owed.carried;
-      const key = STEP_KEYS[axis][direction > 0 ? 1 : 0];
-      for (let step = 0; step < owed.steps; step++) options.onStep(key);
-      return isY ? options.current().row : options.current().col;
-    }
-    carried[axis] = 0;
-    const moved = scroll() + (speed * cell * frameMs) / 1000;
-    if (isY) element.scrollTop = moved;
-    else element.scrollLeft = moved;
-    return stickCurrentRow(
-      indexAt(
-        leadingPoint(centre(), boxCells * cell, cell, speed),
-        cell,
-        count,
-      ),
-      index,
-      (centre() - (index + 0.5) * cell) / cell,
-      boxCells,
-    );
+  for (const axis of ["y", "x"] as const) {
+    machines[axis].onEffect((effect) => {
+      if (effect.type !== "pan") return;
+      const element = options.scroller();
+      if (!element) return;
+      const isY = axis === "y";
+      const cell = options.cellSize();
+      const feel = options.feel();
+      const boxCells = isY ? feel.boxRows : feel.boxCols;
+      const { rows, cols } = options.size();
+      const moved = (effect.cellsPerSecond * cell * effect.frameMs) / 1000;
+      if (isY) element.scrollTop += moved;
+      else element.scrollLeft += moved;
+      const scroll = isY ? element.scrollTop : element.scrollLeft;
+      const view = isY ? element.clientHeight : element.clientWidth;
+      const centre = scroll + view / 2;
+      const index = options.index(axis);
+      machines[axis].dispatch({
+        type: "view/panned",
+        leadingIndex: indexAt(
+          leadingPoint(centre, boxCells * cell, cell, effect.cellsPerSecond),
+          cell,
+          isY ? rows : cols,
+        ),
+        currentIndex: index,
+        cellsFromCurrent: (centre - (index + 0.5) * cell) / cell,
+        bandCells: boxCells,
+      });
+    });
   }
+
   if (options.loop === "pad") usePadRafFn(frame);
   else useRafFn(frame);
 
@@ -173,13 +120,4 @@ export function useStickScroll2d(options: {
     releases.push(claimStickX(), claimStickY(), claimKeyRateRepeat()),
   );
   onBeforeUnmount(() => releases.splice(0).forEach((release) => release()));
-
-  /** Another input took over (a D-pad press): stand down until let go. */
-  const cancel = (): void => {
-    if (!isActive) return;
-    isActive = false;
-    isHandedOver = true;
-  };
-
-  return { cancel, isActive: () => isActive };
 }

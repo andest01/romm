@@ -9,6 +9,7 @@ import {
   followScrollTop,
   stickRowsPerSecond,
 } from "../list.selectors";
+import { useAxisMachine } from "../use-axis-machine";
 import { useCruise } from "../use-cruise";
 import { useGlide } from "../use-glide";
 import { readStickY, useStickScroll } from "../use-stick-scroll";
@@ -86,7 +87,15 @@ const deflection = (): number => {
   return stickReading.value;
 };
 const isSticking = ref(false);
-const stick = useStickScroll({
+const machine = useAxisMachine();
+machine.onEffect((effect) => {
+  if (effect.type !== "step") return;
+  for (let count = 0; count < effect.count; count++) {
+    step(effect.direction > 0 ? 1 : -1);
+  }
+});
+useStickScroll({
+  machine,
   feel: () => (props.follow === "feel" ? feel.value.stick : null),
   bandRows: () => props.bandRows,
   scroller: () => viewport.value,
@@ -100,7 +109,6 @@ const stick = useStickScroll({
     isSticking.value = true;
     active.value = rowIndex;
   },
-  onStep: (key) => step(key === "ArrowDown" ? 1 : -1),
   onEnd: () => {
     isSticking.value = false;
   },
@@ -144,7 +152,7 @@ function step(delta: 1 | -1): void {
 function onKey(event: KeyboardEvent): void {
   if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
   event.preventDefault();
-  stick.cancel();
+  machine.dispatch({ type: "stick/yielded" });
   if (
     props.follow === "feel" &&
     cruise.feed(event.key, { via: "key", isRepeat: event.repeat })

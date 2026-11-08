@@ -248,6 +248,29 @@ export const FlyToAnimates: Story = {
   },
 };
 
+/** A held full push becomes cruise: steps, with the view locked on. */
+export const FullPushCruises: Story = {
+  tags: ["!dev"],
+  args: { standInY: 1 },
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const canvas = within(canvasElement);
+
+    // Assert
+    await waitFor(
+      () =>
+        expect(canvas.getByTestId("fsm-rows")).toHaveAttribute(
+          "data-state",
+          "cruising",
+        ),
+      { timeout: 3000 },
+    );
+    await expect(canvas.getByTestId("bands")).toHaveTextContent(
+      "horizontal yes",
+    );
+  },
+};
+
 /** A command that changes only data leaves the view, so the cell goes free. */
 export const CommandSetsActiveOnly: Story = {
   tags: ["!dev"],

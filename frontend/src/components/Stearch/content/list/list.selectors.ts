@@ -384,22 +384,22 @@ export function activeDescendantId(
   return itemDomId(position);
 }
 
-/** Whether a step moves the view. A row out of view always comes back. In
- *  view, a step heading for the centre just walks, so the view doesn't yank;
- *  at or past the centre it follows. Sideways steps (`direction` 0) stay put. */
-export function stepFollows(
+/** Where a step landed, for the machine to judge. A sideways step
+ *  (`direction` 0) is never past the centre. */
+export function landingOf(
   rowTop: number,
   rowHeight: number,
   direction: -1 | 0 | 1,
   view: { scrollTop: number; height: number },
-): boolean {
-  const isInView =
-    rowTop >= view.scrollTop &&
-    rowTop + rowHeight <= view.scrollTop + view.height;
-  if (!isInView) return true;
-  if (direction === 0) return false;
+): { isInView: boolean; isPastCentre: boolean } {
   const centre = view.scrollTop + view.height / 2;
-  return direction * (rowTop + rowHeight / 2 - centre) >= 0;
+  return {
+    isInView:
+      rowTop >= view.scrollTop &&
+      rowTop + rowHeight <= view.scrollTop + view.height,
+    isPastCentre:
+      direction !== 0 && direction * (rowTop + rowHeight / 2 - centre) >= 0,
+  };
 }
 
 /** The top of a scroller row, in content pixels. */

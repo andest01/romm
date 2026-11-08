@@ -69,7 +69,7 @@ export const ArrowsNameTheActiveItem: Story = {
 /** A stand-in pad whose left stick the story can move. */
 function fakePad() {
   let stickY = 0;
-  const original = navigator.getGamepads;
+  const original = navigator.getGamepads.bind(navigator);
   Object.defineProperty(navigator, "getGamepads", {
     configurable: true,
     value: () => [gamepadFixture({ axes: [0, stickY, 0, 0] })],

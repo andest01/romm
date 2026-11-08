@@ -16,13 +16,13 @@ import {
   itemFit,
   itemKindFor,
   itemRowAtCentre,
+  landingOf,
   leadingPoint,
   listSpeed,
   moveFor,
   rowForPosition,
   spanOf,
   stickCurrentRow,
-  stepFollows,
   stickRowsPerSecond,
   withGhosts,
 } from "./list.selectors";
@@ -58,39 +58,39 @@ describe("activeDescendantId", () => {
   });
 });
 
-describe("stepFollows", () => {
+describe("landingOf", () => {
   const VIEW = { scrollTop: 1000, height: 600 };
 
-  it("walks a step heading for the centre, so the view doesn't jump", () => {
+  it("is short of the centre for a step heading toward it", () => {
     // Act
-    const follows = stepFollows(1100, 100, 1, VIEW);
+    const landing = landingOf(1100, 100, 1, VIEW);
 
     // Assert
-    expect(follows).toBe(false);
+    expect(landing).toEqual({ isInView: true, isPastCentre: false });
   });
 
-  it("follows a step past the centre", () => {
+  it("is past the centre beyond it", () => {
     // Act
-    const follows = stepFollows(1400, 100, 1, VIEW);
+    const landing = landingOf(1400, 100, 1, VIEW);
 
     // Assert
-    expect(follows).toBe(true);
+    expect(landing).toEqual({ isInView: true, isPastCentre: true });
   });
 
-  it("leaves the view alone on a sideways step", () => {
+  it("is never past the centre sideways", () => {
     // Act
-    const follows = stepFollows(1100, 100, 0, VIEW);
+    const landing = landingOf(1400, 100, 0, VIEW);
 
     // Assert
-    expect(follows).toBe(false);
+    expect(landing.isPastCentre).toBe(false);
   });
 
-  it("brings back a row that is out of view", () => {
+  it("knows a row out of view", () => {
     // Act
-    const follows = stepFollows(5000, 100, 0, VIEW);
+    const landing = landingOf(5000, 100, 0, VIEW);
 
     // Assert
-    expect(follows).toBe(true);
+    expect(landing.isInView).toBe(false);
   });
 });
 

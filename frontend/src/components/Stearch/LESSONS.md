@@ -351,6 +351,8 @@ Nothing here is settled until the RomM side has been measured.
 
 - **The spike's machine now runs Tiles and Table.** The list's stick only panned, so at the top limit it stopped at item 5, and a gentle push from the first row jumped to item 18 (both reproduced in stories first). `axis-machine.ts` is now the one copy, and the list's stick pans or steps by state. Keys still reach the same step function; state stays derived, and cruise isn't built.
 
+- **Cruise was one state.** `cruising` joined the shared machine with `step` as its mode, so Tiles, Table and the grid got it from one change. The hold timer is the machine's first remembered value.
+
 ### Rules from the input work
 
 1. **Keys and the D-pad are data to screen.** A step moves the active cell, then the view follows. It needs no memory of a previous state.

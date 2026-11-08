@@ -5,22 +5,22 @@
 // inside the centre box; Space or Enter toggles the selection.
 import { useElementSize, useEventListener } from "@vueuse/core";
 import { computed, onMounted, reactive, ref, shallowRef, watch } from "vue";
-import { PAD_BUTTON } from "@/composables/useGamepad";
+import { isPadEvent, PAD_BUTTON } from "@/composables/useGamepad";
 import { RBtn } from "@/lib";
 import { focusFromInput } from "@/utils/autofocus";
 import {
+  type AxisGeometry,
   type AxisState,
-  axisState,
   canPan,
   isInsideBox,
 } from "../axis-machine";
-import { followScrollTop } from "../list.selectors";
+import { type ArrowKey, followScrollTop, landingOf } from "../list.selectors";
+import { useAxisMachine } from "../use-axis-machine";
 import FsmLive from "./fsm-live.vue";
 import {
   type Cell,
   centreTarget,
   type Grid2dFeel,
-  isMovingAway,
   mountedSpan,
   moveCell,
   pushLength,
@@ -111,28 +111,46 @@ const inBands = computed(() => ({
 }));
 const isActiveInBox = computed(() => inBands.value.x && inBands.value.y);
 
-// The way each axis last moved: "can the view move further" needs a direction.
-const facing = reactive({ x: 1, y: 1 });
+// One machine per axis. Everything below only sends them events.
+const machines = { x: useAxisMachine(), y: useAxisMachine() };
+const stateX = computed(() => machines.x.state.value.axis);
+const stateY = computed(() => machines.y.state.value.axis);
 const axisStates = computed((): { x: AxisState; y: AxisState } => ({
-  y: axisState(
-    inBands.value.y,
-    canPan(
-      scroll.value.top,
-      view.height.value,
-      props.rows * props.cellSize,
-      facing.y,
-    ),
-  ),
-  x: axisState(
-    inBands.value.x,
-    canPan(
-      scroll.value.left,
-      view.width.value,
-      props.cols * props.cellSize,
-      facing.x,
-    ),
-  ),
+  x: stateX.value,
+  y: stateY.value,
 }));
+
+const indexOn = (axis: "x" | "y"): number =>
+  axis === "y" ? active.value.row : active.value.col;
+
+// Read live from the scroller, so data and screen can't disagree.
+function geometryOf(axis: "x" | "y"): AxisGeometry {
+  const element = viewport.value;
+  if (!element) return machines[axis].state.value.geometry;
+  const isY = axis === "y";
+  const scrolled = isY ? element.scrollTop : element.scrollLeft;
+  const size = isY ? element.clientHeight : element.clientWidth;
+  const content = isY ? element.scrollHeight : element.scrollWidth;
+  return {
+    isInBand: isInsideBox(
+      indexOn(axis),
+      scrolled + size / 2,
+      props.cellSize,
+      isY ? props.boxRows : props.boxCols,
+    ),
+    canPanNegative: canPan(scrolled, size, content, -1),
+    canPanPositive: canPan(scrolled, size, content, 1),
+  };
+}
+
+function measure(): void {
+  for (const axis of ["y", "x"] as const) {
+    machines[axis].dispatch({
+      type: "view/measured",
+      geometry: geometryOf(axis),
+    });
+  }
+}
 const previousStates = reactive<{ x: AxisState | null; y: AxisState | null }>({
   x: null,
   y: null,
@@ -152,12 +170,14 @@ watch(axisStates, (now, before) => {
   }
 });
 
-const stick = useStickScroll2d({
+useStickScroll2d({
+  machines,
   feel: () => feel.value,
   scroller: () => viewport.value,
   cellSize: () => props.cellSize,
   size: () => ({ rows: props.rows, cols: props.cols }),
-  current: () => active.value,
+  index: indexOn,
+  geometry: geometryOf,
   deflection: () => {
     const isStandingIn = props.standInX !== 0 || props.standInY !== 0;
     const reading = isStandingIn
@@ -170,19 +190,34 @@ const stick = useStickScroll2d({
     ) {
       stickReading.value = reading;
     }
-    const velocity = stickVelocity(stickReading.value, feel.value);
-    if (velocity.x !== 0) facing.x = Math.sign(velocity.x);
-    if (velocity.y !== 0) facing.y = Math.sign(velocity.y);
     return stickReading.value;
   },
   loop: "always",
-  onCell: (cell) => {
-    syncScroll();
-    active.value = cell;
-    note(`stick: hand over to ${nameOf(cell)}`);
-  },
-  onStep: (key) => step(key, "stick"),
 });
+
+for (const axis of ["y", "x"] as const) {
+  machines[axis].onEffect((effect) => {
+    if (effect.type === "follow" && viewport.value) {
+      follow(viewport.value, axis);
+    }
+    if (effect.type === "handOver") {
+      syncScroll();
+      active.value =
+        axis === "y"
+          ? { ...active.value, row: effect.index }
+          : { ...active.value, col: effect.index };
+      note(`stick: hand over to ${nameOf(active.value)}`);
+      measure();
+    }
+    if (effect.type === "step") {
+      const source = effect.key ? "key or D-pad" : "stick";
+      const key = effect.key ?? stepKey(axis, effect.direction);
+      for (let count = 0; count < effect.count; count++) step(key, source);
+    }
+  });
+}
+
+watch([view.width, view.height], measure);
 const speed = computed(() =>
   pushLength(stickVelocity(stickReading.value, feel.value)),
 );
@@ -232,6 +267,12 @@ function syncScroll(): void {
 
 function setActive(cell: Cell): void {
   active.value = cell;
+  measure();
+}
+
+function yieldStick(): void {
+  machines.x.dispatch({ type: "stick/yielded" });
+  machines.y.dispatch({ type: "stick/yielded" });
 }
 
 function addSelected(cell: Cell): void {
@@ -317,7 +358,7 @@ function dispatch(actions: GridAction[]): void {
 
 function runCommand(command: (typeof COMMANDS)[number], cell: Cell): void {
   const actions = command.actions(cell);
-  stick.cancel();
+  yieldStick();
   dispatch(actions);
   note(`command: ${nameOf(cell)}: ${actionTypes(actions)}`);
   focusFromInput(viewport.value, { preventScroll: true });
@@ -345,44 +386,51 @@ function onKey(event: KeyboardEvent): void {
     return;
   }
   event.preventDefault();
-  stick.cancel();
-  step(event.key, "key or D-pad");
+  const axis = event.key === "ArrowUp" || event.key === "ArrowDown" ? "y" : "x";
+  machines[axis === "y" ? "x" : "y"].dispatch({ type: "stick/yielded" });
+  machines[axis].dispatch({
+    type: "key/pressed",
+    key: event.key,
+    direction: event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1,
+    now: performance.now(),
+  });
 }
 
-// One D-pad step, from a key, the D-pad, or the stick where it can't pan:
-// all three arrive here, so they behave the same.
-// A step scrolls only along its own axis. Heading for the band it just walks,
-// so the view doesn't yank; at or past the centre, the view follows.
-function step(
-  key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight",
-  source: string,
-) {
+// The pad's synthetic keyup comes with every press; its holds end by gap.
+useEventListener(window, "keyup", (event: KeyboardEvent) => {
+  if (isPadEvent(event)) return;
+  machines.x.dispatch({ type: "key/released" });
+  machines.y.dispatch({ type: "key/released" });
+});
+
+const stepKey = (axis: "x" | "y", direction: number): ArrowKey => {
+  if (axis === "y") return direction > 0 ? "ArrowDown" : "ArrowUp";
+  return direction > 0 ? "ArrowRight" : "ArrowLeft";
+};
+
+// One step, carrying out the machine's effect; where it lands goes back to
+// the machine, which decides whether the view follows.
+function step(key: ArrowKey, source: string) {
   const axis = key === "ArrowUp" || key === "ArrowDown" ? "y" : "x";
   const direction = key === "ArrowUp" || key === "ArrowLeft" ? -1 : 1;
-  facing[axis] = direction;
   active.value = moveCell(active.value, key, {
     rows: props.rows,
     cols: props.cols,
   });
   const element = viewport.value;
   if (element) {
-    const isAway =
-      axis === "y"
-        ? isMovingAway(
-            active.value.row,
-            direction,
-            element.scrollTop + element.clientHeight / 2,
-            props.cellSize,
-          )
-        : isMovingAway(
-            active.value.col,
-            direction,
-            element.scrollLeft + element.clientWidth / 2,
-            props.cellSize,
-          );
-    if (isAway) follow(element, axis);
+    const isY = axis === "y";
+    machines[axis].dispatch({
+      type: "step/landed",
+      index: indexOn(axis),
+      ...landingOf(indexOn(axis) * props.cellSize, props.cellSize, direction, {
+        scrollTop: isY ? element.scrollTop : element.scrollLeft,
+        height: isY ? element.clientHeight : element.clientWidth,
+      }),
+    });
   }
   syncScroll();
+  measure();
   note(`${source}: step to ${nameOf(active.value)}`);
 }
 
@@ -411,7 +459,7 @@ function onPress(cell: Cell, event: MouseEvent): void {
     note(`mouse: toggle selected ${nameOf(cell)}`);
     return;
   }
-  active.value = cell;
+  setActive(cell);
   note(`mouse: setActive(${nameOf(cell)})`);
 }
 
@@ -419,6 +467,7 @@ function onScroll(event: Event): void {
   const element = event.target;
   if (!(element instanceof HTMLElement)) return;
   scroll.value = { top: element.scrollTop, left: element.scrollLeft };
+  measure();
 }
 
 const feelAsCode = computed(() => JSON.stringify(feel.value, null, 2));

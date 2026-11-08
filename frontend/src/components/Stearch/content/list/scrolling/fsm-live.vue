@@ -9,12 +9,15 @@ defineProps<{
 }>();
 
 const NODES = [
+  { state: "cruising", x: 8, y: -34 },
   { state: "captured", x: 8, y: 8 },
   { state: "pinned", x: 120, y: 8 },
   { state: "free", x: 64, y: 78 },
 ] as const satisfies readonly { state: AxisState; x: number; y: number }[];
 
 const EDGES = [
+  { from: "captured", to: "cruising", path: "M30 8 V-8" },
+  { from: "cruising", to: "captured", path: "M54 -10 V6" },
   { from: "captured", to: "pinned", path: "M80 15 H118" },
   { from: "pinned", to: "captured", path: "M120 25 H82" },
   { from: "pinned", to: "free", path: "M150 32 V88 H138" },
@@ -31,7 +34,11 @@ const EDGES = [
 <template>
   <figure class="fsm-live" :data-testid="`fsm-${label}`" :data-state="state">
     <figcaption>{{ label }}: {{ axisMode(state) }}</figcaption>
-    <svg viewBox="0 0 200 112" role="img" :aria-label="`${label} are ${state}`">
+    <svg
+      viewBox="0 -36 200 148"
+      role="img"
+      :aria-label="`${label} are ${state}`"
+    >
       <path
         v-for="edge in EDGES"
         :key="edge.path"

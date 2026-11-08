@@ -158,6 +158,8 @@ export const claimStickX = (): (() => void) => claimStickAxis("x");
 let keyRateRepeatClaims = 0;
 // The OS owns the keyboard's repeat and JS can't read it, so it's measured.
 const keyRate = { delayMs: INITIAL_DELAY_MS, repeatMs: KEY_RATE_REPEAT_MS };
+/** The keyboard's repeat interval, as last measured. */
+export const keyRepeatMs = (): number => keyRate.repeatMs;
 let lastKeyAt = 0;
 let isFirstRepeat = true;
 

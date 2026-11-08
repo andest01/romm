@@ -9,6 +9,7 @@ import {
   type ShallowRef,
 } from "vue";
 import { useBreakpoint } from "@/composables/useBreakpoint";
+import type { CruiseStack } from "./list/axis-machine";
 
 /** Which item family suits the device: phones get phone items. */
 export type StearchDevice = "phone" | "wide";
@@ -24,6 +25,9 @@ export interface ContentView {
   /** True while the rail is being dragged, so windows load only where the
    *  drag stops. Written only by the rail container. */
   isScrubbing: ShallowRef<boolean>;
+  /** The stick's score multiplier; `null` outside cruise. Written only by
+   *  `useKeyFocus`. */
+  cruiseStack: ShallowRef<CruiseStack | null>;
 }
 
 const CONTENT_VIEW: InjectionKey<ContentView> = Symbol("stearch-content-view");
@@ -38,6 +42,7 @@ function createContentView(): ContentView {
     ),
     activePosition: shallowRef(null),
     isScrubbing: shallowRef(false),
+    cruiseStack: shallowRef(null),
   };
 }
 

@@ -11,7 +11,7 @@ import stearchStore from "../Stearch.store";
 import { useContentView } from "./content.view";
 
 const store = stearchStore();
-const { activePosition } = useContentView();
+const { activePosition, cruiseStack } = useContentView();
 const currentId = computed(() => selectActiveId(store.state));
 const currentName = computed(() => selectCurrentGame(store.state)?.name);
 const selectedIds = computed(() => selectSelectedIds(store.state));
@@ -22,6 +22,9 @@ const selectedNames = computed(() =>
 
 <template>
   <aside class="stearch-attention-debug" aria-label="Attention states (dev)">
+    <span v-if="cruiseStack" data-testid="score-multiplier">
+      {{ cruiseStack }}x
+    </span>
     <span class="stearch-attention-debug__key">
       key position: {{ activePosition ?? "none" }}
     </span>

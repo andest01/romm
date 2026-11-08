@@ -106,11 +106,3 @@ export const mountedSpan = (
   first: Math.max(0, Math.floor(scroll / cellSize) - ring),
   last: Math.min(count - 1, Math.ceil((scroll + view) / cellSize) + ring),
 });
-
-/** Whether a step that landed on `index` went away from the view's centre. */
-export const isMovingAway = (
-  index: number,
-  direction: number,
-  centre: number,
-  cellSize: number,
-): boolean => direction * ((index + 0.5) * cellSize - centre) >= 0;

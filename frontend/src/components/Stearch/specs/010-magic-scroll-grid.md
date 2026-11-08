@@ -154,6 +154,25 @@ See "Rules from the input work" in `LESSONS.md`. Bugs to keep as regression test
 - One new object per frame re-rendered the grid at idle.
 - A growing debug log shrank the stage and moved the centre line.
 
+## Cruise stacks
+
+Built on the shared machine; the only memory is `since` (when the full push began) and `cap` (for the margin).
+
+| Requirement                                | Value                                                         |
+| ------------------------------------------ | ------------------------------------------------------------- |
+| Enter                                      | at least 95% push held 1000 ms: stack 1x                      |
+| Earn                                       | another 1000 ms each: 2x, then 5x, and it stays               |
+| A stack means                              | each jump cut moves that many rows, so active holds its place |
+| Push cap                                   | 90% and up 5x; 75% to 90% 2x; 40% to 75% 1x                   |
+| Margin                                     | 2% below a threshold, so a resting stick doesn't buzz         |
+| Pushing back up                            | restores the earned stack at once                             |
+| Below 40%                                  | exits to smooth scrolling; re-entry takes the full 1000 ms    |
+| View at a limit                            | cruise stays on                                               |
+| Focus moves elsewhere, like the search bar | cruise ends                                                   |
+| Score                                      | shown with the stats at the bottom                            |
+
+This table replaces the `enterAt`, `exitAt` and `dwellMs` defaults above.
+
 ## Open, from the user's pad run (2026-11-08)
 
 | Case                                | Result         | Open question or requirement                                                                              |

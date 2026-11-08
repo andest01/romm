@@ -11,10 +11,11 @@ import {
   activeDescendantId,
   isArrowKey,
   itemRowIndexOf,
+  landingOf,
   moveFor,
   rowTopOf,
-  stepFollows,
 } from "./list.selectors";
+import { useAxisMachine } from "./use-axis-machine";
 import { useCruise } from "./use-cruise";
 import { readStickY, useStickScroll } from "./use-stick-scroll";
 
@@ -24,6 +25,9 @@ const LEAVE_DIRECTION = {
   ArrowLeft: "left",
   ArrowRight: "right",
 } as const;
+
+const directionOf = (key: ArrowKey): -1 | 0 | 1 =>
+  key === "ArrowUp" ? -1 : key === "ArrowDown" ? 1 : 0;
 
 /** Arrow keys inside the results. A press moves the content view's active
  *  position one step and the scroller follows it into the centre band, as
@@ -46,6 +50,7 @@ export function useKeyFocus(options: {
   const { activePosition } = useContentView();
   // The column a cruise keeps, read when it starts.
   let cruiseColumn = 0;
+  const machine = useAxisMachine();
 
   // A cruise row keeps the column it started in, clamped to a short row.
   function positionInRow(rowIndex: number): number | null {
@@ -72,14 +77,17 @@ export function useKeyFocus(options: {
       options.follow(rowIndex);
     },
   });
-  useEventListener(window, "keyup", (event: KeyboardEvent) =>
-    cruise.keyUp(event.key),
-  );
+  useEventListener(window, "keyup", (event: KeyboardEvent) => {
+    cruise.keyUp(event.key);
+    // The pad's synthetic keyup comes with every press; its holds end by gap.
+    if (!isPadEvent(event)) machine.dispatch({ type: "key/released" });
+  });
 
   // The stick moves the view and the current game catches up (spec 008).
   // Letting go leaves the view where it is.
-  const { isScrubbing } = useContentView();
-  const stick = useStickScroll({
+  const { isScrubbing, cruiseStack } = useContentView();
+  useStickScroll({
+    machine,
     feel: () => (isScrubbing.value ? null : options.feel().stick),
     bandRows: () => options.feel().bandRows,
     scroller: options.scroller,
@@ -100,8 +108,25 @@ export function useKeyFocus(options: {
     },
     deflection: readStickY,
     loop: "pad",
-    onStep: (key) => stepActive(key, () => undefined),
     onEnd: () => undefined,
+  });
+
+  // Keys, the D-pad and the stick all arrive here, as the machine's effects.
+  machine.onEffect((effect) => {
+    if (effect.type === "follow") options.follow(effect.index);
+    if (effect.type === "stack") cruiseStack.value = effect.stack;
+    if (effect.type !== "step") return;
+    const key = effect.key ?? (effect.direction > 0 ? "ArrowDown" : "ArrowUp");
+    const grid = gridElement();
+    for (let step = 0; step < effect.count; step++) {
+      // Only a plain press can leave the grid; a stack stops at its edge.
+      const canLeave = effect.key !== null && step === 0;
+      stepActive(key, () => {
+        if (canLeave && grid instanceof HTMLElement) {
+          moveFocus(grid, LEAVE_DIRECTION[key]);
+        }
+      });
+    }
   });
 
   // Puts the cursor on a position and makes its game current: `null` on a
@@ -145,6 +170,11 @@ export function useKeyFocus(options: {
       releaseRepeat();
       releaseRepeat = null;
     }
+    // Focus moved to something else, like the search bar: a true exit, so
+    // cruise ends. Falling to the page is only an unmounted tile.
+    if (!isInside && document.activeElement !== document.body) {
+      machine.dispatch({ type: "focus/left" });
+    }
   }
   useEventListener(document, "focusin", syncRepeatClaim);
   useEventListener(document, "focusout", syncRepeatClaim);
@@ -157,8 +187,9 @@ export function useKeyFocus(options: {
       return;
     }
     event.preventDefault();
-    // A key takes over from a moving stick at once.
-    stick.cancel();
+    // A key takes over from a moving stick at once, and it's ignored until
+    // it's let go, so a resting thumb can't fight the key.
+    machine.dispatch({ type: "stick/yielded" });
     // Hold DOM focus on the list, not a tile: a virtual list unmounts tiles
     // as they scroll away or load, and focus on one would fall to <body>.
     if (document.activeElement !== grid) {
@@ -177,8 +208,13 @@ export function useKeyFocus(options: {
       cruise.cancel();
     }
     const { key } = event;
-    if (isArrowKey(key))
-      stepActive(key, () => moveFocus(grid, LEAVE_DIRECTION[key]));
+    if (!isArrowKey(key)) return;
+    machine.dispatch({
+      type: "key/pressed",
+      key,
+      direction: directionOf(key),
+      now: performance.now(),
+    });
   }
 
   // One step, from a key, the D-pad, or the stick where it can't pan.
@@ -195,9 +231,11 @@ export function useKeyFocus(options: {
     activate(move.position);
     const rowIndex = itemRowIndexOf(options.rows(), move.position);
     const element = options.scroller();
-    if (
-      element &&
-      !stepFollows(
+    if (!element) return;
+    machine.dispatch({
+      type: "step/landed",
+      index: rowIndex,
+      ...landingOf(
         rowTopOf(
           options.rows(),
           rowIndex,
@@ -205,13 +243,10 @@ export function useKeyFocus(options: {
           options.headHeight(),
         ),
         options.rowHeight(),
-        key === "ArrowUp" ? -1 : key === "ArrowDown" ? 1 : 0,
+        directionOf(key),
         { scrollTop: element.scrollTop, height: element.clientHeight },
-      )
-    ) {
-      return;
-    }
-    options.follow(rowIndex);
+      ),
+    });
   }
 
   const visibleRange = shallowRef<VisibleRange | null>(null);
