@@ -8,16 +8,18 @@ import { computed, onMounted, reactive, ref, shallowRef, watch } from "vue";
 import { PAD_BUTTON } from "@/composables/useGamepad";
 import { RBtn } from "@/lib";
 import { focusFromInput } from "@/utils/autofocus";
-import { followScrollTop } from "../list.selectors";
-import FsmLive from "./fsm-live.vue";
 import {
   type AxisState,
   axisState,
   canPan,
+  isInsideBox,
+} from "../axis-machine";
+import { followScrollTop } from "../list.selectors";
+import FsmLive from "./fsm-live.vue";
+import {
   type Cell,
   centreTarget,
   type Grid2dFeel,
-  isInsideBox,
   isMovingAway,
   mountedSpan,
   moveCell,

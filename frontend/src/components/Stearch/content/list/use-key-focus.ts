@@ -7,6 +7,7 @@ import type { StearchAction } from "../../Stearch.actions";
 import { useContentView } from "../content.view";
 import type { ScrollFeel, ScrollRow, VisibleRange } from "./list.props";
 import {
+  type ArrowKey,
   activeDescendantId,
   isArrowKey,
   itemRowIndexOf,
@@ -99,6 +100,7 @@ export function useKeyFocus(options: {
     },
     deflection: readStickY,
     loop: "pad",
+    onStep: (key) => stepActive(key, () => undefined),
     onEnd: () => undefined,
   });
 
@@ -162,7 +164,7 @@ export function useKeyFocus(options: {
     if (document.activeElement !== grid) {
       focusFromInput(grid, { preventScroll: true });
     }
-    const { position, isFresh } = origin();
+    const { position } = origin();
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       const row = options.rows()[itemRowIndexOf(options.rows(), position)];
       cruiseColumn = row?.kind === "items" ? position - row.position : 0;
@@ -174,11 +176,19 @@ export function useKeyFocus(options: {
     } else {
       cruise.cancel();
     }
+    const { key } = event;
+    if (isArrowKey(key))
+      stepActive(key, () => moveFocus(grid, LEAVE_DIRECTION[key]));
+  }
+
+  // One step, from a key, the D-pad, or the stick where it can't pan.
+  function stepActive(key: ArrowKey, onLeave: () => void): void {
+    const { position, isFresh } = origin();
     const move = isFresh
       ? { kind: "move" as const, position }
-      : moveFor(options.rows(), position, event.key);
+      : moveFor(options.rows(), position, key);
     if (move.kind === "leave") {
-      moveFocus(grid, LEAVE_DIRECTION[event.key]);
+      onLeave();
       return;
     }
     if (move.kind === "stay") return;
@@ -195,7 +205,7 @@ export function useKeyFocus(options: {
           options.headHeight(),
         ),
         options.rowHeight(),
-        event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0,
+        key === "ArrowUp" ? -1 : key === "ArrowDown" ? 1 : 0,
         { scrollTop: element.scrollTop, height: element.clientHeight },
       )
     ) {

@@ -100,6 +100,7 @@ const stick = useStickScroll({
     isSticking.value = true;
     active.value = rowIndex;
   },
+  onStep: (key) => step(key === "ArrowDown" ? 1 : -1),
   onEnd: () => {
     isSticking.value = false;
   },

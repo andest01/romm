@@ -107,36 +107,6 @@ export const mountedSpan = (
   last: Math.min(count - 1, Math.ceil((scroll + view) / cellSize) + ring),
 });
 
-/** Where the active cell stands on one axis, against the box and the view.
- *  - `captured`: inside the box, and the view can move the way the stick
- *    pushes. The stick pans; the active cell hands over at the leading edge.
- *  - `pinned`: inside the box, but the view is at its limit that way, so it
- *    can't pan. The cell escapes the box by steps.
- *  - `free`: outside the box (a corner, or a mouse click far away). The
- *    cell walks by steps, and is captured again once it's back in the box. */
-export type AxisState = "captured" | "pinned" | "free";
-
-/** What the stick does on an axis in that state: move the view, or send
- *  steps exactly as a D-pad press would. */
-export type AxisMode = "pan" | "step";
-
-export const axisState = (
-  isInsideBox: boolean,
-  canPanToward: boolean,
-): AxisState => (!isInsideBox ? "free" : canPanToward ? "captured" : "pinned");
-
-export const axisMode = (state: AxisState): AxisMode =>
-  state === "captured" ? "pan" : "step";
-
-/** Whether a cell's middle is inside the box on one axis. */
-export const isInsideBox = (
-  index: number,
-  centre: number,
-  cellSize: number,
-  boxCells: number,
-): boolean =>
-  Math.abs(centre - (index + 0.5) * cellSize) <= (boxCells * cellSize) / 2;
-
 /** Whether a step that landed on `index` went away from the view's centre. */
 export const isMovingAway = (
   index: number,
@@ -144,24 +114,3 @@ export const isMovingAway = (
   centre: number,
   cellSize: number,
 ): boolean => direction * ((index + 0.5) * cellSize - centre) >= 0;
-
-/** Whether the view can move further that way on one axis. */
-export const canPan = (
-  scroll: number,
-  view: number,
-  content: number,
-  direction: number,
-): boolean =>
-  direction > 0 ? scroll < content - view - 0.5 : direction < 0 && scroll > 0.5;
-
-/** Steps owed by a stick in step mode: speed accumulates, and each whole
- *  cell is one step, so a bigger push steps faster. */
-export const stepsOwed = (
-  carried: number,
-  cellsPerSecond: number,
-  frameMs: number,
-): { steps: number; carried: number } => {
-  const total = carried + (Math.abs(cellsPerSecond) * frameMs) / 1000;
-  const steps = Math.floor(total);
-  return { steps, carried: total - steps };
-};

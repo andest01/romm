@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
+import { gamepadFixture } from "@/utils/gamepad.fixtures";
 import {
   FAILED_STEARCH_STATE,
   LOADED_STEARCH_STATE as loaded,
@@ -62,6 +63,85 @@ export const ArrowsNameTheActiveItem: Story = {
       if (!id) throw new Error("No active descendant");
       return expect(document.getElementById(id)).not.toBeNull();
     });
+  },
+};
+
+/** A stand-in pad whose left stick the story can move. */
+function fakePad() {
+  let stickY = 0;
+  const original = navigator.getGamepads;
+  Object.defineProperty(navigator, "getGamepads", {
+    configurable: true,
+    value: () => [gamepadFixture({ axes: [0, stickY, 0, 0] })],
+  });
+  return {
+    push: (y: number) => {
+      stickY = y;
+      window.dispatchEvent(new Event("gamepadconnected"));
+    },
+    restore: () =>
+      Object.defineProperty(navigator, "getGamepads", {
+        configurable: true,
+        value: original,
+      }),
+  };
+}
+
+const activeItem = (grid: HTMLElement) =>
+  grid.getAttribute("aria-activedescendant");
+
+/** The active item's row; the section heading is row 1, the first games 2. */
+const activeRowIndex = (grid: HTMLElement) =>
+  grid
+    .querySelector('[data-key-position="true"]')
+    ?.closest('[role="row"]')
+    ?.getAttribute("aria-rowindex");
+
+/** At the top limit the view can't pan, so the stick walks to the first row. */
+export const StickReachesTheFirstRow: Story = {
+  tags: ["!dev"],
+  args: { state: loaded },
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const pad = fakePad();
+    const grid = await within(canvasElement).findByRole("grid");
+    for (let press = 0; press < 3; press++) {
+      await fireEvent.keyDown(grid, { key: "ArrowDown" });
+    }
+
+    await waitFor(() => expect(activeRowIndex(grid)).not.toBe("2"));
+
+    // Act
+    pad.push(-1);
+
+    // Assert
+    await waitFor(() => expect(activeRowIndex(grid)).toBe("2"), {
+      timeout: 3000,
+    });
+    pad.push(0);
+    pad.restore();
+  },
+};
+
+/** The first row is outside the band: a gentle push must not jump to the band. */
+export const StickStaysOnTheFirstRow: Story = {
+  tags: ["!dev"],
+  args: { state: loaded },
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const pad = fakePad();
+    const grid = await within(canvasElement).findByRole("grid");
+    await fireEvent.keyDown(grid, { key: "ArrowDown" });
+    await waitFor(() => expect(activeItem(grid)).toBe("stearch-item-0"));
+
+    // Act
+    pad.push(0.15);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Assert
+    await expect(activeItem(grid)).toBe("stearch-item-0");
+    pad.push(0);
+    pad.restore();
   },
 };
 

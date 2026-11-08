@@ -1,6 +1,13 @@
 import { useRafFn } from "@vueuse/core";
 import { onBeforeUnmount, onMounted } from "vue";
 import { claimStickY, usePadRafFn } from "@/composables/useGamepad";
+import {
+  axisMode,
+  axisState,
+  canPan,
+  isInsideBox,
+  stepsOwed,
+} from "./axis-machine";
 import type { ScrollRow, StickFeel } from "./list.props";
 import {
   isStickPushed,
@@ -25,9 +32,9 @@ export function readStickY(): number {
 }
 
 /** The left stick as an analog scroll (spec 008), ported from the gallery's
- *  `useStickScroll`. Deflection sets a speed and the view moves; the row at
- *  the centre line becomes current once the current row's middle leaves the
- *  centre band. Letting go stops the view where it is; nothing recentres.
+ *  `useStickScroll`, on the axis machine. Captured, deflection sets a speed
+ *  and the view moves, handing over at the band. Pinned or free, it steps.
+ *  Letting go stops the view where it is; nothing recentres.
  *  While a feel has a stick, the stick sends no up or down arrows. */
 export function useStickScroll(options: {
   feel: () => StickFeel | null;
@@ -47,12 +54,16 @@ export function useStickScroll(options: {
    *  it without one. */
   loop: "pad" | "always";
   onRow: (rowIndex: number) => void;
+  /** A step where the stick can't pan: handled as the D-pad's arrow key. */
+  onStep: (key: "ArrowUp" | "ArrowDown") => void;
   onEnd: () => void;
 }) {
   let isActive = false;
   let isHandedOver = false;
   let currentRow = -1;
   let lastFrame = 0;
+  // Part of a step owed, carried between frames in step mode.
+  let carried = 0;
 
   function stop(): void {
     if (!isActive) return;
@@ -101,13 +112,35 @@ export function useStickScroll(options: {
             )
           : start;
     }
+    const speed = stickRowsPerSecond(y, feel);
+    const direction = Math.sign(speed);
+    if (direction === 0) return;
+    const rowTop = rowMiddle(currentRow) - options.rowHeight() / 2;
+    const state = axisState(
+      isInsideBox(0, centre - rowTop, options.rowHeight(), options.bandRows()),
+      canPan(
+        element.scrollTop,
+        element.clientHeight,
+        element.scrollHeight,
+        direction,
+      ),
+    );
+    if (axisMode(state) === "step") {
+      const owed = stepsOwed(carried, speed, frameMs);
+      carried = owed.carried;
+      for (let step = 0; step < owed.steps; step++) {
+        options.onStep(direction > 0 ? "ArrowDown" : "ArrowUp");
+      }
+      currentRow = options.currentRow() ?? currentRow;
+      return;
+    }
+    carried = 0;
     const max = element.scrollHeight - element.clientHeight;
     element.scrollTop = Math.min(
       max,
       Math.max(
         0,
-        element.scrollTop +
-          (stickRowsPerSecond(y, feel) * options.rowHeight() * frameMs) / 1000,
+        element.scrollTop + (speed * options.rowHeight() * frameMs) / 1000,
       ),
     );
     const line = element.scrollTop + element.clientHeight / 2;

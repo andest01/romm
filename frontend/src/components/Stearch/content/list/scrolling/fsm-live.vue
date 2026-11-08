@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // One axis's state machine, lit by where the active cell stands now.
-import { type AxisState, axisMode } from "./grid-2d.selectors";
+import { type AxisState, axisMode } from "../axis-machine";
 
 defineProps<{
   label: string;

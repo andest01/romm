@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { axisState, canPan, isInsideBox, stepsOwed } from "../axis-machine";
 import {
-  axisState,
-  canPan,
   centreTarget,
   indexAt,
-  isInsideBox,
   isMovingAway,
   mountedSpan,
   moveCell,
-  stepsOwed,
   stickVelocity,
 } from "./grid-2d.selectors";
 

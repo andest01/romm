@@ -7,20 +7,22 @@ import {
   usePadRafFn,
 } from "@/composables/useGamepad";
 import {
+  axisMode,
+  axisState,
+  canPan,
+  isInsideBox,
+  stepsOwed,
+} from "../axis-machine";
+import {
   isStickPushed,
   leadingPoint,
   stickCurrentRow,
 } from "../list.selectors";
 import {
-  axisMode,
-  axisState,
-  canPan,
   type Cell,
   type Grid2dFeel,
   indexAt,
-  isInsideBox,
   pushLength,
-  stepsOwed,
   stickVelocity,
   type Vector,
 } from "./grid-2d.selectors";
