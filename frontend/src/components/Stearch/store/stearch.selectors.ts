@@ -18,10 +18,6 @@ export const selectPlatformIds = (state: IStearchState) =>
 
 // view
 export const selectViewMode = (state: IStearchState) => state.view.mode;
-export const selectIsActionsOpen = (state: IStearchState) =>
-  state.view.isActionsOpen;
-export const selectCollections = (state: IStearchState) =>
-  state.view.collections;
 export const selectIsAdvancedOpen = (state: IStearchState) =>
   state.view.isAdvancedOpen;
 export const selectVisibleSpan = (state: IStearchState) =>

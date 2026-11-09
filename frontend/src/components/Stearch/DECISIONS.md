@@ -14,6 +14,8 @@ Why this folder works the way it does. `AGENTS.md` holds the rules; this holds t
 
 **What I clicked on is where I start.** Any verb that moves the view also moves the current item, so the next press resumes from where the user acted. Before shipping a verb, ask what state it leaves behind.
 
+**The button that opens a modal closes it.** Press it again and you're back where you were, without hunting for B. B still works too.
+
 **Controller input has one owner per press.** Hardware becomes named events (Confirm, Back), and the first owner found gets the press: overlay, then panel, then view. Keep the reducer behind it, so a screen never grows a chain of `showThisMenu` conditions per direction. Argosy's owner stack and event names are the model.
 
 **Landmarks and order.** Only layouts declare landmarks, named by `aria-labelledby` and never `aria-label`. Tab order equals DOM order, with no scripted exceptions. See spec 012.

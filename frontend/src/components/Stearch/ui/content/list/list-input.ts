@@ -58,7 +58,11 @@ export interface ListInputOptions {
   idAt: (position: number) => number | null;
   /** Opens the actions menu for the current game or selection. */
   openActions: () => void;
+  /** Closes the overlay on top, as B does. */
+  closeOverlay: () => void;
 }
+
+const OVERLAY = ".r-menu__panel, .r-dialog__panel";
 
 type PaintMode = "add" | "remove";
 
@@ -222,7 +226,7 @@ export function createListInput(
     }
     if (event.key === "ContextMenu" && event.target === grid) {
       event.preventDefault();
-      options.openActions();
+      toggleActions();
       return;
     }
     if (event.key === " " && event.target === grid) {
@@ -272,6 +276,10 @@ export function createListInput(
     // focus to the page, where nothing else would hear them.
     keyDown(event) {
       if (document.activeElement === document.body) onKey(event);
+      if (event.key === "ContextMenu" && !ownsTheStick()) {
+        event.preventDefault();
+        toggleActions();
+      }
     },
     // The pad's synthetic keyup comes with every press; its holds end by gap.
     keyUp(event) {
@@ -318,10 +326,23 @@ export function createListInput(
     visibleRange.value = range;
   };
 
+  // The button that opened a menu closes it. Only ours: other menus' buttons
+  // are their own.
+  let didOpenActions = false;
+
+  function toggleActions(): void {
+    if (ownsTheStick()) {
+      didOpenActions = true;
+      options.openActions();
+    } else if (didOpenActions && document.activeElement?.closest(OVERLAY)) {
+      didOpenActions = false;
+      options.closeOverlay();
+    }
+  }
+
   function onPadButton(name: string): void {
-    if (!ownsTheStick()) return;
-    if (name === "x") paint = options.toggleSelected();
-    if (name === "y") options.openActions();
+    if (name === "y") toggleActions();
+    if (name === "x" && ownsTheStick()) paint = options.toggleSelected();
   }
 
   function onPadButtonUp(name: string): void {

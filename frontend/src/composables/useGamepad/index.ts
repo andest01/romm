@@ -236,6 +236,9 @@ function dispatchKey(binding: Binding): boolean {
   return claimed;
 }
 
+/** Closes the topmost overlay the way pad B does. */
+export const closeTopOverlay = (): boolean => dispatchKey(ESCAPE);
+
 type ButtonState = { pressed: boolean; nextRepeatAt: number };
 type PadState = {
   buttons: Record<number, ButtonState>;

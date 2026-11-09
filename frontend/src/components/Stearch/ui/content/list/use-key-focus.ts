@@ -1,6 +1,7 @@
 import { useEventListener } from "@vueuse/core";
 import { readonly } from "vue";
 import { useRouter } from "vue-router";
+import { closeTopOverlay } from "@/composables/useGamepad";
 import { ROUTES } from "@/plugins/routeNames";
 import {
   selectActiveId,
@@ -19,7 +20,7 @@ import { useStickDriver } from "./use-stick-driver";
 export function useKeyFocus(
   options: Omit<
     ListInputOptions,
-    "open" | "toggleSelected" | "idAt" | "openActions"
+    "open" | "toggleSelected" | "idAt" | "openActions" | "closeOverlay"
   >,
 ) {
   const view = useContentView();
@@ -53,7 +54,14 @@ export function useKeyFocus(
       ?.click();
   };
   const input = createListInput(
-    { ...options, open, toggleSelected, idAt, openActions },
+    {
+      ...options,
+      open,
+      toggleSelected,
+      idAt,
+      openActions,
+      closeOverlay: closeTopOverlay,
+    },
     createAxisStore(),
     view,
   );

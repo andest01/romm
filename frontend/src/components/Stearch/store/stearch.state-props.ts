@@ -144,12 +144,6 @@ export interface IStearchState {
     } | null;
     /** The field open in the add-a-filter menu. */
     readonly openFieldId: string | null;
-    readonly isActionsOpen: boolean;
-    /** What the actions menu can add games to. */
-    readonly collections: readonly {
-      readonly id: number;
-      readonly name: string;
-    }[];
   };
   /** Words are state, so selectors can hand views finished content. */
   readonly labels: StearchLabels;

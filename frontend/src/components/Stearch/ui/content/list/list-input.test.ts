@@ -27,6 +27,7 @@ function pressEnter(onChild: boolean) {
       toggleSelected: vi.fn(() => null),
       idAt: () => null,
       openActions: vi.fn(),
+      closeOverlay: vi.fn(),
     },
     createAxisStore(),
     {
@@ -44,6 +45,8 @@ function pressEnter(onChild: boolean) {
 }
 
 function painting() {
+  const openActions = vi.fn();
+  const closeOverlay = vi.fn();
   const dispatch = vi.fn();
   const navigate = shallowRef<((position: number) => void) | null>(null);
   const input = createListInput(
@@ -60,7 +63,8 @@ function painting() {
       open: vi.fn(),
       toggleSelected: () => "add",
       idAt: (position) => position + 100,
-      openActions: vi.fn(),
+      openActions,
+      closeOverlay,
     },
     createAxisStore(),
     {
@@ -74,8 +78,29 @@ function painting() {
     dispatch.mock.calls.flatMap(([actions]) =>
       actions.filter((a: { type: string }) => a.type === "selection/add"),
     );
-  return { input, navigate, added };
+  return { input, navigate, added, openActions, closeOverlay };
 }
+
+describe("createListInput actions button", () => {
+  it("closes the menu it opened on the second press", () => {
+    // Arrange
+    const { input, closeOverlay } = painting();
+    input.onPadButton("y");
+    const panel = document.createElement("div");
+    panel.className = "r-menu__panel";
+    const item = document.createElement("button");
+    panel.append(item);
+    document.body.append(panel);
+    item.focus();
+
+    // Act
+    input.onPadButton("y");
+
+    // Assert
+    expect(closeOverlay).toHaveBeenCalledOnce();
+    panel.remove();
+  });
+});
 
 describe("createListInput painting", () => {
   it("adds each game the cursor lands on while X is held", () => {

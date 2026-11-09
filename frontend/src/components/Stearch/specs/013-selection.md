@@ -21,7 +21,7 @@ Stearch is a file browser for games, so selection follows file browsers. Three t
 | S4  | B never changes data, so it never clears a selection                                    | Spec rule                         |
 | S5  | Bulk actions appear only while something is selected                                    | `footer.pure-component.vue`       |
 | S6  | A bulk action keeps the selection, so a second action can follow                        | `bulk-add.container.vue`          |
-| S7  | Y opens the game menu; with a selection it leads with a bulk actions entry              | `action-menu.selectors.test.ts`   |
+| S7  | Y opens the game menu; Like and Download act on the selection, else the active game     | Needs a pad pass                  |
 | S8  | Hold X and move paints a run; the first game decides add or remove. Shift + arrows adds | `list-input.test.ts`              |
 
 ## Open
@@ -30,7 +30,7 @@ What should A do on a game? Opening it is one answer. The user's better idea: A 
 
 ## Actions menu
 
-Y opens RomM's existing game menu on the game under the cursor, so every surface shares one list of verbs. With a selection, its first entry is `Bulk actions for 3 games`, which opens a dialog of bulk verbs from `store/action-menu.selectors.ts`. A dialog rather than a nested menu, so focus and B stay simple on a controller.
+Y opens RomM's existing game menu on the game under the cursor, so every surface shares one list of verbs. Verbs that can run in bulk act on `selected || active`, in that same menu. There is no second modal: a dialog opened from the menu lost controller focus.
 
 ## Why selections are cheap
 

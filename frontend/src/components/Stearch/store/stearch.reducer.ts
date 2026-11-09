@@ -60,8 +60,6 @@ export const INITIAL_STEARCH_STATE: IStearchState = {
     visibleSpan: { first: 0, last: 0 },
     jump: null,
     openFieldId: null,
-    isActionsOpen: false,
-    collections: [],
   },
   labels: buildLabels((key) => key),
   results: {

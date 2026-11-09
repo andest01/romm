@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, toRef } from "vue";
 import { useI18n } from "vue-i18n";
-import { GAME_MENU_EXTRA } from "@/components/GameActions/gameMenuExtra";
+import { GAME_MENU_BULK } from "@/components/GameActions/gameMenuExtra";
 import { useGameActions } from "@/composables/useGameActions";
 import { RDivider, RMenuItem } from "@/lib";
 import type { SimpleRom } from "@/stores/roms";
@@ -13,7 +13,7 @@ const props = defineProps<{ rom: SimpleRom | null }>();
 const emit = defineEmits<{ (e: "close"): void }>();
 
 const { t } = useI18n();
-const extra = inject(GAME_MENU_EXTRA, null);
+const bulk = inject(GAME_MENU_BULK, null);
 const romRef = toRef(props, "rom");
 const actions = useGameActions(() => romRef.value);
 
@@ -22,6 +22,8 @@ const favLabel = computed(() =>
     ? t("rom.remove-from-favorites")
     : t("rom.add-to-favorites"),
 );
+const bulkFavoriteLabel = computed(() => bulk?.favoriteLabel.value ?? null);
+const bulkDownloadLabel = computed(() => bulk?.downloadLabel.value ?? null);
 
 const hasMetadataActions = computed(
   () =>
@@ -35,7 +37,6 @@ function run(fn: () => void | Promise<void>) {
 </script>
 
 <template>
-  <component :is="extra" v-if="extra" />
   <!-- Primary actions -->
   <RMenuItem
     v-if="actions.canPlayLocally.value"
@@ -57,9 +58,9 @@ function run(fn: () => void | Promise<void>) {
   />
   <RMenuItem
     v-if="actions.canDownload.value"
-    :label="t('rom.download')"
+    :label="bulkDownloadLabel ?? t('rom.download')"
     icon="mdi-download-outline"
-    @click="run(actions.download)"
+    @click="run(bulk && bulkDownloadLabel ? bulk.download : actions.download)"
   />
   <RMenuItem
     v-for="format in actions.downloadFormats.value"
@@ -97,10 +98,16 @@ function run(fn: () => void | Promise<void>) {
 
   <!-- User actions -->
   <RMenuItem
-    :label="favLabel"
-    :icon="actions.isFavorited.value ? 'mdi-heart' : 'mdi-heart-outline'"
-    :variant="actions.isFavorited.value ? 'active' : 'default'"
-    @click="run(actions.favorite)"
+    :label="bulkFavoriteLabel ?? favLabel"
+    :icon="
+      !bulkFavoriteLabel && actions.isFavorited.value
+        ? 'mdi-heart'
+        : 'mdi-heart-outline'
+    "
+    :variant="
+      !bulkFavoriteLabel && actions.isFavorited.value ? 'active' : 'default'
+    "
+    @click="run(bulk && bulkFavoriteLabel ? bulk.favorite : actions.favorite)"
   />
   <RMenuItem
     v-if="actions.canManageCollections.value"
