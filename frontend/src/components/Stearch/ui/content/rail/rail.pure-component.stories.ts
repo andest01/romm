@@ -22,7 +22,7 @@ const bucket = (key: string, share: number, isCurrent: boolean) => ({
   label: key,
   share,
   isCurrent,
-  navigateActions: [],
+  position: 0,
 });
 
 export const Letters: Story = {

@@ -2,6 +2,7 @@
 // state and an event and returns the next state and effects. The list runs it
 // once; the 2D grid runs it per axis.
 import { type Handlers, reducerOf } from "../../../store/stearch.actions";
+import { type CruiseTuning, DEFAULT_CRUISE } from "./list.props";
 import { type ArrowKey, stickCurrentRow } from "./list.selectors";
 
 /** Where the active cell stands on one axis, against the band and the view.
@@ -29,15 +30,8 @@ export const axisState = (
   return isCruising ? "cruising" : "captured";
 };
 
-const CRUISE = {
-  enterAt: 0.95,
-  exitAt: 0.4,
-  stackMs: 1000,
-  /** A push at or above these caps the stack at 5x, then 2x. */
-  capAt: { five: 0.9, two: 0.75 },
-  /** Keeps a stick resting on a threshold from buzzing between stacks. */
-  margin: 0.02,
-} as const;
+/** Keeps a stick resting on a threshold from buzzing between stacks. */
+const CAP_MARGIN = 0.02;
 
 /** Rows each cruise step moves. */
 export type CruiseStack = 1 | 2 | 5;
@@ -56,12 +50,16 @@ export const CRUISE_AT_REST: Cruise = { since: null, cap: 5, stack: null };
 const lower = (a: CruiseStack, b: CruiseStack): CruiseStack => (a < b ? a : b);
 const higher = (a: CruiseStack, b: CruiseStack): CruiseStack => (a > b ? a : b);
 
-function capFor(push: number, previous: CruiseStack): CruiseStack {
+function capFor(
+  push: number,
+  previous: CruiseStack,
+  { fiveAt, twoAt }: CruiseTuning,
+): CruiseStack {
   const capWith = (margin: number): CruiseStack => {
-    if (push >= CRUISE.capAt.five - margin) return 5;
-    return push >= CRUISE.capAt.two - margin ? 2 : 1;
+    if (push >= fiveAt - margin) return 5;
+    return push >= twoAt - margin ? 2 : 1;
   };
-  return higher(capWith(0), lower(capWith(CRUISE.margin), previous));
+  return higher(capWith(0), lower(capWith(CAP_MARGIN), previous));
 }
 
 /** Rows or cells one step moves, whatever input is driving it. */
@@ -87,13 +85,19 @@ export function nextHeldKey(
   previous: HeldKey,
   key: string,
   now: number,
+  tuning: CruiseTuning = DEFAULT_CRUISE,
 ): HeldKey {
   const isSameHold =
     previous.key === key && now - previous.at < HELD_KEY_GAP_MS;
   return {
     key,
     at: now,
-    cruise: nextCruise(isSameHold ? previous.cruise : CRUISE_AT_REST, 1, now),
+    cruise: nextCruise(
+      isSameHold ? previous.cruise : CRUISE_AT_REST,
+      1,
+      now,
+      tuning,
+    ),
   };
 }
 
@@ -103,17 +107,18 @@ export function nextCruise(
   previous: Cruise,
   push: number,
   now: number,
+  tuning: CruiseTuning = DEFAULT_CRUISE,
 ): Cruise {
-  const since = previous.since ?? (push >= CRUISE.enterAt ? now : null);
+  const since = previous.since ?? (push >= tuning.enterAt ? now : null);
   if (since === null) return CRUISE_AT_REST;
-  const stacksEarned = Math.floor((now - since) / CRUISE.stackMs);
+  const stacksEarned = Math.floor((now - since) / tuning.stackMs);
   if (stacksEarned < 1) {
-    return push >= CRUISE.enterAt
+    return push >= tuning.enterAt
       ? { ...CRUISE_AT_REST, since }
       : CRUISE_AT_REST;
   }
-  if (push < CRUISE.exitAt) return CRUISE_AT_REST;
-  const cap = capFor(push, previous.cap);
+  if (push < tuning.exitAt) return CRUISE_AT_REST;
+  const cap = capFor(push, previous.cap, tuning);
   const earned: CruiseStack =
     stacksEarned >= 3 ? 5 : stacksEarned === 2 ? 2 : 1;
   return { since, cap, stack: lower(earned, cap) };
@@ -192,6 +197,7 @@ export type AxisEvent =
       push: number;
       cellsPerSecond: number;
       keyCellsPerSecond: number;
+      tuning: CruiseTuning;
       frameMs: number;
       now: number;
       geometry: AxisGeometry;
@@ -199,7 +205,13 @@ export type AxisEvent =
   | { type: "stick/yielded" }
   | { type: "navigate/started"; index: number }
   | { type: "view/settled"; geometry: AxisGeometry }
-  | { type: "key/pressed"; key: ArrowKey; direction: -1 | 0 | 1; now: number }
+  | {
+      type: "key/pressed";
+      key: ArrowKey;
+      direction: -1 | 0 | 1;
+      now: number;
+      tuning: CruiseTuning;
+    }
   | { type: "key/released" }
   | { type: "focus/left" }
   | {
@@ -288,7 +300,12 @@ const HANDLERS: Handlers<AxisResult, AxisEvent> = {
       );
     }
     if (state.phase === "yielded") return { state, effects: [] };
-    const cruise = nextCruise(state.cruise, event.push, event.now);
+    const cruise = nextCruise(
+      state.cruise,
+      event.push,
+      event.now,
+      event.tuning,
+    );
     const sign = Math.sign(event.cellsPerSecond);
     const direction = sign > 0 ? 1 : sign < 0 ? -1 : state.direction;
     const axis = axisFor(event.geometry, direction, cruise);
@@ -335,8 +352,8 @@ const HANDLERS: Handlers<AxisResult, AxisEvent> = {
     },
     effects: [],
   }),
-  "key/pressed": ({ state }, { key, direction, now }) => {
-    const heldKey = nextHeldKey(state.heldKey, key, now);
+  "key/pressed": ({ state }, { key, direction, now, tuning }) => {
+    const heldKey = nextHeldKey(state.heldKey, key, now, tuning);
     const next = { ...yielded(state), heldKey };
     return resolved(state, next, [
       { type: "step", key, direction, count: cellsPerStep(heldKey.cruise) },

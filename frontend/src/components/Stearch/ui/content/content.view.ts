@@ -28,6 +28,8 @@ export interface ContentView {
   /** The stick's score multiplier; `null` outside cruise. Written only by
    *  `useKeyFocus`. */
   cruiseStack: ShallowRef<CruiseStack | null>;
+  /** Sends a position to the mounted view's machine. Written by that view. */
+  navigate: ShallowRef<((position: number) => void) | null>;
 }
 
 const CONTENT_VIEW: InjectionKey<ContentView> = Symbol("stearch-content-view");
@@ -43,6 +45,7 @@ function createContentView(): ContentView {
     activePosition: shallowRef(null),
     isScrubbing: shallowRef(false),
     cruiseStack: shallowRef(null),
+    navigate: shallowRef(null),
   };
 }
 

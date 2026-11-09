@@ -1,6 +1,7 @@
 // The two-axis spike (spec 009). Most of 1D carries over by running it once
 // per axis: `followScrollTop` follows, `stickCurrentRow` hands over. Only the
 // stick's velocity is new, because a radial deadzone needs both axes at once.
+import type { CruiseTuning } from "../list.props";
 
 /** How a 2D grid moves. Separate from `ScrollFeel` until the spike says how
  *  to merge them. */
@@ -15,6 +16,7 @@ export interface Grid2dFeel {
   readonly maxCellsPerSecond: number;
   /** The curve between them: 1 is linear, above 1 is finer when slow. */
   readonly gamma: number;
+  readonly cruise: CruiseTuning;
 }
 
 export interface Cell {

@@ -3,9 +3,15 @@ import { claimKeyRateRepeat, isPadEvent } from "@/composables/useGamepad";
 import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import type { StearchAction } from "../../../store/stearch.actions";
+import type { ContentView } from "../content.view";
 import type { CruiseStack } from "./axis-machine";
 import type { AxisStore } from "./axis-store";
-import type { ScrollFeel, ScrollRow, VisibleRange } from "./list.props";
+import {
+  DEFAULT_CRUISE,
+  type ScrollFeel,
+  type ScrollRow,
+  type VisibleRange,
+} from "./list.props";
 import {
   type ArrowKey,
   activeDescendantId,
@@ -51,9 +57,12 @@ export function createListInput(
     activePosition: ShallowRef<number | null>;
     isScrubbing: ShallowRef<boolean>;
     cruiseStack: ShallowRef<CruiseStack | null>;
+    navigate: ContentView["navigate"];
   },
 ) {
-  const { activePosition, isScrubbing, cruiseStack } = view;
+  const { activePosition, isScrubbing, cruiseStack, navigate } = view;
+  navigate.value = (position) =>
+    machine.dispatch({ type: "navigate/started", index: position });
   // The column the stick keeps, clamped to a short row.
   let column = 0;
 
@@ -118,6 +127,15 @@ export function createListInput(
   }
 
   machine.onEffect((effect) => {
+    if (effect.type === "activate") activate(effect.index);
+    if (effect.type === "fly" && activePosition.value !== null) {
+      options.dispatch([
+        {
+          type: "view/set",
+          patch: { jump: { position: activePosition.value, isSmooth: true } },
+        },
+      ]);
+    }
     if (effect.type === "follow") options.follow(effect.index);
     if (effect.type === "stack") cruiseStack.value = effect.stack;
     if (effect.type !== "step") return;
@@ -175,6 +193,7 @@ export function createListInput(
       key: event.key,
       direction: directionOf(event.key),
       now: performance.now(),
+      tuning: options.feel().stick?.cruise ?? DEFAULT_CRUISE,
     });
   }
 
@@ -208,6 +227,9 @@ export function createListInput(
     // hear it, or the next key would judge against a stale view.
     scrolled(event) {
       if (event.target === options.scroller()) stick.measure();
+    },
+    settled(event) {
+      if (event.target === options.scroller()) stick.settle();
     },
     dispose: () => releaseRepeat?.(),
   };

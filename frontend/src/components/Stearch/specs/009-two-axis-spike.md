@@ -1,6 +1,6 @@
 # Spec 009: the two-axis spike
 
-**Status:** phase 1 (the grid) built as a story, unit-tested, not yet tried with a real pad. Phase 2 (the map) and the treemap are ideas.
+**Status:** phase 1 (the grid) built as a story, unit-tested, not yet tried with a real pad. Phase 2 (the map) and the treemap are ideas. The spike's machine is now shared with the list (spec 010); `use-stick-scroll-2d.ts` below became `grid-stick-driver.ts`.
 **Source of intent:** the user, 2026-11-08: "I want the control stick to smoothly move across both axes ... a 128×128 grid, but only big enough to see 24×24. Same fundamental concepts, two directions." Then: keyboard is the D-pad; selection and active carry over; radial deadzone; a separate feel for now, with lessons for merging; later, our games as GeoJSON on a map, where the sticks pan and zoom.
 
 ## Concepts carried over

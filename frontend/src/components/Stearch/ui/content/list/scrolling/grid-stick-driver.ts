@@ -95,6 +95,7 @@ export function createGridStickDriver(options: {
           push: Math.abs(stick[axis]),
           cellsPerSecond: velocity[axis],
           keyCellsPerSecond: 1000 / keyRepeatMs(),
+          tuning: feel.cruise,
           frameMs,
           now,
           geometry: isPushed

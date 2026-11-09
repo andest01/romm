@@ -1,7 +1,7 @@
 import { claimStickY, keyRepeatMs } from "@/composables/useGamepad";
 import { type AxisGeometry, canPan, isInsideBox } from "./axis-machine";
 import type { AxisStore } from "./axis-store";
-import type { ScrollRow, StickFeel } from "./list.props";
+import { DEFAULT_CRUISE, type ScrollRow, type StickFeel } from "./list.props";
 import {
   isStickPushed,
   itemRowAtCentre,
@@ -35,7 +35,7 @@ export function createListStickDriver(options: {
   deflection: () => number;
   onRow: (rowIndex: number) => void;
   onEnd: () => void;
-}): StickDriver & { measure: () => void } {
+}): StickDriver & { measure: () => void; settle: () => void } {
   const { machine } = options;
   let currentRow = -1;
 
@@ -105,7 +105,13 @@ export function createListStickDriver(options: {
       const y = feel ? options.deflection() : 0;
       const wasPushed = machine.state.value.phase !== "idle";
       const isPushed = !!feel && isStickPushed(y, feel.deadzone, wasPushed);
-      const common = { type: "stick/sampled", isPushed, frameMs, now } as const;
+      const common = {
+        type: "stick/sampled",
+        isPushed,
+        frameMs,
+        now,
+        tuning: feel ? feel.cruise : DEFAULT_CRUISE,
+      } as const;
       if (!isPushed) {
         machine.dispatch({
           ...common,
@@ -129,6 +135,15 @@ export function createListStickDriver(options: {
       if (element) {
         machine.dispatch({
           type: "view/measured",
+          geometry: geometryOf(element),
+        });
+      }
+    },
+    settle() {
+      const element = options.scroller();
+      if (element) {
+        machine.dispatch({
+          type: "view/settled",
           geometry: geometryOf(element),
         });
       }

@@ -6,6 +6,7 @@ import {
   type AxisMachineState,
   transition,
 } from "./axis-machine";
+import { DEFAULT_CRUISE } from "./list.props";
 
 const CAPTURED: AxisGeometry = {
   isInBand: true,
@@ -22,6 +23,7 @@ const sample = (
   push: 0.5,
   cellsPerSecond: 10,
   keyCellsPerSecond: 30,
+  tuning: DEFAULT_CRUISE,
   frameMs: 16,
   now: 0,
   geometry: CAPTURED,
@@ -33,6 +35,7 @@ const press = (now: number): AxisEvent => ({
   key: "ArrowDown",
   direction: 1,
   now,
+  tuning: DEFAULT_CRUISE,
 });
 
 const apply = (...events: AxisEvent[]): AxisMachineState =>
@@ -232,6 +235,18 @@ describe("transition", () => {
 
     // Assert
     expect(state.axis).toBe("free");
+  });
+
+  it("earns stacks at the tuned speed", () => {
+    // Arrange
+    const tuning = { ...DEFAULT_CRUISE, stackMs: 100 };
+    const before = apply(sample({ push: 1, now: 0, tuning }));
+
+    // Act
+    const { state } = transition(before, sample({ push: 1, now: 300, tuning }));
+
+    // Assert
+    expect(state.cruise.stack).toBe(5);
   });
 
   it("does nothing, identically, for an idle stick", () => {

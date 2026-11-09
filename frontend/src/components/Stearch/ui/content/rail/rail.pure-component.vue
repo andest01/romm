@@ -24,7 +24,7 @@ defineEmits<RailEmits>();
       :data-current="bucket.isCurrent"
       :style="{ flexGrow: bucket.share }"
       :title="bucket.label"
-      @click="$emit('press', bucket.navigateActions)"
+      @click="$emit('press', bucket.position)"
       @keydown="$emit('key', $event)"
     >
       {{ bucket.label }}

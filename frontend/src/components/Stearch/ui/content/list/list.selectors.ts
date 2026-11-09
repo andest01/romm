@@ -14,7 +14,6 @@ import type {
 import type { StearchDevice } from "../content.view";
 import { LIST_ITEMS } from "./list.items";
 import type {
-  CruiseFeel,
   StickFeel,
   ListItemKind,
   ListProps,
@@ -431,15 +430,6 @@ export const glideStep = (
   glideMs <= 0
     ? target
     : from + (target - from) * Math.min(1, Math.max(0, elapsedMs / glideMs));
-
-/** Cruise speed after holding for `heldMs`: a linear ramp, then flat. */
-export const cruiseRowsPerSecond = (
-  heldMs: number,
-  { startRowsPerSecond, maxRowsPerSecond, rampMs }: CruiseFeel,
-): number =>
-  startRowsPerSecond +
-  (maxRowsPerSecond - startRowsPerSecond) *
-    Math.min(1, rampMs <= 0 ? 1 : heldMs / rampMs);
 
 /** The item row under the viewport's centre line, or the next item row when
  *  a heading sits there. -1 when there are no item rows. */

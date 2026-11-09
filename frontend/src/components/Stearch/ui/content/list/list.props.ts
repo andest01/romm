@@ -80,13 +80,26 @@ export const RESULTS_HELP_ID = "stearch-results-help";
  * ahead, so a wider ring only mounts tiles nobody sees. */
 export const SCROLLER_OVERSCAN = 2;
 
-/** Hold-to-cruise: a held ↑ or ↓ scrolls in a straight line, from the start
- *  speed to the top speed over the ramp. */
-export interface CruiseFeel {
-  readonly startRowsPerSecond: number;
-  readonly maxRowsPerSecond: number;
-  readonly rampMs: number;
+/** How cruise is entered, stacked and left (spec 010). Pushes are 0 to 1. */
+export interface CruiseTuning {
+  /** The push that starts the count, and that must hold until the first stack. */
+  readonly enterAt: number;
+  /** Below this push, cruise ends. */
+  readonly exitAt: number;
+  /** Time to earn each stack: 1x, then 2x, then 5x. */
+  readonly stackMs: number;
+  /** A push at or above these allows 5x, then 2x. */
+  readonly fiveAt: number;
+  readonly twoAt: number;
 }
+
+export const DEFAULT_CRUISE: CruiseTuning = Object.freeze({
+  enterAt: 0.95,
+  exitAt: 0.4,
+  stackMs: 1000,
+  fiveAt: 0.9,
+  twoAt: 0.75,
+});
 
 /** Easing curves for the attention marks, by name, so a story can pick one. */
 export const MARK_CURVES = Object.freeze({
@@ -126,6 +139,7 @@ export interface StickFeel {
   readonly maxRowsPerSecond: number;
   /** The curve between them: 1 is linear, above 1 is finer when slow. */
   readonly gamma: number;
+  readonly cruise: CruiseTuning;
 }
 
 /** How a list moves (specs 007 and 008). One interface for every view, read
@@ -137,8 +151,6 @@ export interface ScrollFeel {
   readonly bandRows: number;
   /** A tap's glide, in a straight line. 0 is a jump cut. */
   readonly glideMs: number;
-  /** `null`: a held key just repeats steps. */
-  readonly cruise: CruiseFeel | null;
   /** How the attention marks fade in and out. */
   readonly marks: MarkMotion;
   /** `null`: the stick sends arrow keys, like the D-pad. */
@@ -157,13 +169,13 @@ const STICK: StickFeel = Object.freeze({
   minRowsPerSecond: 0.5,
   maxRowsPerSecond: 30,
   gamma: 1,
+  cruise: DEFAULT_CRUISE,
 });
 
 /** The table: keys in jump cuts, the stick as a smooth scroll. */
 export const TABLE_FEEL: ScrollFeel = Object.freeze({
   bandRows: 1,
   glideMs: 0,
-  cruise: null,
   marks: JUMP_CUT_MARKS,
   stick: STICK,
 });
@@ -172,7 +184,6 @@ export const TABLE_FEEL: ScrollFeel = Object.freeze({
 export const TILES_FEEL: ScrollFeel = Object.freeze({
   bandRows: 1,
   glideMs: 0,
-  cruise: null,
   marks: JUMP_CUT_MARKS,
   stick: STICK,
 });

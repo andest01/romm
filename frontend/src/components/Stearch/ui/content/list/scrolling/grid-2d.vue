@@ -32,7 +32,13 @@ import {
 import { createGridStickDriver, readStick } from "./grid-stick-driver";
 
 const props = defineProps<
-  Grid2dFeel & {
+  Omit<Grid2dFeel, "cruise"> & {
+    /** Cruise, flat so each is its own Storybook control. */
+    cruiseEnterAt: number;
+    cruiseExitAt: number;
+    cruiseStackMs: number;
+    cruiseFiveAt: number;
+    cruiseTwoAt: number;
     rows: number;
     cols: number;
     cellSize: number;
@@ -58,6 +64,13 @@ const feel = computed((): Grid2dFeel => ({
   minCellsPerSecond: props.minCellsPerSecond,
   maxCellsPerSecond: props.maxCellsPerSecond,
   gamma: props.gamma,
+  cruise: {
+    enterAt: props.cruiseEnterAt,
+    exitAt: props.cruiseExitAt,
+    stackMs: props.cruiseStackMs,
+    fiveAt: props.cruiseFiveAt,
+    twoAt: props.cruiseTwoAt,
+  },
 }));
 // The grid fills whatever canvas it's given, so it measures its viewport.
 // The content box excludes the scrollbars, which is the space cells get.
@@ -408,6 +421,7 @@ function onKey(event: KeyboardEvent): void {
     key: event.key,
     direction: event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1,
     now: performance.now(),
+    tuning: feel.value.cruise,
   });
 }
 
@@ -423,6 +437,7 @@ useKeyDriver({
   },
   focusChanged: () => undefined,
   scrolled: () => undefined,
+  settled: () => undefined,
   dispose: () => undefined,
 });
 

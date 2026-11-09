@@ -3,13 +3,12 @@ import { LOADED_STEARCH_STATE } from "../../../store/fixtures";
 import { selectSlots } from "../../../store/rows.selectors";
 import type { StearchAction } from "../../../store/stearch.actions";
 import { INITIAL_STEARCH_STATE } from "../../../store/stearch.reducer";
-import type { CruiseFeel, ScrollRow } from "./list.props";
+import type { ScrollRow } from "./list.props";
 import {
   activeDescendantId,
   bandOffsetFor,
   buildScrollRows,
   buildWindowActions,
-  cruiseRowsPerSecond,
   followScrollTop,
   glideStep,
   isStickPushed,
@@ -503,30 +502,6 @@ describe("glideStep", () => {
 
     // Assert
     expect(next).toBe(100);
-  });
-});
-
-describe("cruiseRowsPerSecond", () => {
-  const cruise: CruiseFeel = {
-    startRowsPerSecond: 8,
-    maxRowsPerSecond: 20,
-    rampMs: 1000,
-  };
-
-  it("ramps linearly from the start speed", () => {
-    // Act
-    const speed = cruiseRowsPerSecond(500, cruise);
-
-    // Assert
-    expect(speed).toBe(14);
-  });
-
-  it("holds the top speed after the ramp", () => {
-    // Act
-    const speed = cruiseRowsPerSecond(5000, cruise);
-
-    // Assert
-    expect(speed).toBe(20);
   });
 });
 

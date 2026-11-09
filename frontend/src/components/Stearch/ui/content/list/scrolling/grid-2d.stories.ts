@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
+import { DEFAULT_CRUISE } from "../list.props";
 import Grid2d from "./grid-2d.vue";
 
 const meta: Meta<typeof Grid2d> = {
@@ -20,6 +21,13 @@ const meta: Meta<typeof Grid2d> = {
       control: { type: "range", min: 1, max: 60, step: 1 },
     },
     gamma: { control: { type: "range", min: 0.5, max: 3, step: 0.1 } },
+    cruiseEnterAt: { control: { type: "range", min: 0.5, max: 1, step: 0.01 } },
+    cruiseExitAt: { control: { type: "range", min: 0, max: 0.9, step: 0.01 } },
+    cruiseStackMs: {
+      control: { type: "range", min: 100, max: 3000, step: 50 },
+    },
+    cruiseFiveAt: { control: { type: "range", min: 0.5, max: 1, step: 0.01 } },
+    cruiseTwoAt: { control: { type: "range", min: 0.4, max: 1, step: 0.01 } },
     rows: { control: { type: "range", min: 24, max: 512, step: 8 } },
     cols: { control: { type: "range", min: 24, max: 512, step: 8 } },
     cellSize: { control: { type: "range", min: 16, max: 96, step: 4 } },
@@ -33,6 +41,11 @@ const meta: Meta<typeof Grid2d> = {
     minCellsPerSecond: 0.5,
     maxCellsPerSecond: 30,
     gamma: 1,
+    cruiseEnterAt: DEFAULT_CRUISE.enterAt,
+    cruiseExitAt: DEFAULT_CRUISE.exitAt,
+    cruiseStackMs: DEFAULT_CRUISE.stackMs,
+    cruiseFiveAt: DEFAULT_CRUISE.fiveAt,
+    cruiseTwoAt: DEFAULT_CRUISE.twoAt,
     rows: 128,
     cols: 128,
     cellSize: 32,

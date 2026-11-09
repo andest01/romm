@@ -8,6 +8,8 @@ export interface KeyDriver {
   focusChanged: () => void;
   /** Anything scrolled, like the wheel or the scrollbar. */
   scrolled: (event: Event) => void;
+  /** A smooth scroll finished. */
+  settled: (event: Event) => void;
   dispose: () => void;
 }
 
@@ -17,9 +19,8 @@ export function useKeyDriver(driver: KeyDriver): void {
   useEventListener(window, "keyup", driver.keyUp);
   useEventListener(document, "focusin", driver.focusChanged);
   useEventListener(document, "focusout", driver.focusChanged);
-  useEventListener(window, "scroll", driver.scrolled, {
-    capture: true,
-    passive: true,
-  });
+  const quietly = { capture: true, passive: true };
+  useEventListener(window, "scroll", driver.scrolled, quietly);
+  useEventListener(window, "scrollend", driver.settled, quietly);
   onBeforeUnmount(driver.dispose);
 }

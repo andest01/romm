@@ -1,6 +1,6 @@
 # Spec 007: focus travel
 
-**Status:** F1 to F4 and F6 built for tiles and table, unit-tested, tried by the user in a browser. F5, F7, F9 to F11 not built.
+**Status:** F1 to F4 and F6 built for tiles and table, unit-tested, tried by the user in a browser. F5, F7, F9 to F11 not built. **Superseded in part:** hold-to-cruise (`use-cruise`), the `cruise` feel and the `centre-band` story are deleted; held input is now spec 010's cruise stacks.
 **Source of intent:** the user's nits in `search nits.md` (focus spins out into the sidebar while holding ↓; tile, ♡ and ⋯ are separate stops; keyboard and pad differ in speed), and the planning answers of 2026-11-07.
 
 ## The problem

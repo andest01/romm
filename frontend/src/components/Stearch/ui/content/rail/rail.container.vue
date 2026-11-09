@@ -9,7 +9,7 @@ import RailPure from "./rail.pure-component.vue";
 import { buildScrubActions, selectRailProps } from "./rail.selectors";
 
 const store = stearchStore();
-const { isScrubbing } = useContentView();
+const { isScrubbing, navigate } = useContentView();
 const props = computed(() => selectRailProps(store.state));
 
 const DRAG_THRESHOLD_PX = 4;
@@ -83,7 +83,7 @@ function onKey(event: KeyboardEvent) {
   <RailPure
     v-bind="props"
     @scrub="onScrub"
-    @press="store.dispatch"
+    @press="navigate?.($event)"
     @key="onKey"
   />
 </template>

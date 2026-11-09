@@ -1,6 +1,6 @@
 # Spec 008: input feel, discrete and analog
 
-**Status:** built for tiles and table, unit-tested; not yet tried with a real pad. I6 covers keys only so far. Open questions at the end.
+**Status:** built for tiles and table, unit-tested; not yet tried with a real pad. I6 covers keys only so far. Open questions at the end. **Superseded in part:** the input path is now the machine and drivers of spec 010; `use-stick-scroll.ts` and the `centre-band` story below are gone, and the stick's tuning, including cruise stacks, is in `StickFeel`.
 **Source of intent:** the user, 2026-11-08: "the arrow keys and the direction pad [are] discrete up/down things, but then the analog stick is smooth". The analog half is the gallery's `useStickScroll` (commit `2cbdb4352`, branch `wip/search-perf-render-all`), which the user remembers as "a really really good scrolling demo".
 
 ## The idea
