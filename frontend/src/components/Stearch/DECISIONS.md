@@ -4,6 +4,18 @@ Why this folder works the way it does. `AGENTS.md` holds the rules; this holds t
 
 **Status:** a first draft implements most of this on a fake API. Requirements and their proof live in [specs/](specs/). When code and this file disagree, follow this file and move the code, unless the user says otherwise.
 
+## Strong opinions
+
+**Do what Argosy does, better than Argosy.** This is support, not rivalry. Every core RomM job that the platform does well is weight [Argosy](https://github.com/rommapp/argosy-launcher) and other clients don't have to carry. Search, collection authoring, curation and administration belong to RomM, built from the ground up here and exposed through the API. Clients keep what only a device can do: launching, emulators, local files, offline use.
+
+**Sort parity with Argosy is a decision, and currently a gap.** Stearch must offer user rating, difficulty, play count, play time and last played. Last played, user rating and difficulty are already columns on `RomUser`. Play count and play time are not, so they need a source chosen first.
+
+**A saved search and a smart collection are one thing.** Saving writes the query, and loading reads it back, cautiously: a stored query can be old, so anything no longer understood is shown and dropped, never silently applied.
+
+**Controller input has one owner per press.** Hardware becomes named events (Confirm, Back), and the first owner found gets the press: overlay, then panel, then view. Keep the reducer behind it, so a screen never grows a chain of `showThisMenu` conditions per direction. Argosy's owner stack and event names are the model.
+
+**Landmarks and order.** Only layouts declare landmarks, named by `aria-labelledby` and never `aria-label`. Tab order equals DOM order, with no scripted exceptions. See spec 012.
+
 ## Input is one machine
 
 Keyboard, D-pad and analog stick all dispatch events into `transition` in `ui/content/list/axis-machine.ts`, which returns the next state and effects. Drivers only translate: input and the DOM into events, effects back into the DOM. Commands such as the rail's letters are events too. The list runs one machine and the 2D grid runs one per axis. Screen state stays out of the Pinia store, because the stick dispatches every frame. See spec 010.
