@@ -4,22 +4,23 @@ import { useI18n } from "vue-i18n";
 import romApi from "@/services/api/rom";
 import StearchLayout from "./Stearch.pure-layout.vue";
 import { buildLabels } from "./store/labels";
-import { selectPanelLayout } from "./store/layout.selectors";
+import { selectFiltersLayout } from "./store/layout.selectors";
 import stearchStore from "./store/stearch.store";
-import ContentContainer from "./ui/content/content.container.vue";
-import { useKeyDriver } from "./ui/content/list/use-key-driver";
-import FooterContainer from "./ui/footer/footer.container.vue";
+import FiltersContainer from "./ui/filters/filters.container.vue";
+import HeaderHeading from "./ui/header/header-heading.container.vue";
 import HeaderContainer from "./ui/header/header.container.vue";
-import ResultsHeading from "./ui/region-heading/results-heading.container.vue";
-import SelectionHeading from "./ui/region-heading/selection-heading.container.vue";
-import SidebarContainer from "./ui/sidebar/sidebar.container.vue";
+import { useKeyDriver } from "./ui/results/list/use-key-driver";
+import ResultsHeading from "./ui/results/results-heading.container.vue";
+import ResultsContainer from "./ui/results/results.container.vue";
+import SelectionHeading from "./ui/selection/selection-heading.container.vue";
+import SelectionContainer from "./ui/selection/selection.container.vue";
 import SkipLinkContainer from "./ui/skip-link/skip-link.container.vue";
 import { createWaypointKeyDriver } from "./ui/waypoints.driver";
 
 useKeyDriver(createWaypointKeyDriver());
 const { t } = useI18n();
 const store = stearchStore();
-const panelLayout = computed(() => selectPanelLayout(store.state));
+const filtersLayout = computed(() => selectFiltersLayout(store.state));
 
 // The one watcher that dispatches, and an open question: labels change only
 // when the language does. See "State comes from events" in AGENTS.md.
@@ -37,12 +38,13 @@ onMounted(store.start);
 <template>
   <StearchLayout
     :header="HeaderContainer"
-    :panel="SidebarContainer"
-    :content="ContentContainer"
-    :footer="FooterContainer"
+    :filters="FiltersContainer"
+    :results="ResultsContainer"
+    :selection="SelectionContainer"
     :background="null"
-    :panel-layout="panelLayout"
+    :filters-layout="filtersLayout"
     :skip-link="SkipLinkContainer"
+    :header-heading="HeaderHeading"
     :results-heading="ResultsHeading"
     :selection-heading="SelectionHeading"
   />

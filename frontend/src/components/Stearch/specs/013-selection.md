@@ -19,7 +19,7 @@ Stearch is a file browser for games, so selection follows file browsers. Three t
 | S2  | X or Space flips the current game in or out of the selection                            | `list-input.ts`, needs a pad pass |
 | S3  | Selection belongs to its results: a change in which games match drops it. Sort keeps it | `stearch.reducer.test.ts`         |
 | S4  | B never changes data, so it never clears a selection                                    | Spec rule                         |
-| S5  | Bulk actions appear only while something is selected                                    | `footer.pure-component.vue`       |
+| S5  | Bulk actions appear only while something is selected                                    | `selection.pure-component.vue`    |
 | S6  | A bulk action keeps the selection, so a second action can follow                        | `bulk-add.container.vue`          |
 | S7  | Y opens the game menu; Like and Download act on the selection, else the active game     | Needs a pad pass                  |
 | S8  | Hold X and move paints a run; the first game decides add or remove. Shift + arrows adds | `list-input.test.ts`              |

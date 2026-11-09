@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import stearchStore from "../../store/stearch.store";
-import { useKeyDriver } from "../content/list/use-key-driver";
+import { useKeyDriver } from "../results/list/use-key-driver";
 import HeaderControlsContainer from "./header-controls.container.vue";
 import HeaderPillsContainer from "./header-pills.container.vue";
 import HeaderSearchContainer from "./header-search.container.vue";

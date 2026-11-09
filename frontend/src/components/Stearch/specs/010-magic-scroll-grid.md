@@ -1,6 +1,6 @@
 # Spec 010: the magic scroll grid
 
-**Status:** partly built. `transition` in `ui/content/list/axis-machine.ts` covers the states and events below, with stick and key drivers. The rail and the grid's `navigateTo` go through it. Still outside it: `moveFor`, column keeping and `syncScroll`. The DOM-only harness isn't started. Cruise thresholds are Storybook controls on the grid and the feel stories.
+**Status:** partly built. `transition` in `ui/results/list/axis-machine.ts` covers the states and events below, with stick and key drivers. The rail and the grid's `navigateTo` go through it. Still outside it: `moveFor`, column keeping and `syncScroll`. The DOM-only harness isn't started. Cruise thresholds are Storybook controls on the grid and the feel stories.
 **Source of intent:** the user, 2026-11-08: a series of specs that recreate the exact needs including cruise control, one state machine driven by dispatched events, and an implementation-agnostic test harness that checks real DOM behaviour with keyboard and controller, with strong a11y expectations.
 
 ## What the rewrite must get perfect

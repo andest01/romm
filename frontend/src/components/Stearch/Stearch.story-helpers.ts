@@ -1,3 +1,4 @@
+import { toId } from "storybook/internal/csf";
 import { h, watchEffect, type Component, type CSSProperties } from "vue";
 import { fakeGetRoms } from "./Stearch.fake-api";
 import type { IStearchState } from "./store/stearch.state-props";
@@ -63,6 +64,92 @@ export const layoutPart =
       label,
     );
 
+/** A deeper story, as Storybook's sidebar names it. */
+export interface StoryLink {
+  label: string;
+  title: string;
+  story: string;
+}
+
+/** The story's URL, relative so it survives any Storybook base path. */
+export const storyHref = ({ title, story }: StoryLink): string =>
+  `./?path=/story/${toId(title, story)}`;
+
+const CODE: CSSProperties = { fontWeight: 400, fontSize: "0.75rem" };
+
+/** A region's catalog card: its layout field, the ids it holds, and links to
+ *  the stories of what really fills it. */
+export const regionPart =
+  (
+    region: {
+      field: string;
+      regionId: string;
+      headingId: string;
+      rendersHeading: boolean;
+      links: readonly StoryLink[];
+    },
+    token: PartToken,
+    minHeight = "100%",
+  ): Component =>
+  () =>
+    h(
+      "div",
+      {
+        "data-region-card": region.field,
+        style: {
+          ...PART_LABEL,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "4px",
+          boxSizing: "border-box",
+          height: "100%",
+          minHeight,
+          padding: "16px 8px 8px",
+          textAlign: "center",
+          border: `1px dashed var(${token})`,
+          background: tint(token, 35),
+        },
+      },
+      [
+        region.rendersHeading
+          ? h("h2", { id: region.headingId, style: PART_LABEL }, region.field)
+          : h("code", region.field),
+        h("code", { style: CODE }, `#${region.regionId}`),
+        h("code", { style: CODE }, `labelled by #${region.headingId}`),
+        h(
+          "span",
+          { style: { display: "flex", flexWrap: "wrap", gap: "12px" } },
+          region.links.map((link) =>
+            h("a", { href: storyHref(link), target: "_top" }, link.label),
+          ),
+        ),
+      ],
+    );
+
+/** A region's heading part, shown so it can be inspected. Zero height, so it
+ *  never moves the part it names. */
+export const headingPart =
+  (id: string, text: string): Component =>
+  () =>
+    h(
+      "h2",
+      {
+        id,
+        style: {
+          ...CODE,
+          position: "relative",
+          zIndex: 1,
+          height: 0,
+          margin: 0,
+          padding: "0 8px",
+          color: "var(--r-color-fg)",
+        },
+      },
+      `${text} · #${id}`,
+    );
+
 /** A part that layers something high inside itself, as a band, a rail or a
  *  raised button does. A layout must keep it below anything that overlays it. */
 export const raisedPart =
@@ -89,7 +176,7 @@ export const raisedPart =
             insetInline: 0,
             insetBlockStart: 0,
             padding: "8px",
-            background: tint(token, 60),
+            background: tint(token, 25),
           },
         },
         `${label} · z-index 10 inside; must stay under the panel`,
@@ -108,6 +195,7 @@ export const scrollingPart =
     h(
       "div",
       {
+        tabindex: 0,
         style: {
           boxSizing: "border-box",
           height: "100%",

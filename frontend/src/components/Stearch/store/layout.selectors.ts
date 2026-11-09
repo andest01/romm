@@ -1,12 +1,12 @@
-import type { StearchPanelLayout } from "../Stearch.pure-layout-props";
+import type { StearchFiltersLayout } from "../Stearch.pure-layout-props";
 import { createSelector } from "./create-selector";
 import { selectIsAdvancedOpen } from "./stearch.selectors";
 
-export const selectPanelLayout = createSelector(
+export const selectFiltersLayout = createSelector(
   [selectIsAdvancedOpen],
-  (isAdvancedOpen): StearchPanelLayout => ({
-    panelState: isAdvancedOpen ? "shown" : "hidden",
-    panelAxis: "inline",
-    panelPosition: "start",
+  (isAdvancedOpen): StearchFiltersLayout => ({
+    state: isAdvancedOpen ? "shown" : "hidden",
+    axis: "inline",
+    position: "start",
   }),
 );

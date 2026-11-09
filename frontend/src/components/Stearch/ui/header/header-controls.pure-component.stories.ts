@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import type { StearchAction } from "../../store/stearch.actions";
-import { MULTI_FIELD } from "../fields/fields.story-args";
+import { MULTI_FIELD } from "../filters/fields/fields.story-args";
 import HeaderControls from "./header-controls.pure-component.vue";
 
 const ADVANCED_ACTIONS: readonly StearchAction[] = [

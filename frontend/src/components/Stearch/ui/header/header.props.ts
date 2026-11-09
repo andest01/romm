@@ -4,7 +4,7 @@ import type {
   StearchSortKey,
   StearchViewMode,
 } from "../../store/stearch.state-props";
-import type { FieldPreview, MultiFieldPreview } from "../fields/fields.props";
+import type { FieldPreview, MultiFieldPreview } from "../filters/fields.props";
 
 export interface HeaderViewOption {
   id: StearchViewMode;

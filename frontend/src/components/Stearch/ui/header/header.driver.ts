@@ -1,7 +1,7 @@
 import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import { isEditable } from "@/utils/editable";
-import type { KeyDriver } from "../content/list/use-key-driver";
+import type { KeyDriver } from "../results/list/use-key-driver";
 
 /** Keeps the search box from trapping focus: left and right leave it once the
  *  caret is at that end of the text, so editing still works. */

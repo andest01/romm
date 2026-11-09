@@ -6,7 +6,7 @@ import {
   STEARCH_ROM,
   STEARCH_ROW,
 } from "./fixtures";
-import { selectPanelLayout } from "./layout.selectors";
+import { selectFiltersLayout } from "./layout.selectors";
 import { selectLoadedRoms } from "./results.selectors";
 import { coverUrlOf, selectRows, titleOf } from "./rows.selectors";
 import { INITIAL_STEARCH_STATE, stearchReducer } from "./stearch.reducer";
@@ -165,13 +165,13 @@ describe("coverUrlOf", () => {
   });
 });
 
-describe("selectPanelLayout", () => {
+describe("selectFiltersLayout", () => {
   it("shows the panel by default", () => {
     // Act
-    const { panelState } = selectPanelLayout(INITIAL_STEARCH_STATE);
+    const { state: filtersState } = selectFiltersLayout(INITIAL_STEARCH_STATE);
 
     // Assert
-    expect(panelState).toBe("shown");
+    expect(filtersState).toBe("shown");
   });
 
   it("hides the panel once Advanced mode is closed", () => {
@@ -182,9 +182,9 @@ describe("selectPanelLayout", () => {
     };
 
     // Act
-    const { panelState } = selectPanelLayout(state);
+    const { state: filtersState } = selectFiltersLayout(state);
 
     // Assert
-    expect(panelState).toBe("hidden");
+    expect(filtersState).toBe("hidden");
   });
 });

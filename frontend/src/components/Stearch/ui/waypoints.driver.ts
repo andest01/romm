@@ -1,5 +1,5 @@
 import { focusFromInput } from "@/utils/autofocus";
-import type { KeyDriver } from "./content/list/use-key-driver";
+import type { KeyDriver } from "./results/list/use-key-driver";
 
 const ENTRY = 'input, [role="grid"], button, a[href], [tabindex="0"]';
 

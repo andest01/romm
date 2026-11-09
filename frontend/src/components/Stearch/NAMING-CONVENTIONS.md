@@ -2,6 +2,8 @@
 
 A file is named `<domain>.<role>.<ext>`. The domain is the folder's name, for example `list` or `sidebar`, or `Stearch` at the root. The role says what the file may contain, so the name alone tells you its rules. A role can be hyphenated when it takes two words: `pure-component`, `layout-props`, `state-props`, `story-args`.
 
+A folder under `ui/` is named for the job its region does, and a file in it starts with that name: `results.container.vue`, or `<folder>-<part>` for a part with no folder of its own, as in `header-search.container.vue`. Grep the job name and you find the prop, ids, waypoint, grid area, folder and files together.
+
 Counts are committed files on `feature/stearch` (2d7c1bc28), 125 code files in all.
 
 ## Components
@@ -76,4 +78,4 @@ A story or test is named after the file it covers, plus `.stories.ts` or `.test.
 
 | File                                | Problem                                                                              |
 | ----------------------------------- | ------------------------------------------------------------------------------------ |
-| `content/list/use-scroller-jump.ts` | No domain and no role. It's a composable, the one kind of file we have no suffix for |
+| `results/list/use-scroller-jump.ts` | No domain and no role. It's a composable, the one kind of file we have no suffix for |

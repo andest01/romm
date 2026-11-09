@@ -2,7 +2,7 @@
 import type { Component } from "vue";
 import { RBtn, RMenu, RMenuItem, RSegmentedControl } from "@/lib";
 import type { StearchAction } from "../../store/stearch.actions";
-import FieldPicker from "../fields/field-picker/field-picker.pure-component.vue";
+import FieldPicker from "../filters/fields/field-picker/field-picker.pure-component.vue";
 import type { HeaderProps } from "./header.props";
 
 defineProps<

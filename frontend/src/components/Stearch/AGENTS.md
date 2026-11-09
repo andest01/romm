@@ -52,8 +52,8 @@ store/stearch.selectors.ts    the trunk: one selector per state field
 store/<family>.selectors.ts   branches: results, rows, attention, query, layout
 store/create-selector.ts      memoizer, same call shape as reselect
 store/fixtures.ts             shared story and test data
-ui/content/content.container.vue  items plus scroll: the one `content` the app sees
-ui/<domain>/                  header, sidebar, footer, content/list, content/table, content/rail
+ui/results/results.container.vue  items plus scroll: the one `results` the app sees
+ui/<domain>/                  header, filters, selection, results/list, results/table, results/rail
   <domain>.pure-component.vue
   <domain>.container.vue
   <domain>.props.ts
@@ -73,7 +73,7 @@ ui/<domain>/                  header, sidebar, footer, content/list, content/tab
    - **Roots and trunk:** the state is the ground. `store/stearch.selectors.ts` is the trunk, with one plain selector per field and nothing else. It's the only code that reads `IStearchState`, apart from the reducer and store that write it. ESLint enforces this.
    - **Branches:** memoized families in `store/`, one per state branch: `results.selectors.ts`, `rows.selectors.ts`, `attention.selectors.ts`, `query.selectors.ts` and `layout.selectors.ts`. They build only on the trunk and on each other.
    - **Leaves:** each domain's `*.selectors.ts` returns exactly the props its pure component takes, so containers just bind them.
-6. **State comes from events.** A click, a keypress, a scroll range or a network reply may dispatch. A watcher never does, because one that dispatches can feed back into itself: two of them once re-ran each other until Vue stopped and `/stearch` went blank. ESLint enforces this. Screen facts, such as the list's size, the device and the band's push, stay in the view and reach pure components as props. Each has one owner and is read-only to everyone else: `ui/content/content.view.ts` derives the device, and `use-scroller-jump.ts` owns the band's push, the list's box and the scrollbar's measured width. Never write a shared ref from several places; if a fact comes from an event, it belongs in state. The store holds the user's job; the view holds the screen. The one exception left is `locale/set`, which is marked and still an open question.
+6. **State comes from events.** A click, a keypress, a scroll range or a network reply may dispatch. A watcher never does, because one that dispatches can feed back into itself: two of them once re-ran each other until Vue stopped and `/stearch` went blank. ESLint enforces this. Screen facts, such as the list's size, the device and the band's push, stay in the view and reach pure components as props. Each has one owner and is read-only to everyone else: `ui/results/results.view.ts` derives the device, and `use-scroller-jump.ts` owns the band's push, the list's box and the scrollbar's measured width. Never write a shared ref from several places; if a fact comes from an event, it belongs in state. The store holds the user's job; the view holds the screen. The one exception left is `locale/set`, which is marked and still an open question.
 7. **State stays immutable.** The store holds state in a `shallowRef`, so selectors can compare identity. Replace values; never edit them in place.
 8. **No silent fallbacks.** Don't use `!`, or an invented `??` default, on a value that can't be missing. See "Don't silence a type check" in the root `AGENTS.md`.
 
@@ -104,6 +104,10 @@ export const stearchReducer = reducerOf(HANDLERS);
 - **Stories run offline.** Container stories connect the store to `fakeGetRoms` through `renderContainer`, so scrolling past the seeded rows fetches fake windows instead of a backend that isn't there. Never let a story reach the real API.
 - Stories mean it: real states, and `play()` for anything interactive.
 - **Pure layout stories show every part in its own colour.** Fill each part with `layoutPart(label, token)`, or `scrollingPart` for a part that scrolls, from `Stearch.story-helpers.ts`. Each part gets a different `PartToken` colour, a label naming the part and what it does ("Band · floats over the items"), and a dashed edge, so overlaps, gaps and scrolling show at a glance in both themes. Don't hand-roll blocks in a story: a layout story without these helpers is an outlier to fix.
+- **A layout story is a map.** Opening `Playground` must answer what each part is, what it's called and where to go deeper, with no source open. Each part shows its prop name, any ids it holds and links to the stories that fill it; `regionPart` does this at the root. A bare button named "Grid" passes a test and shows nothing.
+- **Check what a stand-in can't hide.** A region's ids and `aria-labelledby` get a `play()` check, because a dangling reference is silent in the browser.
+- **One name per region.** A region's prop, ids, waypoint, grid area and folder all use its job: `header`, `filters`, `results`, `selection`.
+- **Whichever part draws a region's visible title owns its heading.** The layout takes a heading prop only when no part draws a title.
 - **A layout fix lands in the layout and is proven in its story.** Change only the layout, then add a named story that recreates the bug with stand-in parts, and a `play()` check where one can assert it. `PanelCoversRaisedParts` does this for stacking: `raisedPart` layers something at `z-index: 10`, and the check confirms the open panel still covers it. Never patch the parts or views to hide a layout bug.
 - **One named story per state worth seeing.** Besides `Playground`, add a story for each layout state a reader should recognise, such as `BandBeingPushed` or `NoFooter`. Use `layout: "fullscreen"`, and size the frame as the layout is used, for example a 360px-wide panel. Responsive behaviour is CSS on `data-bp`, so a viewport change alone proves it.
 
@@ -120,8 +124,8 @@ A layout's remaining props are the interface's real states. Ask what states the 
 
 - **Regions are named grid areas.** Each placement is one `grid-template` you can read as a picture, and each part just names its `grid-area`. Don't offset regions with padding or margins. To make room for something optional, keep its area and size its track to `0px`, so the names never change.
 - **Parts fill their container.** A pure component takes the size it's given and never sets its own outer width, so any layout can hold it. Grid tracks inside a part are `minmax(0, 1fr)`, because a bare `1fr` won't shrink below its content. Only the layout decides what scrolls.
-- **Layouts nest.** Any region with parts of its own gets a layout, as `sidebar.pure-layout.vue` does for header, body and footer.
-- **A pure layout's props serve layout only.** At least two `Component` parts (the `stearch/pure-layout-parts` lint rule checks this), view states such as `panelState: "shown" | "hidden"` rather than narrow booleans, and very rarely a CSS preference such as a speed or colour override. With fewer than two parts, it's a pure component.
+- **Layouts nest.** Any region with parts of its own gets a layout, as `filters.pure-layout.vue` does for header, body and footer.
+- **A pure layout's props serve layout only.** At least two `Component` parts (the `stearch/pure-layout-parts` lint rule checks this), view states such as `state: "shown" | "hidden"` rather than narrow booleans, and very rarely a CSS preference such as a speed or colour override. With fewer than two parts, it's a pure component.
 - **Layouts hold no logic.** They arrange parts through an interface and don't know what's inside.
 - **Give each state its own prop.** `isPanelShown` is visibility; one prop doing visibility and position can't animate.
 - **Name placement in flexbox terms.** An axis (`inline`, `block`) plus a position (`start`, `end`) covers every edge. Use CSS logical properties, not left, right, top or bottom.
@@ -129,7 +133,7 @@ A layout's remaining props are the interface's real states. Ask what states the 
 - **Map each prop to a `data-` attribute,** and let CSS own everything visual, including transitions. No animation logic in script.
 - **Every item speaks one contract.** Any view of an item takes `ItemProps` and emits `ItemEmits`: a slot in, actions out. `null` draws that view's own placeholder.
 - **Containers nest.** Don't thread a part through a pure component. If one field needs its own container, let a container choose it, and pass that container as a part. A list that mixes pure and connected items is a container.
-- **Group props by concept.** Past a handful of props, group them as objects (`search`, `filters`, `sort`), as `panelLayout` does. A selector returns the whole group, labels included.
+- **Group props by concept.** Past a handful of props, group them as objects (`search`, `filters`, `sort`), as `filtersLayout` does. A selector returns the whole group, labels included.
 - **Discriminate by kind.** If a field only means something for some kinds, make a union, not a nullable. Nullables mean a value can be absent, not that it doesn't apply.
 - **Nullable, not optional.** A part that can be absent is a required prop that accepts `null`, as in `background: Component | null`. Every caller has to state it, and Storybook can show it.
 - **Keep animated things mounted.** A `v-if` can't transition out, and it throws away the content's state.

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RBtn } from "@/lib";
 import type { StearchAction } from "../../store/stearch.actions";
-import FieldPill from "../fields/field-pill/field-pill.pure-component.vue";
+import FieldPill from "../filters/fields/field-pill/field-pill.pure-component.vue";
 import type { HeaderFilters } from "./header.props";
 
 defineProps<Pick<HeaderFilters, "pills" | "clearLabel" | "clearActions">>();

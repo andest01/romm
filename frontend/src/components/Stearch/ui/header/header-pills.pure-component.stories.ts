@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
-import { MULTI_FIELD, TRI_STATE_FIELD } from "../fields/fields.story-args";
+import {
+  MULTI_FIELD,
+  TRI_STATE_FIELD,
+} from "../filters/fields/fields.story-args";
 import HeaderPills from "./header-pills.pure-component.vue";
 
 const meta: Meta<typeof HeaderPills> = {

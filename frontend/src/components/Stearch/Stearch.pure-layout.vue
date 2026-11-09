@@ -2,9 +2,12 @@
 import {
   FILTERS_HEADING_ID,
   FILTERS_REGION_ID,
+  HEADER_HEADING_ID,
+  HEADER_REGION_ID,
   RESULTS_HEADING_ID,
   RESULTS_REGION_ID,
   SELECTION_HEADING_ID,
+  SELECTION_REGION_ID,
   type StearchLayoutProps,
 } from "./Stearch.pure-layout-props";
 
@@ -14,43 +17,51 @@ defineProps<StearchLayoutProps>();
 <template>
   <div
     class="stearch-layout"
-    :data-panel="panelLayout.panelState"
-    :data-panel-axis="panelLayout.panelAxis"
-    :data-panel-position="panelLayout.panelPosition"
+    :data-filters="filtersLayout.state"
+    :data-filters-axis="filtersLayout.axis"
+    :data-filters-position="filtersLayout.position"
   >
     <component :is="skipLink" v-if="skipLink" />
     <div v-if="background" class="stearch-layout__background">
       <component :is="background" />
     </div>
-    <div class="stearch-layout__header"><component :is="header" /></div>
+    <section
+      :id="HEADER_REGION_ID"
+      class="stearch-layout__header"
+      :aria-labelledby="HEADER_HEADING_ID"
+    >
+      <component :is="headerHeading" />
+      <component :is="header" />
+    </section>
     <aside
       :id="FILTERS_REGION_ID"
-      class="stearch-layout__panel"
+      class="stearch-layout__filters"
       :aria-labelledby="FILTERS_HEADING_ID"
       data-waypoint="filters"
       tabindex="-1"
-      :inert="panelLayout.panelState === 'hidden'"
+      :inert="filtersLayout.state === 'hidden'"
     >
-      <component :is="panel" />
+      <component :is="filters" />
     </aside>
     <section
       :id="RESULTS_REGION_ID"
-      class="stearch-layout__content"
+      class="stearch-layout__results"
       :aria-labelledby="RESULTS_HEADING_ID"
       data-waypoint="results"
       tabindex="-1"
     >
       <component :is="resultsHeading" />
-      <component :is="content" v-if="content" />
+      <component :is="results" v-if="results" />
     </section>
     <section
-      v-if="footer"
-      class="stearch-layout__footer"
+      v-if="selection"
+      :id="SELECTION_REGION_ID"
+      class="stearch-layout__selection"
       :aria-labelledby="SELECTION_HEADING_ID"
       data-waypoint="selection"
     >
       <component :is="selectionHeading" />
-      <component :is="footer" />
+      <component :is="selection" />
     </section>
   </div>
 </template>
@@ -59,11 +70,11 @@ defineProps<StearchLayoutProps>();
 /* Props become data attributes; everything visual follows from them here.
    Regions are named grid areas; only the panel's transform animates. */
 .stearch-layout {
-  --stearch-panel-inline-size: 25%;
-  --stearch-panel-block-size: 30vh;
+  --stearch-filters-inline-size: 25%;
+  --stearch-filters-block-size: 30vh;
   /* The panel's track: empty until shown, so regions keep their names. */
-  --stearch-panel-track-inline: 0px;
-  --stearch-panel-track-block: 0px;
+  --stearch-filters-track-inline: 0px;
+  --stearch-filters-track-block: 0px;
   position: relative;
   isolation: isolate;
   display: grid;
@@ -71,40 +82,40 @@ defineProps<StearchLayoutProps>();
   height: calc(100vh - var(--r-nav-h));
   height: calc(100dvh - var(--r-nav-h));
 }
-.stearch-layout[data-panel="shown"] {
-  --stearch-panel-track-inline: var(--stearch-panel-inline-size);
-  --stearch-panel-track-block: var(--stearch-panel-block-size);
+.stearch-layout[data-filters="shown"] {
+  --stearch-filters-track-inline: var(--stearch-filters-inline-size);
+  --stearch-filters-track-block: var(--stearch-filters-block-size);
 }
 
 /* One template per edge. Content space changes once, and never animates. */
-[data-panel-axis="inline"][data-panel-position="start"] {
+[data-filters-axis="inline"][data-filters-position="start"] {
   grid-template:
-    "panel header" auto
-    "panel content" minmax(0, 1fr)
-    "panel footer" auto
-    / var(--stearch-panel-track-inline) minmax(0, 1fr);
+    "filters header" auto
+    "filters results" minmax(0, 1fr)
+    "filters selection" auto
+    / var(--stearch-filters-track-inline) minmax(0, 1fr);
 }
-[data-panel-axis="inline"][data-panel-position="end"] {
+[data-filters-axis="inline"][data-filters-position="end"] {
   grid-template:
-    "header panel" auto
-    "content panel" minmax(0, 1fr)
-    "footer panel" auto
-    / minmax(0, 1fr) var(--stearch-panel-track-inline);
+    "header filters" auto
+    "results filters" minmax(0, 1fr)
+    "selection filters" auto
+    / minmax(0, 1fr) var(--stearch-filters-track-inline);
 }
-[data-panel-axis="block"][data-panel-position="start"] {
+[data-filters-axis="block"][data-filters-position="start"] {
   grid-template:
-    "panel" var(--stearch-panel-track-block)
+    "filters" var(--stearch-filters-track-block)
     "header" auto
-    "content" minmax(0, 1fr)
-    "footer" auto
+    "results" minmax(0, 1fr)
+    "selection" auto
     / minmax(0, 1fr);
 }
-[data-panel-axis="block"][data-panel-position="end"] {
+[data-filters-axis="block"][data-filters-position="end"] {
   grid-template:
     "header" auto
-    "content" minmax(0, 1fr)
-    "footer" auto
-    "panel" var(--stearch-panel-track-block)
+    "results" minmax(0, 1fr)
+    "selection" auto
+    "filters" var(--stearch-filters-track-block)
     / minmax(0, 1fr);
 }
 /* The app shell reserves the bottom bar up to this breakpoint, so the layout
@@ -125,24 +136,24 @@ html[data-bp~="sm-and-down"] .stearch-layout {
 /* Each region is its own stacking layer, so whatever a part layers inside it
    (a band, a rail, a raised button) can never rise above the panel. */
 .stearch-layout__header,
-.stearch-layout__content,
-.stearch-layout__footer {
+.stearch-layout__results,
+.stearch-layout__selection {
   isolation: isolate;
 }
 .stearch-layout__header {
   grid-area: header;
   border-bottom: 1px solid var(--r-color-border);
 }
-.stearch-layout__content {
-  grid-area: content;
+.stearch-layout__results {
+  grid-area: results;
   min-height: 0;
 }
-.stearch-layout__footer {
-  grid-area: footer;
+.stearch-layout__selection {
+  grid-area: selection;
   border-top: 1px solid var(--r-color-border);
 }
 
-.stearch-layout__panel {
+.stearch-layout__filters {
   position: absolute;
   z-index: 1;
   overflow: hidden auto;
@@ -156,39 +167,42 @@ html[data-bp~="sm-and-down"] .stearch-layout {
 }
 
 /* Which edge: the axis sets the panel's shape, the position its side. */
-[data-panel-axis="inline"] > .stearch-layout__panel {
+[data-filters-axis="inline"] > .stearch-layout__filters {
   inset-block: 0;
-  inline-size: var(--stearch-panel-inline-size);
+  inline-size: var(--stearch-filters-inline-size);
 }
-[data-panel-axis="block"] > .stearch-layout__panel {
+[data-filters-axis="block"] > .stearch-layout__filters {
   inset-inline: 0;
-  block-size: var(--stearch-panel-block-size);
+  block-size: var(--stearch-filters-block-size);
 }
-[data-panel-axis="inline"][data-panel-position="start"]
-  > .stearch-layout__panel {
+[data-filters-axis="inline"][data-filters-position="start"]
+  > .stearch-layout__filters {
   inset-inline-start: 0;
   border-inline-end-width: 1px;
   transform: translateX(-100%);
 }
-[data-panel-axis="inline"][data-panel-position="end"] > .stearch-layout__panel {
+[data-filters-axis="inline"][data-filters-position="end"]
+  > .stearch-layout__filters {
   inset-inline-end: 0;
   border-inline-start-width: 1px;
   transform: translateX(100%);
 }
-[data-panel-axis="block"][data-panel-position="start"]
-  > .stearch-layout__panel {
+[data-filters-axis="block"][data-filters-position="start"]
+  > .stearch-layout__filters {
   inset-block-start: 0;
   border-block-end-width: 1px;
   transform: translateY(-100%);
 }
-[data-panel-axis="block"][data-panel-position="end"] > .stearch-layout__panel {
+[data-filters-axis="block"][data-filters-position="end"]
+  > .stearch-layout__filters {
   inset-block-end: 0;
   border-block-start-width: 1px;
   transform: translateY(100%);
 }
 
 /* Shown: the panel slides over its track. */
-.stearch-layout[data-panel="shown"][data-panel-axis] > .stearch-layout__panel {
+.stearch-layout[data-filters="shown"][data-filters-axis]
+  > .stearch-layout__filters {
   visibility: visible;
   transform: none;
   transition-delay: 0s;
@@ -196,16 +210,16 @@ html[data-bp~="sm-and-down"] .stearch-layout {
 
 /* On a phone the panel swoops in over the content instead of beside it. */
 html[data-bp~="xs"] .stearch-layout {
-  --stearch-panel-inline-size: 100%;
-  --stearch-panel-block-size: 100%;
+  --stearch-filters-inline-size: 100%;
+  --stearch-filters-block-size: 100%;
 }
-html[data-bp~="xs"] .stearch-layout[data-panel] {
-  --stearch-panel-track-inline: 0px;
-  --stearch-panel-track-block: 0px;
+html[data-bp~="xs"] .stearch-layout[data-filters] {
+  --stearch-filters-track-inline: 0px;
+  --stearch-filters-track-block: 0px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stearch-layout__panel {
+  .stearch-layout__filters {
     transition: none;
   }
 }

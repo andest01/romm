@@ -22,7 +22,7 @@ Why this folder works the way it does. `AGENTS.md` holds the rules; this holds t
 
 ## Input is one machine
 
-Keyboard, D-pad and analog stick all dispatch events into `transition` in `ui/content/list/axis-machine.ts`, which returns the next state and effects. Drivers only translate: input and the DOM into events, effects back into the DOM. Commands such as the rail's letters are events too. The list runs one machine and the 2D grid runs one per axis. Screen state stays out of the Pinia store, because the stick dispatches every frame. See spec 010.
+Keyboard, D-pad and analog stick all dispatch events into `transition` in `ui/results/list/axis-machine.ts`, which returns the next state and effects. Drivers only translate: input and the DOM into events, effects back into the DOM. Commands such as the rail's letters are events too. The list runs one machine and the 2D grid runs one per axis. Screen state stays out of the Pinia store, because the stick dispatches every frame. See spec 010.
 
 ## Guiding idea
 

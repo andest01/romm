@@ -369,6 +369,13 @@ Nothing here is settled until the RomM side has been measured.
 6. **Don't allocate per frame into reactive state.** One new `{x, y}` each frame re-rendered the whole grid at idle: main thread 80% busy before, 22% after, across two different recordings.
 7. **Test the rule, not the arithmetic.** Each bug here passed review on paper and failed a story written from the report.
 
+## One name per region
+
+- **What:** the root layout's regions had up to three names each (`panel`, `filters`, `sidebar`). Props, ids, waypoints, grid areas and folders now share one job name.
+- **Cost:** about 110 import and story-title lines, because relative paths and hand-written titles both encode the folder.
+- **Caught by lint:** moving `fields` under `filters` made `header.selectors.ts` import downward. The zones flagged it, so the shared `fields.props` and `fields.selectors` moved up to `ui/filters/`.
+- **Left alone:** the header keeps its `search` and `controls` waypoints. A `header` waypoint would add an F6 stop.
+
 ## Next measurements
 
 1. A shared 100k library for `/stearch` and `/search`.
