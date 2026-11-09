@@ -11,15 +11,16 @@ import type {
   StearchFilterValues,
   StearchQuery,
 } from "../../store/stearch.state-props";
-import type {
-  ChoicePreview,
-  ChoiceState,
-  FieldPreview,
-  MultiFieldPreview,
-  RangeChange,
-  RangeFieldPreview,
-  TriStateFieldPreview,
-  PlatformFieldPreview,
+import {
+  type ChoicePreview,
+  type ChoiceState,
+  type FieldPreview,
+  type MultiFieldPreview,
+  RANGE_MAX_HOURS,
+  type RangeChange,
+  type RangeFieldPreview,
+  type TriStateFieldPreview,
+  type PlatformFieldPreview,
 } from "./fields.props";
 
 /** A computed key alone loses the value check, so this keeps it. */
@@ -175,13 +176,14 @@ export const selectFieldPreviews = createSelector(
     STEARCH_FIELDS.map((field) => previewOf(field, query, values, labels)),
 );
 
-/** A typed value is one only the DOM knows, so it's built here. */
+/** A slider's value is one only the DOM knows, so it's built here. At the
+ *  slider's end, a bound is open. */
 export function buildRangeActions({
   bound,
   value,
 }: RangeChange): readonly StearchAction[] {
-  const hours = value === "" ? null : Number(value);
-  const seconds = hours === null ? null : hours * SECONDS_PER_HOUR;
+  const isOpen = value === (bound === "min" ? 0 : RANGE_MAX_HOURS);
+  const seconds = isOpen ? null : value * SECONDS_PER_HOUR;
   const key = bound === "min" ? "hltbMainStoryMin" : "hltbMainStoryMax";
   return [{ type: "query/set", patch: patchOf(key, seconds) }];
 }

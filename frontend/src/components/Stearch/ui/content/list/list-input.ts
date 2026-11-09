@@ -1,5 +1,9 @@
 import { computed, shallowRef, type ShallowRef } from "vue";
-import { claimKeyRateRepeat, isPadEvent } from "@/composables/useGamepad";
+import {
+  claimKeyRateRepeat,
+  claimStickY,
+  isPadEvent,
+} from "@/composables/useGamepad";
 import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import type { StearchAction } from "../../../store/stearch.actions";
@@ -98,6 +102,12 @@ export function createListInput(
   const gridElement = (): Element | null | undefined =>
     options.scroller()?.closest('[role="grid"]');
 
+  // The page counts: focus falls there when a tile unmounts.
+  function ownsTheStick(): boolean {
+    const focused = document.activeElement;
+    return focused === document.body || !!gridElement()?.contains(focused);
+  }
+
   function stepActive(key: ArrowKey, onLeave: () => void): void {
     const { position, isFresh } = origin();
     const move = isFresh
@@ -154,7 +164,8 @@ export function createListInput(
 
   const stick = createListStickDriver({
     machine,
-    feel: () => (isScrubbing.value ? null : options.feel().stick),
+    feel: () =>
+      isScrubbing.value || !ownsTheStick() ? null : options.feel().stick,
     bandRows: () => options.feel().bandRows,
     scroller: options.scroller,
     rows: options.rows,
@@ -199,6 +210,19 @@ export function createListInput(
 
   // Fast repeat only while the results have focus: menus need the slow one.
   let releaseRepeat: (() => void) | null = null;
+  // Elsewhere, such as the filters, the stick has to act as arrows.
+  let releaseStick: (() => void) | null = null;
+
+  function syncStickClaim(): void {
+    const owns = ownsTheStick();
+    if (owns && !releaseStick && options.feel().stick) {
+      releaseStick = claimStickY();
+    }
+    if (!owns && releaseStick) {
+      releaseStick();
+      releaseStick = null;
+    }
+  }
 
   const keys: KeyDriver = {
     // The D-pad's keys go to whatever has focus. A tile that unmounts drops
@@ -211,6 +235,7 @@ export function createListInput(
       if (!isPadEvent(event)) machine.dispatch({ type: "key/released" });
     },
     focusChanged() {
+      syncStickClaim();
       const isInside = !!gridElement()?.contains(document.activeElement);
       if (isInside && !releaseRepeat) releaseRepeat = claimKeyRateRepeat();
       if (!isInside && releaseRepeat) {
@@ -231,7 +256,10 @@ export function createListInput(
     settled(event) {
       if (event.target === options.scroller()) stick.settle();
     },
-    dispose: () => releaseRepeat?.(),
+    dispose: () => {
+      releaseRepeat?.();
+      releaseStick?.();
+    },
   };
 
   const visibleRange = shallowRef<VisibleRange | null>(null);

@@ -89,7 +89,7 @@ describe("selectFieldPreviews", () => {
 
   it("shows a range in hours", () => {
     // Arrange
-    const actions = buildRangeActions({ bound: "min", value: "2" });
+    const actions = buildRangeActions({ bound: "min", value: 2 });
 
     // Act
     const field = previewAfter(actions, "hltbMainStory");
@@ -102,7 +102,7 @@ describe("selectFieldPreviews", () => {
 describe("buildRangeActions", () => {
   it("stores hours as the seconds the API expects", () => {
     // Act
-    const actions = buildRangeActions({ bound: "max", value: "1.5" });
+    const actions = buildRangeActions({ bound: "max", value: 1.5 });
 
     // Assert
     expect(actions).toEqual([
@@ -110,9 +110,19 @@ describe("buildRangeActions", () => {
     ]);
   });
 
-  it("clears the bound when the input is empty", () => {
+  it("opens the maximum at the slider's top", () => {
     // Act
-    const actions = buildRangeActions({ bound: "min", value: "" });
+    const actions = buildRangeActions({ bound: "max", value: 100 });
+
+    // Assert
+    expect(actions).toEqual([
+      { type: "query/set", patch: { hltbMainStoryMax: null } },
+    ]);
+  });
+
+  it("opens the minimum at the slider's bottom", () => {
+    // Act
+    const actions = buildRangeActions({ bound: "min", value: 0 });
 
     // Assert
     expect(actions).toEqual([

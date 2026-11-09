@@ -63,7 +63,11 @@ export type FieldPreview =
 
 export type RangeBound = "min" | "max";
 
+/** The slider's top stop. At the ends a bound is open, so it's `null`. */
+export const RANGE_MAX_HOURS = 100;
+
 export interface RangeChange {
   bound: RangeBound;
-  value: string;
+  /** In hours, on the slider's 0 to `RANGE_MAX_HOURS` scale. */
+  value: number;
 }

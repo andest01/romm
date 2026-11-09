@@ -6,11 +6,11 @@ defineProps<SidebarLayoutProps>();
 
 <template>
   <div class="stearch-sidebar">
-    <header class="stearch-sidebar__header"><component :is="header" /></header>
+    <div class="stearch-sidebar__header"><component :is="header" /></div>
     <div class="stearch-sidebar__body"><component :is="body" /></div>
-    <footer v-if="footer" class="stearch-sidebar__footer">
+    <div v-if="footer" class="stearch-sidebar__footer">
       <component :is="footer" />
-    </footer>
+    </div>
   </div>
 </template>
 

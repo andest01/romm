@@ -145,6 +145,37 @@ export const StickStaysOnTheFirstRow: Story = {
   },
 };
 
+/** With focus elsewhere, like the filters, the stick leaves the list alone. */
+export const StickLeavesTheListWhenFocusIsElsewhere: Story = {
+  tags: ["!dev"],
+  args: { state: loaded },
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const pad = fakePad();
+    const canvas = within(canvasElement);
+    const grid = await canvas.findByRole("grid");
+    await fireEvent.keyDown(grid, { key: "ArrowDown" });
+    await waitFor(() => expect(activeItem(grid)).toBe("stearch-item-0"));
+    const [letter] = await within(
+      await canvas.findByRole("toolbar"),
+    ).findAllByRole("button");
+    if (!letter) throw new Error("No letters rendered");
+    // The list takes focus as it finishes opening.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    letter.focus();
+    await expect(document.activeElement).toBe(letter);
+
+    // Act
+    pad.push(1);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Assert
+    await expect(activeItem(grid)).toBe("stearch-item-0");
+    pad.push(0);
+    pad.restore();
+  },
+};
+
 /** A Ctrl-click selects; a plain click only makes the game current. */
 export const SelectingDispatches: Story = {
   args: { state: loaded },

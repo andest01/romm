@@ -1,5 +1,5 @@
 import { useEventListener } from "@vueuse/core";
-import { onBeforeUnmount } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
 
 /** The keyboard and the D-pad, which arrives as synthetic arrow keys. */
 export interface KeyDriver {
@@ -22,5 +22,6 @@ export function useKeyDriver(driver: KeyDriver): void {
   const quietly = { capture: true, passive: true };
   useEventListener(window, "scroll", driver.scrolled, quietly);
   useEventListener(window, "scrollend", driver.settled, quietly);
+  onMounted(driver.focusChanged);
   onBeforeUnmount(driver.dispose);
 }

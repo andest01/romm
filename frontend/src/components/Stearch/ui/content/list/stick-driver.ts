@@ -1,4 +1,4 @@
-import { claimStickY, keyRepeatMs } from "@/composables/useGamepad";
+import { keyRepeatMs } from "@/composables/useGamepad";
 import { type AxisGeometry, canPan, isInsideBox } from "./axis-machine";
 import type { AxisStore } from "./axis-store";
 import { DEFAULT_CRUISE, type ScrollRow, type StickFeel } from "./list.props";
@@ -97,7 +97,8 @@ export function createListStickDriver(options: {
   });
 
   return {
-    claim: () => (options.feel() ? [claimStickY()] : []),
+    // The list claims the stick only while it has focus; see `list-input`.
+    claim: () => [],
     sample(now, frameMs) {
       const element = options.scroller();
       if (!element) return;

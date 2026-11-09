@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, fireEvent, fn, within } from "storybook/test";
 import { computed } from "vue";
 import RangeRow from "./range-row.pure-component.vue";
 
@@ -51,11 +51,16 @@ type Story = StoryObj<Args>;
 
 export const Playground: Story = {};
 
-export const TypingHandsTheValueBack: Story = {
+export const SlidingHandsTheValueBack: Story = {
   play: async ({ args, canvasElement }) => {
-    const [minField] = within(canvasElement).getAllByRole("spinbutton");
+    // Arrange
+    const [minField] = within(canvasElement).getAllByRole("slider");
     if (!minField) throw new Error("No field rendered");
-    await userEvent.type(minField, "5");
+
+    // Act
+    await fireEvent.input(minField, { target: { value: "10" } });
+
+    // Assert
     await expect(args.onRange).toHaveBeenCalled();
   },
 };

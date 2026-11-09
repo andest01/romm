@@ -357,6 +357,8 @@ Nothing here is settled until the RomM side has been measured.
 
 - **The list reports to the machine, and commands go through it.** Wheel and scrollbar now send `view/measured` from the list, and the grid's `navigateTo` is one `navigate/started` event with a real `flying` state. The rail's letters now go through it too, so a letter that isn't loaded still becomes the active position.
 
+- **The filters had traps.** Number inputs own the arrows, so a pad or keyboard got stuck. They're sliders now, and a sidebar driver sends up and down onward. The list also held the stick for as long as it was mounted, so the stick never acted as arrows elsewhere; it now claims it only while it has focus.
+
 ### Rules from the input work
 
 1. **Keys and the D-pad are data to screen.** A step moves the active cell, then the view follows. It needs no memory of a previous state.
