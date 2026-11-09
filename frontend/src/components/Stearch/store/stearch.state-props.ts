@@ -22,7 +22,10 @@ export const STEARCH_SORT_KEYS = [
   "first_release_date",
   "average_rating",
   "hltb_main_story",
-] as const satisfies readonly GalleryOrderKey[];
+  "last_played",
+  "rating",
+  "difficulty",
+] as const satisfies readonly (GalleryOrderKey | "rating" | "difficulty")[];
 export type StearchSortKey = (typeof STEARCH_SORT_KEYS)[number];
 export type StearchSortDir = "asc" | "desc";
 

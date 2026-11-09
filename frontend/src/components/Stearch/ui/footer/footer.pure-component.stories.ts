@@ -28,6 +28,7 @@ const meta: Meta<typeof FooterPure> = {
     clearActions: CLEAR_ACTIONS,
     selectAllLabel: "Select all",
     selectAllActions: SELECT_ALL_ACTIONS,
+    bulkAdd: null,
   },
 };
 

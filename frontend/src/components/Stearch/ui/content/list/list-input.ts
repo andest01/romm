@@ -52,6 +52,8 @@ export interface ListInputOptions {
   dispatch: (actions: readonly StearchAction[]) => void;
   /** Opens the current game, as Enter does. */
   open: () => void;
+  /** Flips the current game in or out of the selection. */
+  toggleSelected: () => void;
 }
 
 /** The list's side of the machine: its drivers and the effects only a list
@@ -197,6 +199,11 @@ export function createListInput(
       options.open();
       return;
     }
+    if (event.key === " " && event.target === grid) {
+      event.preventDefault();
+      options.toggleSelected();
+      return;
+    }
     if (!(grid instanceof HTMLElement) || !isArrowKey(event.key)) return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
       return;
@@ -282,5 +289,9 @@ export function createListInput(
     visibleRange.value = range;
   };
 
-  return { stick, keys, onKey, activeDescendant, noteRange };
+  function onPadButton(name: string): void {
+    if (name === "x" && ownsTheStick()) options.toggleSelected();
+  }
+
+  return { stick, keys, onKey, onPadButton, activeDescendant, noteRange };
 }

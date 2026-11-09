@@ -8,7 +8,7 @@ Why this folder works the way it does. `AGENTS.md` holds the rules; this holds t
 
 **Do what Argosy does, better than Argosy.** This is support, not rivalry. Every core RomM job that the platform does well is weight [Argosy](https://github.com/rommapp/argosy-launcher) and other clients don't have to carry. Search, collection authoring, curation and administration belong to RomM, built from the ground up here and exposed through the API. Clients keep what only a device can do: launching, emulators, local files, offline use.
 
-**Sort parity with Argosy is a decision, and currently a gap.** Stearch must offer user rating, difficulty, play count, play time and last played. Last played, user rating and difficulty are already columns on `RomUser`. Play count and play time are not, so they need a source chosen first.
+**Sort parity with Argosy, where it's cheap.** Stearch offers user rating, difficulty and last played, in the data model first, with how they're displayed left open. Play count and play time are a deliberate difference: they aren't columns, RomM is primarily administrative, and launchers are where that data starts. Adding them later is a registry entry and a bucket.
 
 **A saved search and a smart collection are one thing.** Saving writes the query, and loading reads it back, cautiously: a stored query can be old, so anything no longer understood is shown and dropped, never silently applied.
 

@@ -23,6 +23,7 @@ const meta: Meta<typeof HeaderControls> = {
   component: HeaderControls,
   args: {
     groupLabel: "Results options",
+    savedSearches: null,
     filters: {
       addLabel: "+ Add a filter",
       addFields: [MULTI_FIELD],

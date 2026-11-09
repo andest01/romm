@@ -69,6 +69,24 @@ export const SORT_FIELDS: Readonly<Record<StearchSortKey, SortField>> = {
     defaultDir: "asc",
     valueOf: asText,
   },
+  last_played: {
+    label: "Last played",
+    directions: BY_DATE,
+    defaultDir: "desc",
+    valueOf: numberOr((year) => ({ kind: "year", year })),
+  },
+  rating: {
+    label: "Your rating",
+    directions: { asc: "Lowest first", desc: "Highest first" },
+    defaultDir: "desc",
+    valueOf: numberOr((stars) => ({ kind: "stars", stars })),
+  },
+  difficulty: {
+    label: "Difficulty",
+    directions: { asc: "Easiest first", desc: "Hardest first" },
+    defaultDir: "desc",
+    valueOf: asText,
+  },
 };
 
 /** A bucket squeezed to fit the rail's narrow column. */

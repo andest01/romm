@@ -15,6 +15,7 @@ defineEmits<{ press: [actions: readonly StearchAction[]] }>();
       <RBtn variant="text" @click="$emit('press', clearActions)">
         {{ clearLabel }}
       </RBtn>
+      <component :is="bulkAdd" v-if="bulkAdd" />
     </template>
     <span v-else>{{ resultCount }} {{ resultsLabel }}</span>
     <RBtn

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import stearchStore from "../../store/stearch.store";
+import BulkAdd from "./bulk-add.container.vue";
 import FooterPure from "./footer.pure-component.vue";
 import { selectFooterState } from "./footer.selectors";
 
@@ -21,6 +22,7 @@ const footerState = computed(() => selectFooterState(store.state));
     :selected-label="SELECTED_LABEL"
     :clear-label="CLEAR_LABEL"
     :select-all-label="SELECT_ALL_LABEL"
+    :bulk-add="BulkAdd"
     @press="store.dispatch"
   />
 </template>

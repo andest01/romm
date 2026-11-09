@@ -596,6 +596,39 @@ _GROUP_SORT_AGGREGATE_TYPES = (DateTime, Integer)
 PLATFORM_SORT_NAME = func.coalesce(func.nullif(Platform.custom_name, ""), Platform.name)
 UNKNOWN_BUCKET = "Unknown"
 
+_MB = 1024 * 1024
+_HOUR = 3600
+# Hard-coded guesses, to be tuned against real library stats. Edges ascend, and
+# each column has one more label than edges.
+_BUCKET_BANDS: dict[str, tuple[tuple[int, ...], tuple[str, ...]]] = {
+    "fs_size_bytes": (
+        (10 * _MB, 100 * _MB, 1024 * _MB, 4096 * _MB),
+        ("<10 MB", "10–100 MB", "100 MB–1 GB", "1–4 GB", "4 GB+"),
+    ),
+    "generated_hltb_main_story": (
+        (5 * _HOUR, 10 * _HOUR, 20 * _HOUR, 40 * _HOUR),
+        ("<5 h", "5–10 h", "10–20 h", "20–40 h", "40 h+"),
+    ),
+}
+
+
+def _band_index(column: Any, edges: tuple[int, ...]) -> Any:
+    """The band a value falls in, as a number so bands sort by value."""
+    value = _zero_unset_folded(column)
+    return case(
+        (value.is_(None), None),
+        *((value < edge, index) for index, edge in enumerate(edges)),
+        else_=len(edges),
+    )
+
+
+def _bucket_label(column: Any, value: Any) -> str:
+    """The name a client sees for one row of the bucket query."""
+    if value is None:
+        return UNKNOWN_BUCKET
+    bands = _BUCKET_BANDS.get(getattr(column, "key", ""))
+    return bands[1][int(value)] if bands else str(value)
+
 
 def _bucket_expression(column: Any, postgresql: bool) -> Any:
     """The SQL grouping a sort column's rows, or None when it has no buckets.
@@ -606,8 +639,13 @@ def _bucket_expression(column: Any, postgresql: bool) -> Any:
         return column
     if column is Rom.generated_average_rating:
         return cast(func.floor(column), Integer)
-    if column is Rom.created_at:
+    if column is Rom.created_at or column is RomUser.last_played:
         return cast(extract("year", column), Integer)
+    if column is RomUser.rating or column is RomUser.difficulty:
+        return _zero_unset_folded(column)
+    bands = _BUCKET_BANDS.get(getattr(column, "key", ""))
+    if bands:
+        return _band_index(column, bands[0])
     if column is Rom.generated_first_release_date:
         seconds = column / 1000
         moment = (
@@ -2120,7 +2158,7 @@ class DBRomsHandler(DBBaseHandler):
         result: list[tuple[str, int]] = []
         offset = 0
         for value, count in session.execute(counts).all():
-            result.append((UNKNOWN_BUCKET if value is None else str(value), offset))
+            result.append((_bucket_label(order_by_attr, value), offset))
             offset += count
         result.sort(key=lambda entry: entry[0])
         if redis_key is not None and version is not None:

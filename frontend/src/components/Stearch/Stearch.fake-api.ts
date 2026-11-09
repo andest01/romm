@@ -99,6 +99,9 @@ const bandOf = (
 
 /** Stands in for the server's bands, which the frontend never holds. */
 function bucketOf(rom: SimpleRomSchema, key: string): string {
+  if (key === "last_played" || key === "rating" || key === "difficulty") {
+    return UNKNOWN_BUCKET;
+  }
   if (key === "platform_id") return rom.platform_display_name;
   if (key === "fs_size_bytes") {
     return bandOf(

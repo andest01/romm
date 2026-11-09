@@ -24,6 +24,7 @@ function pressEnter(onChild: boolean) {
       follow: vi.fn(),
       dispatch: vi.fn(),
       open,
+      toggleSelected: vi.fn(),
     },
     createAxisStore(),
     {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Component } from "vue";
 import { RBtn, RMenu, RMenuItem, RSegmentedControl } from "@/lib";
 import type { StearchAction } from "../../store/stearch.actions";
 import FieldPicker from "../fields/field-picker/field-picker.pure-component.vue";
@@ -8,6 +9,7 @@ defineProps<
   Pick<HeaderProps, "advanced" | "sort" | "view"> & {
     groupLabel: string;
     filters: HeaderProps["filters"];
+    savedSearches: Component | null;
   }
 >();
 
@@ -40,6 +42,7 @@ defineEmits<{ press: [actions: readonly StearchAction[]] }>();
         />
       </template>
     </RMenu>
+    <component :is="savedSearches" v-if="savedSearches" />
     <RBtn
       variant="text"
       :aria-pressed="advanced.isOpen"
