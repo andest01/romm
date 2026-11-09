@@ -29,7 +29,7 @@ export const NAV_TARGETS: readonly { id: NavDestinationId; to: string }[] = [
   { id: "home", to: "/" },
   { id: "platforms", to: "/platforms" },
   { id: "collections", to: "/collections" },
-  { id: "search", to: "/search" },
+  { id: "search", to: "/stearch" },
 ];
 
 const NAV_META: Record<NavDestinationId, { labelKey: string; icon: string }> = {
@@ -55,7 +55,7 @@ export function navDestinationAt(path: string): NavDestinationId | null {
   if (isUnder(path, "/collections") || isUnder(path, "/collection")) {
     return "collections";
   }
-  if (isUnder(path, "/search")) return "search";
+  if (isUnder(path, "/search") || isUnder(path, "/stearch")) return "search";
   return null;
 }
 

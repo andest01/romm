@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect } from "storybook/test";
-import type { Component } from "vue";
-import type {
-  StearchLayoutProps,
-  StearchPanelLayout,
+import { h, type Component } from "vue";
+import {
+  RESULTS_HEADING_ID,
+  SELECTION_HEADING_ID,
+  type StearchLayoutProps,
+  type StearchPanelLayout,
 } from "./Stearch.pure-layout-props";
 import StearchLayout from "./Stearch.pure-layout.vue";
 import { layoutPart, raisedPart, scrollingPart } from "./Stearch.story-helpers";
@@ -16,6 +18,10 @@ const CONTENT = scrollingPart("Content", "--r-color-info", {
 });
 const FOOTER = layoutPart("Footer", "--r-color-success", "64px");
 const BACKGROUND = layoutPart("Background", "--r-color-danger");
+const heading =
+  (id: string, text: string): Component =>
+  () =>
+    h("h2", { id, hidden: true }, text);
 
 type Args = Omit<StearchLayoutProps, "panelLayout"> & StearchPanelLayout;
 
@@ -50,6 +56,8 @@ const meta: Meta<Args> = {
     content: CONTENT,
     footer: FOOTER,
     background: null,
+    resultsHeading: heading(RESULTS_HEADING_ID, "Results"),
+    selectionHeading: heading(SELECTION_HEADING_ID, "Selection"),
   },
   render: (args) => ({
     components: { StearchLayout },
@@ -68,6 +76,8 @@ const meta: Meta<Args> = {
             panelPosition: args.panelPosition,
           }"
           :skip-link="null"
+          :results-heading="args.resultsHeading"
+          :selection-heading="args.selectionHeading"
         />
       </div>
     `,

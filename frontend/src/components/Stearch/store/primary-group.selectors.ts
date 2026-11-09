@@ -1,7 +1,11 @@
 import { createSelector } from "./create-selector";
 import { selectSections } from "./results.selectors";
 import { shortOf, SORT_FIELDS, spokenOf } from "./sort.fields";
-import { selectSortKey, selectVisiblePosition } from "./stearch.selectors";
+import {
+  selectSortDir,
+  selectSortKey,
+  selectVisiblePosition,
+} from "./stearch.selectors";
 
 /** The first sort level as groups. Every surface draws these same buckets. */
 export const selectPrimaryGroup = createSelector(
@@ -34,4 +38,13 @@ export const selectCurrentBucket = createSelector(
   [selectPrimaryGroup, selectVisiblePosition],
   ({ buckets }, position) =>
     buckets.findLast(({ start }) => start <= position) ?? null,
+);
+
+/** What a screen reader hears as the sort or the current group changes. */
+export const selectAnnouncement = createSelector(
+  [selectPrimaryGroup, selectSortDir, selectCurrentBucket],
+  ({ field }, dir, current) => {
+    const sort = `Sorted by ${field.label}, ${field.directions[dir]}.`;
+    return current ? `${sort} ${current.label}` : sort;
+  },
 );

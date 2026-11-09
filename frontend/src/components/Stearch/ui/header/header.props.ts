@@ -20,6 +20,8 @@ export interface HeaderSortOption<Id = StearchSortKey> {
 
 export interface HeaderSearch {
   term: string | null;
+  /** Names the search landmark; a placeholder is only a hint. */
+  label: string;
   placeholder: string;
   resultCount: number;
 }

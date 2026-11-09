@@ -18,7 +18,17 @@ export interface StearchLayoutProps {
   panelLayout: StearchPanelLayout;
   /** The first Tab's stop, placed ahead of every other part. */
   skipLink: Component | null;
+  /** Renders the heading with `RESULTS_HEADING_ID`, naming the results. */
+  resultsHeading: Component;
+  /** Renders the heading with `SELECTION_HEADING_ID`, naming the footer. */
+  selectionHeading: Component;
 }
 
-/** The content region's id: what a skip link aims at. */
+/** Region ids: what skip links aim at. */
 export const RESULTS_REGION_ID = "stearch-results";
+export const FILTERS_REGION_ID = "stearch-filters";
+
+/** Heading ids: a part renders the heading, and its region points at it. */
+export const RESULTS_HEADING_ID = "stearch-results-heading";
+export const FILTERS_HEADING_ID = "stearch-filters-heading";
+export const SELECTION_HEADING_ID = "stearch-selection-heading";

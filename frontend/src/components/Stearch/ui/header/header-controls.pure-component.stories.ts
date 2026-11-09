@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import type { StearchAction } from "../../store/stearch.actions";
-import { MULTI_FIELD, TRI_STATE_FIELD } from "../fields/fields.story-args";
-import HeaderPure from "./header.pure-component.vue";
+import { MULTI_FIELD } from "../fields/fields.story-args";
+import HeaderControls from "./header-controls.pure-component.vue";
 
 const ADVANCED_ACTIONS: readonly StearchAction[] = [
   { type: "view/set", patch: { isAdvancedOpen: true } },
@@ -10,33 +10,28 @@ const ADVANCED_ACTIONS: readonly StearchAction[] = [
 const SORT_ACTIONS: readonly StearchAction[] = [
   {
     type: "query/set",
-    patch: { sort: [{ param: "fs_size_bytes", dir: "asc" }] },
+    patch: { sort: [{ param: "fs_size_bytes", dir: "desc" }] },
   },
 ];
 const VIEW_ACTIONS: readonly StearchAction[] = [
   { type: "view/set", patch: { mode: "tiles" } },
 ];
 
-const meta: Meta<typeof HeaderPure> = {
-  title: "Stearch/ui/header/header.pure-component.vue",
+const meta: Meta<typeof HeaderControls> = {
+  title: "Stearch/ui/header/header-controls.pure-component.vue",
   tags: ["!autodocs"],
-  component: HeaderPure,
-  parameters: { layout: "fullscreen" },
+  component: HeaderControls,
   args: {
-    search: {
-      term: "",
-      placeholder: "Name, filename, hash...",
-      resultCount: 601,
-    },
+    groupLabel: "Results options",
     filters: {
       addLabel: "+ Add a filter",
       addFields: [MULTI_FIELD],
       openField: null,
       closeFieldLabel: "Back",
       closeFieldActions: [{ type: "view/set", patch: { openFieldId: null } }],
-      pills: [MULTI_FIELD, TRI_STATE_FIELD],
+      pills: [],
       clearLabel: "Clear all",
-      clearActions: [{ type: "query/set", patch: { selectedGenres: [] } }],
+      clearActions: [],
     },
     advanced: {
       isOpen: false,
@@ -44,7 +39,7 @@ const meta: Meta<typeof HeaderPure> = {
       actions: ADVANCED_ACTIONS,
     },
     sort: {
-      accessibleLabel: "Sort by Name ↑",
+      accessibleLabel: "Sort by Name, A to Z",
       label: "Sort by Name ↑",
       shortLabel: "Name ↑",
       sortByLabel: "Sort by",
@@ -59,8 +54,8 @@ const meta: Meta<typeof HeaderPure> = {
       ],
       directionLabel: "Direction",
       directions: [
-        { id: "asc", label: "Ascending", isActive: true, actions: [] },
-        { id: "desc", label: "Descending", isActive: false, actions: [] },
+        { id: "asc", label: "A to Z", isActive: true, actions: [] },
+        { id: "desc", label: "Z to A", isActive: false, actions: [] },
       ],
     },
     view: {
@@ -76,27 +71,24 @@ const meta: Meta<typeof HeaderPure> = {
 
 export default meta;
 
-type Story = StoryObj<typeof HeaderPure>;
+type Story = StoryObj<typeof HeaderControls>;
 
 export const Playground: Story = {};
-
-export const Typing: Story = {
-  args: { onSearch: fn() },
-  play: async ({ args, canvasElement }) => {
-    await userEvent.type(within(canvasElement).getByRole("textbox"), "z");
-    await expect(args.onSearch).toHaveBeenCalledWith("z");
-  },
-};
 
 export const SortMenu: Story = {
   args: { onPress: fn() },
   play: async ({ args, canvasElement }) => {
+    // Act
     await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "Sort by Name ↑" }),
+      within(canvasElement).getByRole("button", {
+        name: "Sort by Name, A to Z",
+      }),
     );
     await userEvent.click(
       await within(document.body).findByRole("menuitem", { name: "Size" }),
     );
+
+    // Assert
     await expect(args.onPress).toHaveBeenCalledWith(SORT_ACTIONS);
   },
 };
@@ -104,9 +96,12 @@ export const SortMenu: Story = {
 export const PressingViewHandsActionsBack: Story = {
   args: { onPress: fn() },
   play: async ({ args, canvasElement }) => {
+    // Act
     await userEvent.click(
       within(canvasElement).getByRole("button", { name: "Table" }),
     );
+
+    // Assert
     await expect(args.onPress).toHaveBeenCalledWith(VIEW_ACTIONS);
   },
 };
@@ -114,9 +109,12 @@ export const PressingViewHandsActionsBack: Story = {
 export const PressingHandsActionsBack: Story = {
   args: { onPress: fn() },
   play: async ({ args, canvasElement }) => {
+    // Act
     await userEvent.click(
       within(canvasElement).getByRole("button", { name: "Advanced mode" }),
     );
+
+    // Assert
     await expect(args.onPress).toHaveBeenCalledWith(ADVANCED_ACTIONS);
   },
 };

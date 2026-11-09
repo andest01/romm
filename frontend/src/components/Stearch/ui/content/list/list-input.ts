@@ -50,6 +50,8 @@ export interface ListInputOptions {
   scroller: () => HTMLElement | null;
   follow: (rowIndex: number) => void;
   dispatch: (actions: readonly StearchAction[]) => void;
+  /** Opens the current game, as Enter does. */
+  open: () => void;
 }
 
 /** The list's side of the machine: its drivers and the effects only a list
@@ -189,6 +191,12 @@ export function createListInput(
 
   function onKey(event: KeyboardEvent): void {
     const grid = gridElement();
+    // Only on the grid itself: a sort header inside it has its own Enter.
+    if (event.key === "Enter" && event.target === grid) {
+      event.preventDefault();
+      options.open();
+      return;
+    }
     if (!(grid instanceof HTMLElement) || !isArrowKey(event.key)) return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
       return;

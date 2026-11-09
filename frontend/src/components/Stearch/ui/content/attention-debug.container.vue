@@ -24,7 +24,7 @@ const selectedNames = computed(() =>
 </script>
 
 <template>
-  <aside class="stearch-attention-debug" aria-label="Attention states (dev)">
+  <div class="stearch-attention-debug">
     <span v-if="cruiseStack" data-testid="score-multiplier">
       {{ cruiseStack }}x
     </span>
@@ -42,7 +42,7 @@ const selectedNames = computed(() =>
         · {{ selectedNames.join(", ") }}
       </template>
     </span>
-  </aside>
+  </div>
 </template>
 
 <style scoped>

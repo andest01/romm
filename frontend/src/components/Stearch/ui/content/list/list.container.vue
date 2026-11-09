@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, defineComponent, h } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   selectAnchorPosition,
@@ -19,6 +19,7 @@ import {
 import stearchStore from "../../../store/stearch.store";
 import { useContentView } from "../content.view";
 import RailContainer from "../rail/rail.container.vue";
+import ResultsLayout from "../results/results.pure-layout.vue";
 import SectionContainer from "../section/section.container.vue";
 import { selectSectionProps } from "../section/section.selectors";
 import { useFeel } from "./feel";
@@ -105,28 +106,41 @@ function onRange(range: VisibleRange): void {
     }),
   );
 }
+
+const hasRows = computed(
+  () => rows.value.length > 0 && errorMessage.value === null,
+);
+// The layout takes parts, so the grid is one, reading this container's state.
+const Grid = defineComponent(
+  () => () =>
+    h(ListPure, {
+      ...fit.value,
+      verbs: Verbs,
+      setScroller,
+      rows: rows.value,
+      activePosition: activePosition.value,
+      currentId: currentId.value,
+      marks: feel.value.marks,
+      gridLabel: GRID_LABEL,
+      activeDescendantId: activeDescendant.value,
+      gridHelp: RESULTS_HELP,
+      errorMessage: errorMessage.value,
+      emptyMessage: t("rom.no-games-match"),
+      onPress: store.dispatch,
+      onRange,
+      onKey,
+    }),
+);
 </script>
 
 <template>
-  <ListPure
-    v-bind="fit"
-    :verbs="Verbs"
-    :set-scroller="setScroller"
-    :band="band"
+  <ResultsLayout
+    :grid="Grid"
+    :rail="hasRows ? RailContainer : null"
+    :band="hasRows ? band : null"
     :band-offset="bandOffset"
-    :rail="RailContainer"
+    :band-height="fit.headHeight"
+    :head-inset="0"
     :scrollbar-width="scrollbarWidth"
-    :rows="rows"
-    :active-position="activePosition"
-    :current-id="currentId"
-    :marks="feel.marks"
-    :grid-label="GRID_LABEL"
-    :active-descendant-id="activeDescendant"
-    :grid-help="RESULTS_HELP"
-    :error-message="errorMessage"
-    :empty-message="t('rom.no-games-match')"
-    @press="store.dispatch"
-    @range="onRange"
-    @key="onKey"
   />
 </template>

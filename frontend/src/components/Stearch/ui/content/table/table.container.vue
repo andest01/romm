@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, defineComponent, h } from "vue";
 import { useI18n } from "vue-i18n";
-import type { RTableColumn } from "@/lib";
+import type { RTableColumn, RTableSortPayload } from "@/lib";
 import {
   selectAnchorPosition,
   selectCurrentPosition,
@@ -35,11 +35,16 @@ import { useListSpeed } from "../list/use-list-speed";
 import { useScrollerJump } from "../list/use-scroller-jump";
 import Verbs from "../list/verbs/verbs.container.vue";
 import RailContainer from "../rail/rail.container.vue";
+import ResultsLayout from "../results/results.pure-layout.vue";
 import SectionContainer from "../section/section.container.vue";
 import { selectSectionProps } from "../section/section.selectors";
 import RowPure from "./row/row.pure-component.vue";
 import TablePure from "./table.pure-component.vue";
-import { buildSortActions, TABLE_ROW_HEIGHT } from "./table.selectors";
+import {
+  buildSortActions,
+  TABLE_HEAD_HEIGHT,
+  TABLE_ROW_HEIGHT,
+} from "./table.selectors";
 
 // Stub labels: move to locale keys before this leaves the fork.
 const TABLE_LABEL = "Games";
@@ -133,35 +138,49 @@ function onRange(range: VisibleRange): void {
     }),
   );
 }
+
+const hasRows = computed(
+  () => rows.value.length > 0 && errorMessage.value === null,
+);
+// The layout takes parts, so the grid is one, reading this container's state.
+const Grid = defineComponent(
+  () => () =>
+    h(TablePure, {
+      item: RowPure,
+      verbs: Verbs,
+      setScroller,
+      tableLabel: TABLE_LABEL,
+      activeDescendantId: activeDescendant.value,
+      gridHelp: RESULTS_HELP,
+      columns: COLUMNS,
+      gridTemplate: GRID_TEMPLATE,
+      rowHeight: TABLE_ROW_HEIGHT,
+      headHeight,
+      rows: rows.value,
+      activePosition: activePosition.value,
+      currentId: currentId.value,
+      marks: feel.value.marks,
+      sortKey: sortKey.value,
+      sortDir: sortDir.value,
+      errorMessage: errorMessage.value,
+      emptyMessage: t("rom.no-games-match"),
+      onPress: store.dispatch,
+      onSort: (payload: RTableSortPayload) =>
+        store.dispatch(buildSortActions(payload)),
+      onRange,
+      onKey,
+    }),
+);
 </script>
 
 <template>
-  <TablePure
-    :item="RowPure"
-    :verbs="Verbs"
-    :set-scroller="setScroller"
-    :band="band"
+  <ResultsLayout
+    :grid="Grid"
+    :rail="hasRows ? RailContainer : null"
+    :band="hasRows ? band : null"
     :band-offset="bandOffset"
-    :rail="RailContainer"
+    :band-height="headHeight"
+    :head-inset="TABLE_HEAD_HEIGHT"
     :scrollbar-width="scrollbarWidth"
-    :table-label="TABLE_LABEL"
-    :active-descendant-id="activeDescendant"
-    :grid-help="RESULTS_HELP"
-    :columns="COLUMNS"
-    :grid-template="GRID_TEMPLATE"
-    :row-height="TABLE_ROW_HEIGHT"
-    :head-height="headHeight"
-    :rows="rows"
-    :active-position="activePosition"
-    :current-id="currentId"
-    :marks="feel.marks"
-    :sort-key="sortKey"
-    :sort-dir="sortDir"
-    :error-message="errorMessage"
-    :empty-message="t('rom.no-games-match')"
-    @press="store.dispatch"
-    @sort="(payload) => store.dispatch(buildSortActions(payload))"
-    @range="onRange"
-    @key="onKey"
   />
 </template>

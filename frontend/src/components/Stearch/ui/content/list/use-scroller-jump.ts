@@ -1,7 +1,6 @@
 import { useElementSize, usePreferredReducedMotion } from "@vueuse/core";
 import { computed, nextTick, readonly, shallowRef, watch } from "vue";
 import { focusFromInput } from "@/utils/autofocus";
-import { isEditable } from "@/utils/editable";
 import { selectJump } from "../../../store/stearch.selectors";
 import stearchStore from "../../../store/stearch.store";
 import type {
@@ -23,13 +22,13 @@ import { useGlide } from "./use-glide";
 const isJumpScroller = (instance: object): instance is JumpScroller =>
   "scrollToIndex" in instance;
 
-// A view that opens takes keyboard focus, so arrows work straight after the
-// Tiles/Table switch instead of steering the switch. Typing is never
-// interrupted.
+// A view that opens takes focus only if nothing holds it, so the Tiles/Table
+// switch can be pressed over and over.
 function takeFocus(inside: HTMLElement | null): void {
   const grid = inside?.closest('[role="grid"]');
   if (!(grid instanceof HTMLElement)) return;
-  if (isEditable(document.activeElement)) return;
+  const focused = document.activeElement;
+  if (focused && focused !== document.body) return;
   focusFromInput(grid, { preventScroll: true });
 }
 

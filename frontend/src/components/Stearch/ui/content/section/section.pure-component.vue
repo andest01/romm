@@ -39,7 +39,7 @@ defineEmits<ItemEmits>();
   gap: var(--r-space-2);
   box-sizing: border-box;
   block-size: 100%;
-  padding-inline: var(--r-row-pad) calc(var(--stearch-rail-width, 0px) + 6px);
+  padding-inline: var(--r-row-pad) 6px;
   border-bottom: 1px solid var(--r-color-border);
   font-size: 0.75em;
 }

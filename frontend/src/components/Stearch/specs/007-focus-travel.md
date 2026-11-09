@@ -82,7 +82,7 @@ This section is from general knowledge of desktop file managers and the WAI-ARIA
 - Moves come from one pure function, `moveFor`, shared by tiles and table, so both behave the same. A new view seeds the key position from `selectAnchorPosition`, the Current game's position.
 - A move sets Current with `attention/set { activeId }`, or `null` on a ghost.
 - The list keeps DOM focus on itself, not on a tile: a virtual list unmounts tiles as they scroll or load, and focus on one fell to `<body>` and dropped every later key.
-- A view that opens takes focus, unless a text field has it. After a click on the Tiles/Table switch, focus stayed on the switch, so arrows steered the switch instead of the list.
+- A view that opens takes focus only if nothing holds it. Focus stays on the Tiles/Table switch, so a controller can press it over and over.
 - A view opens on `selectAnchorPosition`: the current game, else the latest selected game, else where the list was. It waits for a measured width first, because tiles lay out at one column until then and the anchor's row came out far too low.
 
 ## Scroll feel

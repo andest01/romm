@@ -28,7 +28,7 @@ defineEmits<{
     :choice="field.choice"
     @press="$emit('press', $event)"
   />
-  <section v-else class="stearch-section">
+  <div v-else class="stearch-section">
     <h3 class="stearch-section__title">{{ field.label }}</h3>
     <FieldPicker
       v-if="field.kind === 'multi'"
@@ -42,7 +42,7 @@ defineEmits<{
       :max-label="maxLabel"
       @range="$emit('range', $event)"
     />
-  </section>
+  </div>
 </template>
 
 <style scoped>

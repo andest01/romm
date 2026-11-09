@@ -7,11 +7,16 @@ import { buildLabels } from "./store/labels";
 import { selectPanelLayout } from "./store/layout.selectors";
 import stearchStore from "./store/stearch.store";
 import ContentContainer from "./ui/content/content.container.vue";
+import { useKeyDriver } from "./ui/content/list/use-key-driver";
 import FooterContainer from "./ui/footer/footer.container.vue";
 import HeaderContainer from "./ui/header/header.container.vue";
+import ResultsHeading from "./ui/region-heading/results-heading.container.vue";
+import SelectionHeading from "./ui/region-heading/selection-heading.container.vue";
 import SidebarContainer from "./ui/sidebar/sidebar.container.vue";
 import SkipLinkContainer from "./ui/skip-link/skip-link.container.vue";
+import { createWaypointKeyDriver } from "./ui/waypoints.driver";
 
+useKeyDriver(createWaypointKeyDriver());
 const { t } = useI18n();
 const store = stearchStore();
 const panelLayout = computed(() => selectPanelLayout(store.state));
@@ -38,5 +43,7 @@ onMounted(store.start);
     :background="null"
     :panel-layout="panelLayout"
     :skip-link="SkipLinkContainer"
+    :results-heading="ResultsHeading"
+    :selection-heading="SelectionHeading"
   />
 </template>

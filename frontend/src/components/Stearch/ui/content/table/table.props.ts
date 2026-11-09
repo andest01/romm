@@ -12,10 +12,6 @@ export interface TableProps {
   item: ItemPart<RowProps>;
   verbs: RowProps["verbs"];
   setScroller: ListProps["setScroller"];
-  band: ListProps["band"];
-  bandOffset: ListProps["bandOffset"];
-  rail: ListProps["rail"];
-  scrollbarWidth: ListProps["scrollbarWidth"];
   tableLabel: string;
   activeDescendantId: ListProps["activeDescendantId"];
   gridHelp: ListProps["gridHelp"];

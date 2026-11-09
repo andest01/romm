@@ -261,7 +261,7 @@ describe("useGamepad", () => {
 
       step();
 
-      expect(router.push).toHaveBeenCalledWith("/search");
+      expect(router.push).toHaveBeenCalledWith("/stearch");
     });
 
     it("lands on Home from a page outside the sections", () => {

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import {
+  FILTERS_HEADING_ID,
+  FILTERS_REGION_ID,
+  RESULTS_HEADING_ID,
   RESULTS_REGION_ID,
+  SELECTION_HEADING_ID,
   type StearchLayoutProps,
 } from "./Stearch.pure-layout-props";
 
@@ -18,9 +22,13 @@ defineProps<StearchLayoutProps>();
     <div v-if="background" class="stearch-layout__background">
       <component :is="background" />
     </div>
-    <header class="stearch-layout__header"><component :is="header" /></header>
+    <div class="stearch-layout__header"><component :is="header" /></div>
     <aside
+      :id="FILTERS_REGION_ID"
       class="stearch-layout__panel"
+      :aria-labelledby="FILTERS_HEADING_ID"
+      data-waypoint="filters"
+      tabindex="-1"
       :inert="panelLayout.panelState === 'hidden'"
     >
       <component :is="panel" />
@@ -28,13 +36,22 @@ defineProps<StearchLayoutProps>();
     <section
       :id="RESULTS_REGION_ID"
       class="stearch-layout__content"
+      :aria-labelledby="RESULTS_HEADING_ID"
+      data-waypoint="results"
       tabindex="-1"
     >
+      <component :is="resultsHeading" />
       <component :is="content" v-if="content" />
     </section>
-    <footer v-if="footer" class="stearch-layout__footer">
+    <section
+      v-if="footer"
+      class="stearch-layout__footer"
+      :aria-labelledby="SELECTION_HEADING_ID"
+      data-waypoint="selection"
+    >
+      <component :is="selectionHeading" />
       <component :is="footer" />
-    </footer>
+    </section>
   </div>
 </template>
 

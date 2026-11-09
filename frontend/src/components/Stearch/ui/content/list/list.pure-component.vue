@@ -18,13 +18,7 @@ defineEmits<
 </script>
 
 <template>
-  <div
-    class="stearch-list"
-    :style="{
-      '--stearch-scrollbar-width': `${scrollbarWidth}px`,
-      ...markVariables(marks),
-    }"
-  >
+  <div class="stearch-list" :style="markVariables(marks)">
     <REmptyState
       v-if="errorMessage"
       icon="mdi-alert-circle-outline"
@@ -97,20 +91,7 @@ defineEmits<
         </template>
       </template>
     </RVirtualScroller>
-    <div
-      v-if="band"
-      class="stearch-list__band"
-      :style="{ blockSize: `${headHeight}px` }"
-    >
-      <div
-        class="stearch-list__band-part"
-        :style="{ transform: `translateY(${bandOffset}px)` }"
-      >
-        <component :is="band" />
-      </div>
-    </div>
     <p :id="RESULTS_HELP_ID" class="stearch-results-help">{{ gridHelp }}</p>
-    <div v-if="rail" class="stearch-list__rail"><component :is="rail" /></div>
   </div>
 </template>
 
@@ -120,7 +101,6 @@ defineEmits<
   display: contents;
 }
 .stearch-list {
-  --stearch-rail-width: 0px;
   position: relative;
   /* Items are picked, not read: Shift and drag must not select text. */
   user-select: none;
@@ -136,31 +116,6 @@ defineEmits<
 .stearch-list__row :deep(.r-skeleton::after) {
   content: none;
 }
-/* Room for the rail only while there is one. */
-.stearch-list:has(> .stearch-list__rail) {
-  --stearch-rail-width: 24px;
-}
-/* The rail sits hard against the native scrollbar, so both can be grabbed. */
-.stearch-list__rail {
-  position: absolute;
-  z-index: 2;
-  inset-block: 0;
-  inset-inline-end: var(--stearch-scrollbar-width);
-  inline-size: var(--stearch-rail-width);
-}
-/* The band floats over the top of the scroller, clipped to its own height,
-   so a heading can push it out of view. It stops short of the scrollbar. */
-.stearch-list__band {
-  position: absolute;
-  z-index: 1;
-  overflow: hidden;
-  inset-block-start: 0;
-  inset-inline: 0 var(--stearch-scrollbar-width);
-}
-.stearch-list__band-part {
-  block-size: 100%;
-  background: var(--r-color-bg);
-}
 /* Padding sits on the scroller, so its content box is the items' width. */
 .stearch-list__scroller {
   box-sizing: border-box;
@@ -170,10 +125,15 @@ defineEmits<
   display: grid;
   gap: 6px;
 }
+/* Runs from the edge to the rail, matching the band that takes over. */
 .stearch-list__head {
   display: flex;
   align-items: center;
+  box-sizing: border-box;
+  margin-inline: calc(-1 * var(--r-row-pad)) -6px;
+  padding-inline: var(--r-row-pad) 6px;
   border-bottom: 1px solid var(--r-color-border);
+  background: var(--r-color-bg);
   color: var(--r-color-brand-primary);
   font-size: 1em;
   font-weight: 800;

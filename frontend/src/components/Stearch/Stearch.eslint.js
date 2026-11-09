@@ -1,5 +1,7 @@
 // Stearch's own lint rules, spread into frontend/eslint.config.js. Paths are
 // relative to frontend/, where the root config lives.
+import landmarks from "./eslint-rules/landmarks.js";
+import noVisualReorder from "./eslint-rules/no-visual-reorder.js";
 import pureLayoutParts from "./eslint-rules/pure-layout-parts.js";
 
 const STEARCH = "src/components/Stearch";
@@ -7,7 +9,11 @@ const STEARCH = "src/components/Stearch";
 /** Rules only Stearch needs, as a local plugin. */
 const stearchPlugin = {
   meta: { name: "stearch" },
-  rules: { "pure-layout-parts": pureLayoutParts },
+  rules: {
+    landmarks,
+    "no-visual-reorder": noVisualReorder,
+    "pure-layout-parts": pureLayoutParts,
+  },
 };
 
 const UP_ONLY =
@@ -52,7 +58,20 @@ export default [
   {
     files: [`${STEARCH}/**/*.pure-layout.vue`],
     plugins: { stearch: stearchPlugin },
-    rules: { "stearch/pure-layout-parts": "error" },
+    rules: {
+      "stearch/pure-layout-parts": "error",
+      "stearch/no-visual-reorder": "error",
+    },
+  },
+  // Navigation and accessibility: the structure is checked, not reviewed.
+  {
+    files: [`${STEARCH}/**/*.vue`],
+    plugins: { stearch: stearchPlugin },
+    rules: {
+      "stearch/landmarks": "error",
+      "vuejs-accessibility/no-aria-hidden-on-focusable": "error",
+      "vuejs-accessibility/no-role-presentation-on-focusable": "error",
+    },
   },
   // Pure means pure: props in, events out. State lives in containers and the store.
   {

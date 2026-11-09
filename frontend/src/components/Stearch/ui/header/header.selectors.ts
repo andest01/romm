@@ -53,6 +53,8 @@ const selectSearch = createSelector(
   [selectSearchTerm, selectPlaceholder, selectTotal],
   (term, placeholder, resultCount): HeaderSearch => ({
     term,
+    // Stub label: move to a locale key before this leaves the fork.
+    label: "Search games",
     placeholder,
     resultCount,
   }),

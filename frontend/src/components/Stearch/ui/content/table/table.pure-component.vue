@@ -23,13 +23,7 @@ defineEmits<
 </script>
 
 <template>
-  <div
-    class="stearch-table"
-    :style="{
-      '--stearch-scrollbar-width': `${scrollbarWidth}px`,
-      ...markVariables(marks),
-    }"
-  >
+  <div class="stearch-table" :style="markVariables(marks)">
     <REmptyState
       v-if="errorMessage"
       icon="mdi-alert-circle-outline"
@@ -119,47 +113,17 @@ defineEmits<
           </RVirtualScroller>
         </div>
       </div>
-      <div
-        v-if="band"
-        class="stearch-table__band"
-        :style="{ blockSize: `${headHeight}px` }"
-      >
-        <div
-          class="stearch-table__band-part"
-          :style="{ transform: `translateY(${bandOffset}px)` }"
-        >
-          <component :is="band" />
-        </div>
-      </div>
       <p :id="RESULTS_HELP_ID" class="stearch-results-help">{{ gridHelp }}</p>
-      <div v-if="rail" class="stearch-table__rail">
-        <component :is="rail" />
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
 .stearch-table {
-  --stearch-rail-width: 0px;
-  --stearch-table-head-height: 30px;
   height: 100%;
   /* Items are picked, not read: Shift and drag must not select text. */
   user-select: none;
   min-height: 0;
-}
-/* Room for the rail only while there is one. */
-.stearch-table:has(.stearch-table__rail) {
-  --stearch-rail-width: 24px;
-}
-/* The rail sits hard against the native scrollbar, below the column header,
-   so both can be grabbed. */
-.stearch-table__rail {
-  position: absolute;
-  z-index: 2;
-  inset-block: var(--stearch-table-head-height) 0;
-  inset-inline-end: var(--stearch-scrollbar-width);
-  inline-size: var(--stearch-rail-width);
 }
 .stearch-table__head,
 .stearch-table__section {
@@ -169,7 +133,10 @@ defineEmits<
 .stearch-table__section {
   display: flex;
   align-items: center;
+  margin-inline-end: var(--stearch-rail-width, 0px);
+  padding-inline-end: 6px;
   border-bottom: 1px solid var(--r-color-border);
+  background: var(--r-color-bg);
   color: var(--r-color-brand-primary);
   font-size: 1em;
   font-weight: 800;
@@ -190,7 +157,7 @@ defineEmits<
   display: grid;
   flex: none;
   gap: var(--r-space-2);
-  block-size: var(--stearch-table-head-height);
+  block-size: var(--stearch-results-head, 30px);
   align-items: center;
 }
 .stearch-table__body {
@@ -206,19 +173,6 @@ defineEmits<
 /* One compositor layer per row made Layerize the top scroll cost. */
 .stearch-table__body :deep(.r-virtual-scroller__item) {
   will-change: auto;
-}
-/* The band floats over the body, below the column header, clipped to its own
-   height so a heading can push it out of view. */
-.stearch-table__band {
-  position: absolute;
-  z-index: 1;
-  overflow: hidden;
-  inset-block-start: var(--stearch-table-head-height);
-  inset-inline: 0 var(--stearch-scrollbar-width);
-}
-.stearch-table__band-part {
-  block-size: 100%;
-  background: var(--r-color-bg);
 }
 </style>
 
