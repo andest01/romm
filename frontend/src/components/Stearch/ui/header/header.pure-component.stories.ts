@@ -44,10 +44,23 @@ const meta: Meta<typeof HeaderPure> = {
       actions: ADVANCED_ACTIONS,
     },
     sort: {
+      accessibleLabel: "Sort by Name ↑",
       label: "Sort by Name ↑",
+      shortLabel: "Name ↑",
+      sortByLabel: "Sort by",
       options: [
-        { id: "name", label: "Name ↑", actions: SORT_ACTIONS },
-        { id: "fs_size_bytes", label: "Size", actions: SORT_ACTIONS },
+        { id: "name", label: "Name", isActive: true, actions: SORT_ACTIONS },
+        {
+          id: "fs_size_bytes",
+          label: "Size",
+          isActive: false,
+          actions: SORT_ACTIONS,
+        },
+      ],
+      directionLabel: "Direction",
+      directions: [
+        { id: "asc", label: "Ascending", isActive: true, actions: [] },
+        { id: "desc", label: "Descending", isActive: false, actions: [] },
       ],
     },
     view: {

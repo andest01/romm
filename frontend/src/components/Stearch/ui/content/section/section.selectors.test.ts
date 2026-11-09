@@ -11,7 +11,7 @@ const STATE: IStearchState = {
   results: {
     ...results,
     ids: [10, 11, 12, 13],
-    charIndex: { A: 0, B: 2 },
+    bucketIndex: { A: 0, B: 2 },
   },
 };
 
@@ -37,7 +37,7 @@ describe("selectSectionProps", () => {
 
   it("is null for a sort without sections", () => {
     // Arrange
-    const state = { ...STATE, results: { ...STATE.results, charIndex: {} } };
+    const state = { ...STATE, results: { ...STATE.results, bucketIndex: {} } };
 
     // Act
     const props = selectSectionProps(state);

@@ -171,8 +171,8 @@ defineEmits<
   align-items: center;
   border-bottom: 1px solid var(--r-color-border);
   color: var(--r-color-brand-primary);
-  font-size: 0.75em;
-  font-weight: 700;
+  font-size: 1em;
+  font-weight: 800;
 }
 /* The rail and band sit beside the grid: a grid may only own rows. */
 .stearch-table__frame {
@@ -218,7 +218,7 @@ defineEmits<
 }
 .stearch-table__band-part {
   block-size: 100%;
-  background: var(--r-color-surface);
+  background: var(--r-color-bg);
 }
 </style>
 

@@ -9,7 +9,7 @@ import { selectHeaderProps } from "./header.selectors";
 describe("selectHeaderProps sort", () => {
   const { options } = selectHeaderProps(INITIAL_STEARCH_STATE).sort;
 
-  it("starts a new key ascending", () => {
+  it("starts a new key in its own default direction", () => {
     // Act
     const option = options.find(({ id }) => id === "average_rating");
 
@@ -17,20 +17,53 @@ describe("selectHeaderProps sort", () => {
     expect(option?.actions).toEqual([
       {
         type: "query/set",
-        patch: { sort: [{ param: "average_rating", dir: "asc" }] },
+        patch: { sort: [{ param: "average_rating", dir: "desc" }] },
       },
     ]);
   });
 
-  it("flips direction on the active key", () => {
+  it("sets direction explicitly, keeping the key", () => {
+    // Arrange
+    const { directions } = selectHeaderProps(INITIAL_STEARCH_STATE).sort;
+
     // Act
-    const option = options.find(({ id }) => id === "name");
+    const option = directions.find(({ id }) => id === "desc");
 
     // Assert
     expect(option?.actions).toEqual([
       {
         type: "query/set",
         patch: { sort: [{ param: "name", dir: "desc" }] },
+      },
+    ]);
+  });
+
+  it("keeps later sort levels when the first changes", () => {
+    // Arrange
+    const state = stearchReducer(INITIAL_STEARCH_STATE, {
+      type: "query/set",
+      patch: {
+        sort: [
+          { param: "name", dir: "asc" },
+          { param: "created_at", dir: "desc" },
+        ],
+      },
+    });
+    const { options: all } = selectHeaderProps(state).sort;
+
+    // Act
+    const option = all.find(({ id }) => id === "average_rating");
+
+    // Assert
+    expect(option?.actions).toEqual([
+      {
+        type: "query/set",
+        patch: {
+          sort: [
+            { param: "average_rating", dir: "desc" },
+            { param: "created_at", dir: "desc" },
+          ],
+        },
       },
     ]);
   });

@@ -25,6 +25,7 @@ from sqlalchemy import (
     cast,
     delete,
     event,
+    extract,
     false,
     func,
 )
@@ -592,9 +593,36 @@ def _prerelease_rank() -> ColumnElement[Any]:
 _GROUP_SORT_AGGREGATE_TYPES = (DateTime, Integer)
 
 
+PLATFORM_SORT_NAME = func.coalesce(func.nullif(Platform.custom_name, ""), Platform.name)
+UNKNOWN_BUCKET = "Unknown"
+
+
+def _bucket_expression(column: Any, postgresql: bool) -> Any:
+    """The SQL grouping a sort column's rows, or None when it has no buckets.
+
+    Each bucket must be monotonic in the sort order, so runs stay contiguous.
+    """
+    if column is PLATFORM_SORT_NAME:
+        return column
+    if column is Rom.generated_average_rating:
+        return cast(func.floor(column), Integer)
+    if column is Rom.created_at:
+        return cast(extract("year", column), Integer)
+    if column is Rom.generated_first_release_date:
+        seconds = column / 1000
+        moment = (
+            func.to_timestamp(seconds) if postgresql else func.from_unixtime(seconds)
+        )
+        return cast(extract("year", moment), Integer)
+    # `Enum` subclasses `String`, but databases order enums by declaration.
+    if isinstance(column.type, (String, Text)) and not isinstance(column.type, Enum):
+        return func.substring(column, 1, 1)
+    return None
+
+
 class _GallerySortKey(NamedTuple):
-    column: QueryableAttribute[Any]
-    source: Literal["rom", "rom_user", "rom_metadata"]
+    column: Any
+    source: Literal["rom", "rom_user", "rom_metadata", "platform"]
     # Nullable keys get the NULLS LAST treatment; an indexed Rom column is
     # sorted as-is.
     nullable: bool = False
@@ -624,6 +652,8 @@ def _zero_unset_folded(column: Any) -> Any:
 
 def _resolve_gallery_sort_key(order_by: str, user_id: int | None) -> _GallerySortKey:
     """Map a gallery `order_by` name to its sort column and source table."""
+    if order_by == "platform_id":
+        return _GallerySortKey(PLATFORM_SORT_NAME, "platform")
     rom_column = _mapped_sort_column(Rom, order_by)
     if user_id and rom_column is None:
         rom_user_column = _mapped_sort_column(RomUser, order_by)
@@ -1931,6 +1961,8 @@ class DBRomsHandler(DBBaseHandler):
         sort_key = _resolve_gallery_sort_key(order_by, user_id)
         if sort_key.source == "rom_metadata":
             query = query.outerjoin(RomMetadata, RomMetadata.rom_id == Rom.id)
+        elif sort_key.source == "platform":
+            query = query.join(Platform, Rom.platform_id == Platform.id)
 
         order_clauses = self._gallery_order_clauses(
             order_by=order_by,
@@ -2054,13 +2086,8 @@ class DBRomsHandler(DBBaseHandler):
         order_dir: str = "asc",
         session: Session = INJECTED_SESSION,
     ) -> list[tuple[str, int]]:
-        # Letter offsets only index a lexically ordered result. `Enum` subclasses
-        # `String`, but the database orders native enums by declaration order.
-        column_type = order_by_attr.type
-        is_lexical = isinstance(column_type, (String, Text)) and not isinstance(
-            column_type, Enum
-        )
-        if not is_lexical:
+        bucket = _bucket_expression(order_by_attr, is_postgresql(session.get_bind()))
+        if bucket is None:
             return []
 
         redis_key: str | None = None
@@ -2077,25 +2104,23 @@ class DBRomsHandler(DBBaseHandler):
         # This builds its own positional ordering below.
         query = query.order_by(None)
 
-        # The alpha-strip only needs each first letter's starting offset, not a
-        # positional number for every row. Counting rows per letter and
-        # accumulating those counts avoids row_number() over the whole library,
-        # which forced a full materialization + filesort on large libraries.
+        # The strip only needs each bucket's starting offset, not a positional
+        # number for every row. Counting rows per bucket and accumulating those
+        # counts avoids row_number() over the whole library, which forced a
+        # full materialization + filesort on large libraries.
         descending = order_dir.lower() == "desc"
-        letter = func.substring(order_by_attr, 1, 1)
         counts = (
-            query.with_only_columns(letter.label("letter"), func.count().label("count"))
-            .group_by(letter)
-            .order_by(letter.desc() if descending else letter.asc())
+            query.with_only_columns(bucket.label("bucket"), func.count().label("count"))
+            .group_by(bucket)
+            .order_by(nulls_last(bucket, descending))
         )
 
-        # Walk the letters in the same direction the client paginates over, so
-        # each letter's offset is the count of rows that sort before it.
+        # Walk the buckets in the same direction the client paginates over, so
+        # each bucket's offset is the count of rows that sort before it.
         result: list[tuple[str, int]] = []
         offset = 0
         for value, count in session.execute(counts).all():
-            if value is not None:
-                result.append((value, offset))
+            result.append((UNKNOWN_BUCKET if value is None else str(value), offset))
             offset += count
         result.sort(key=lambda entry: entry[0])
         if redis_key is not None and version is not None:

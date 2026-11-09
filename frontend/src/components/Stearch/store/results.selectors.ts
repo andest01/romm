@@ -1,6 +1,6 @@
 import { createSelector } from "./create-selector";
 import {
-  selectCharIndex,
+  selectBucketIndex,
   selectIds,
   selectStatus,
   selectWindows,
@@ -8,11 +8,11 @@ import {
 
 export const selectTotal = createSelector([selectIds], (ids) => ids.length);
 
-/** Runs of results sharing a first letter. The rail and the band read these. */
+/** Runs of results in one bucket of the first sort level. */
 export const selectSections = createSelector(
-  [selectCharIndex, selectTotal],
-  (charIndex, total) => {
-    const starts = Object.entries(charIndex).sort(([, a], [, b]) => a - b);
+  [selectBucketIndex, selectTotal],
+  (bucketIndex, total) => {
+    const starts = Object.entries(bucketIndex).sort(([, a], [, b]) => a - b);
     return starts.map(([key, start], index) => {
       const next = starts[index + 1];
       return { key, start, size: (next ? next[1] : total) - start };

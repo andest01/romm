@@ -1,7 +1,9 @@
+import type { RailValue } from "../../../store/sort.fields";
 import type { StearchAction } from "../../../store/stearch.actions";
 
 export interface SectionProps {
   label: string;
+  value: RailValue;
   countLabel: string;
   selectLabel: string;
   selectActions: readonly StearchAction[];

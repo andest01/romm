@@ -1,12 +1,15 @@
 import { createSelector } from "../../store/create-selector";
 import { selectClearActions } from "../../store/query.selectors";
 import type { StearchAction } from "../../store/stearch.actions";
+import { selectGroupByMetaId } from "../../store/stearch.selectors";
 import type { BarProps, BarVerb } from "./sidebar.props";
 
 // Stub labels: move to locale keys before this leaves the fork.
 const TITLE = "Filters";
 const CLOSE_LABEL = "Close";
 const RESET_LABEL = "Reset filters";
+const GROUP_LABEL = "Group versions";
+const UNGROUP_LABEL = "Show every version";
 
 const CLOSE_ACTIONS: readonly StearchAction[] = [
   { type: "view/set", patch: { isAdvancedOpen: false } },
@@ -23,9 +26,19 @@ export const SIDEBAR_HEADER_PROPS: BarProps = {
 };
 
 export const selectSidebarFooterProps = createSelector(
-  [selectClearActions],
-  (actions): BarProps => ({
+  [selectClearActions, selectGroupByMetaId],
+  (actions, groupByMetaId): BarProps => ({
     title: null,
-    verbs: [{ id: "reset", label: RESET_LABEL, actions }, CLOSE_VERB],
+    verbs: [
+      {
+        id: "versions",
+        label: groupByMetaId ? UNGROUP_LABEL : GROUP_LABEL,
+        actions: [
+          { type: "query/set", patch: { groupByMetaId: !groupByMetaId } },
+        ],
+      },
+      { id: "reset", label: RESET_LABEL, actions },
+      CLOSE_VERB,
+    ],
   }),
 );

@@ -1,20 +1,20 @@
 import { createSelector } from "../../store/create-selector";
 import { selectClearActions } from "../../store/query.selectors";
 import { selectTotal } from "../../store/results.selectors";
+import { SORT_FIELDS } from "../../store/sort.fields";
 import type { StearchAction } from "../../store/stearch.actions";
 import {
   selectIsAdvancedOpen,
   selectLabels,
   selectOpenFieldId,
   selectSearchTerm,
-  selectSortDir,
-  selectSortKey,
+  selectSortList,
   selectViewMode,
 } from "../../store/stearch.selectors";
 import {
   STEARCH_SORT_KEYS,
+  type StearchSort,
   type StearchSortDir,
-  type StearchSortKey,
 } from "../../store/stearch.state-props";
 import type { MultiFieldPreview } from "../fields/fields.props";
 import { selectFieldPreviews } from "../fields/fields.selectors";
@@ -39,13 +39,6 @@ const VIEW_OPTIONS: HeaderView["options"] = [
   { id: "tiles", label: "Tiles" },
   { id: "table", label: "Table" },
 ];
-const SORT_LABELS: Readonly<Record<StearchSortKey, string>> = {
-  name: "Name",
-  fs_size_bytes: "Size",
-  created_at: "Added",
-  first_release_date: "Released",
-  average_rating: "Rating",
-};
 const SORT_ARROWS: Readonly<Record<StearchSortDir, string>> = {
   asc: "↑",
   desc: "↓",
@@ -66,32 +59,38 @@ const selectSearch = createSelector(
 );
 
 const selectSort = createSelector(
-  [selectSortKey, selectSortDir],
-  (sortKey, sortDir): HeaderSort => ({
-    label: `Sort by ${SORT_LABELS[sortKey]} ${SORT_ARROWS[sortDir]}`,
-    options: STEARCH_SORT_KEYS.map((key) => {
-      const isActive = key === sortKey;
-      return {
-        id: key,
-        label: isActive
-          ? `${SORT_LABELS[key]} ${SORT_ARROWS[sortDir]}`
-          : SORT_LABELS[key],
-        actions: [
-          {
-            type: "query/set",
-            patch: {
-              sort: [
-                {
-                  param: key,
-                  dir: isActive && sortDir === "asc" ? "desc" : "asc",
-                },
-              ],
-            },
-          },
-        ],
-      };
-    }),
-  }),
+  [selectSortList],
+  ([first, ...rest]): HeaderSort => {
+    const setFirst = (next: StearchSort): readonly StearchAction[] => [
+      { type: "query/set", patch: { sort: [next, ...rest] } },
+    ];
+    const field = SORT_FIELDS[first.param];
+    const name = field.label;
+    const arrow = SORT_ARROWS[first.dir];
+    return {
+      accessibleLabel: `Sort by ${name}, ${field.directions[first.dir]}`,
+      label: `Sort by ${name} ${arrow}`,
+      shortLabel: `${name} ${arrow}`,
+      sortByLabel: "Sort by",
+      options: STEARCH_SORT_KEYS.map((param) => ({
+        id: param,
+        label: SORT_FIELDS[param].label,
+        isActive: param === first.param,
+        actions: setFirst({
+          param,
+          dir:
+            param === first.param ? first.dir : SORT_FIELDS[param].defaultDir,
+        }),
+      })),
+      directionLabel: "Direction",
+      directions: (["asc", "desc"] as const).map((dir) => ({
+        id: dir,
+        label: field.directions[dir],
+        isActive: dir === first.dir,
+        actions: setFirst({ param: first.param, dir }),
+      })),
+    };
+  },
 );
 
 const selectFilters = createSelector(

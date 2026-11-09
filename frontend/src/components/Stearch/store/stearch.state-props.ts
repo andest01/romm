@@ -16,10 +16,12 @@ export interface VisibleSpan {
 /** The gallery's order keys own the names; this picks the ones we offer. */
 export const STEARCH_SORT_KEYS = [
   "name",
+  "platform_id",
   "fs_size_bytes",
   "created_at",
   "first_release_date",
   "average_rating",
+  "hltb_main_story",
 ] as const satisfies readonly GalleryOrderKey[];
 export type StearchSortKey = (typeof STEARCH_SORT_KEYS)[number];
 export type StearchSortDir = "asc" | "desc";
@@ -37,7 +39,6 @@ type SearchParams = Omit<
   | "collectionId"
   | "virtualCollectionId"
   | "smartCollectionId"
-  | "groupByMetaId"
   | "releasedDays"
   | "releasedBeforeYear"
 >;
@@ -147,7 +148,8 @@ export interface IStearchState {
     readonly status: RequestStatusCoreConcept;
     /** Every result in order, so the total is `ids.length`. */
     readonly ids: readonly number[];
-    readonly charIndex: Readonly<Record<string, number>>;
+    /** Where each bucket of the first sort level starts. */
+    readonly bucketIndex: Readonly<Record<string, number>>;
     readonly filterValues: StearchFilterValues;
     /** Pages of roms by offset. One load replaces one entry. */
     readonly windows: Readonly<Record<number, readonly StearchRom[]>>;

@@ -64,6 +64,14 @@ export const STEARCH_LIBRARY: SimpleRomSchema[] = Array.from(
 );
 
 function compare(a: SimpleRomSchema, b: SimpleRomSchema, key: string): number {
+  if (key === "platform_id") {
+    return a.platform_display_name.localeCompare(b.platform_display_name);
+  }
+  if (key === "hltb_main_story") {
+    return (
+      (a.hltb_metadata?.main_story ?? 0) - (b.hltb_metadata?.main_story ?? 0)
+    );
+  }
   if (key === "fs_size_bytes") return a.fs_size_bytes - b.fs_size_bytes;
   if (key === "created_at") return a.created_at.localeCompare(b.created_at);
   if (key === "first_release_date") {
@@ -80,6 +88,66 @@ function compare(a: SimpleRomSchema, b: SimpleRomSchema, key: string): number {
   return (a.name ?? a.fs_name).localeCompare(b.name ?? b.fs_name);
 }
 
+const UNKNOWN_BUCKET = "Unknown";
+const MB = 1_048_576;
+
+const bandOf = (
+  value: number,
+  bands: readonly (readonly [number, string])[],
+  last: string,
+) => bands.find(([below]) => value < below)?.[1] ?? last;
+
+/** Stands in for the server's bands, which the frontend never holds. */
+function bucketOf(rom: SimpleRomSchema, key: string): string {
+  if (key === "platform_id") return rom.platform_display_name;
+  if (key === "fs_size_bytes") {
+    return bandOf(
+      rom.fs_size_bytes,
+      [
+        [10 * MB, "<10 MB"],
+        [100 * MB, "10–100 MB"],
+        [1024 * MB, "100 MB–1 GB"],
+        [4096 * MB, "1–4 GB"],
+      ],
+      "4 GB+",
+    );
+  }
+  if (key === "created_at") {
+    return new Date(rom.created_at).toLocaleDateString("en", {
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
+  if (key === "first_release_date") {
+    const date = rom.metadatum.first_release_date;
+    return date === null || date === undefined
+      ? UNKNOWN_BUCKET
+      : String(new Date(date).getUTCFullYear());
+  }
+  if (key === "average_rating") {
+    const rating = rom.metadatum.average_rating;
+    return rating === null || rating === undefined
+      ? UNKNOWN_BUCKET
+      : String(Math.floor(rating));
+  }
+  if (key === "hltb_main_story") {
+    const seconds = rom.hltb_metadata?.main_story;
+    if (seconds === undefined) return UNKNOWN_BUCKET;
+    return bandOf(
+      seconds / 3600,
+      [
+        [5, "<5 h"],
+        [10, "5–10 h"],
+        [20, "10–20 h"],
+        [40, "20–40 h"],
+      ],
+      "40 h+",
+    );
+  }
+  return (rom.name ?? rom.fs_name).charAt(0).toUpperCase();
+}
+
 export function buildFakePage(params: GetRomsParams): GetRomsResponse {
   const term = params.searchTerm?.trim().toLowerCase() ?? "";
   const orderBy = params.orderBy ?? "name";
@@ -94,13 +162,16 @@ export function buildFakePage(params: GetRomsParams): GetRomsResponse {
       (regions.length === 0 || rom.regions.some((r) => regions.includes(r))) &&
       (languages.length === 0 ||
         rom.languages.some((l) => languages.includes(l))),
-  ).sort((a, b) => compare(a, b, orderBy) * direction);
+  ).sort((a, b) => {
+    const isAUnknown = bucketOf(a, orderBy) === UNKNOWN_BUCKET;
+    const isBUnknown = bucketOf(b, orderBy) === UNKNOWN_BUCKET;
+    if (isAUnknown !== isBUnknown) return isAUnknown ? 1 : -1;
+    return compare(a, b, orderBy) * direction;
+  });
 
   const charIndex: Record<string, number> = {};
-  if (orderBy === "name") {
-    for (const [position, rom] of matches.entries()) {
-      charIndex[(rom.name ?? rom.fs_name).charAt(0).toUpperCase()] ??= position;
-    }
+  for (const [position, rom] of matches.entries()) {
+    charIndex[bucketOf(rom, orderBy)] ??= position;
   }
 
   const offset = params.offset ?? 0;

@@ -69,14 +69,13 @@ defineEmits<RailEmits>();
 .stearch-rail__bucket {
   flex-shrink: 1;
   flex-basis: 0;
-  overflow: hidden;
   min-height: 0;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: inherit;
   color: var(--r-color-brand-primary);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   text-align: center;
 }
@@ -84,6 +83,7 @@ defineEmits<RailEmits>();
   background: color-mix(in srgb, var(--r-color-brand-primary) 17%, transparent);
 }
 .stearch-rail__bucket[data-current="true"] {
+  min-height: 16px;
   background: var(--r-color-brand-primary);
   color: var(--r-color-brand-on-primary);
 }

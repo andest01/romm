@@ -1,5 +1,6 @@
 import type { StearchAction } from "../../store/stearch.actions";
 import type {
+  StearchSortDir,
   StearchSortKey,
   StearchViewMode,
 } from "../../store/stearch.state-props";
@@ -10,9 +11,10 @@ export interface HeaderViewOption {
   label: string;
 }
 
-export interface HeaderSortOption {
-  id: StearchSortKey;
+export interface HeaderSortOption<Id = StearchSortKey> {
+  id: Id;
   label: string;
+  isActive: boolean;
   actions: readonly StearchAction[];
 }
 
@@ -43,8 +45,15 @@ export interface HeaderAdvanced {
 }
 
 export interface HeaderSort {
+  /** Spoken in full, whatever the button has room to show. */
+  accessibleLabel: string;
   label: string;
+  /** The button when there's less room. */
+  shortLabel: string;
+  sortByLabel: string;
   options: readonly HeaderSortOption[];
+  directionLabel: string;
+  directions: readonly HeaderSortOption<StearchSortDir>[];
 }
 
 export interface HeaderView {

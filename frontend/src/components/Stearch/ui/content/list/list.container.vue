@@ -5,10 +5,10 @@ import {
   selectAnchorPosition,
   selectCurrentPosition,
 } from "../../../store/attention.selectors";
+import { selectGroupHeadings } from "../../../store/primary-group.selectors";
 import {
   selectErrorMessage,
   selectIsLoading,
-  selectSections,
 } from "../../../store/results.selectors";
 import { selectSlots } from "../../../store/rows.selectors";
 import {
@@ -76,7 +76,7 @@ const rows = computed(() =>
       itemsPerScreen(fit.value, box.value),
     ),
     fit.value.columns,
-    selectSections(store.state),
+    selectGroupHeadings(store.state),
   ),
 );
 const errorMessage = computed(() => selectErrorMessage(store.state));

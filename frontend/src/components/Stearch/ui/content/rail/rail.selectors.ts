@@ -1,30 +1,37 @@
 import { createSelector } from "../../../store/create-selector";
-import { selectSections, selectTotal } from "../../../store/results.selectors";
-import type { StearchAction } from "../../../store/stearch.actions";
 import {
-  selectSortKey,
-  selectVisibleSpan,
-} from "../../../store/stearch.selectors";
+  selectCurrentBucket,
+  selectPrimaryGroup,
+} from "../../../store/primary-group.selectors";
+import { selectTotal } from "../../../store/results.selectors";
+import { railTextOf } from "../../../store/sort.fields";
+import type { StearchAction } from "../../../store/stearch.actions";
+import { selectVisibleSpan } from "../../../store/stearch.selectors";
 import type { VisibleSpan } from "../../../store/stearch.state-props";
-import { railValueOf } from "./rail.fields";
 import type { RailProps, RailThumb } from "./rail.props";
 
 // Stub label: move to a locale key before this leaves the fork.
-const RAIL_LABEL = "Jump to letter";
+const RAIL_LABEL = "Jump to group";
+// A guess at what fits a typical list height; measure it later.
+const RAIL_MAX_LABELS = 30;
 
 export const selectRailProps = createSelector(
-  [selectSections, selectTotal, selectVisibleSpan, selectSortKey],
-  (sections, total, span, sortKey): RailProps => {
-    const current = sections.findLast(({ start }) => start <= span.first);
+  [selectPrimaryGroup, selectCurrentBucket, selectTotal, selectVisibleSpan],
+  ({ buckets }, current, total, span): RailProps => {
+    const labelEvery = Math.ceil(buckets.length / RAIL_MAX_LABELS);
     return {
-      buckets: sections.map(({ key, size, start }) => ({
-        key,
-        label: key,
-        value: railValueOf(sortKey, key),
-        share: size / total,
-        isCurrent: key === current?.key,
-        position: start,
-      })),
+      buckets: buckets.map(({ key, label, value, size, start }, index) => {
+        const isCurrent = key === current?.key;
+        const isLabeled = isCurrent || index % labelEvery === 0;
+        return {
+          key,
+          label,
+          value: { kind: "text", text: isLabeled ? railTextOf(value) : "" },
+          share: size / total,
+          isCurrent,
+          position: start,
+        };
+      }),
       thumb: railThumb(span, total),
       label: RAIL_LABEL,
     };

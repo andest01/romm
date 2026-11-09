@@ -9,6 +9,7 @@ import type { IStearchState, StearchQuery } from "./stearch.state-props";
 export const INITIAL_QUERY: StearchQuery = {
   searchTerm: null,
   sort: [{ param: "name", dir: "asc" }],
+  groupByMetaId: false,
   platformIds: [],
   filterMatched: null,
   filterFavorites: null,
@@ -64,7 +65,7 @@ export const INITIAL_STEARCH_STATE: IStearchState = {
   results: {
     status: { kind: "idle" },
     ids: [],
-    charIndex: {},
+    bucketIndex: {},
     filterValues: {
       genres: [],
       franchises: [],
@@ -160,7 +161,7 @@ const HANDLERS: Handlers<IStearchState, StearchAction> = {
           ? {
               status: { kind: "ready", requestId },
               ids: page.rom_id_index,
-              charIndex: page.char_index,
+              bucketIndex: page.char_index,
               filterValues: page.filter_values,
               windows: { 0: page.items },
             }

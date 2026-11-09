@@ -6,12 +6,13 @@ import {
   selectAnchorPosition,
   selectCurrentPosition,
 } from "../../../store/attention.selectors";
+import { selectGroupHeadings } from "../../../store/primary-group.selectors";
 import {
   selectErrorMessage,
   selectIsLoading,
-  selectSections,
 } from "../../../store/results.selectors";
 import { selectSlots } from "../../../store/rows.selectors";
+import { SORT_FIELDS } from "../../../store/sort.fields";
 import {
   selectActiveId,
   selectSortDir,
@@ -43,13 +44,25 @@ import { buildSortActions, TABLE_ROW_HEIGHT } from "./table.selectors";
 // Stub labels: move to locale keys before this leaves the fork.
 const TABLE_LABEL = "Games";
 const COLUMNS: readonly RTableColumn[] = [
-  { key: "name", label: "Title", sortable: true },
-  { key: "platform", label: "Platform" },
-  { key: "fs_size_bytes", label: "Size", sortable: true },
-  { key: "created_at", label: "Added", sortable: true },
-  { key: "first_release_date", label: "Released", sortable: true },
-  { key: "average_rating", label: "Rating", sortable: true },
-  { key: "length", label: "Length" },
+  { key: "name", label: SORT_FIELDS.name.label, sortable: true },
+  { key: "platform", label: SORT_FIELDS.platform_id.label },
+  {
+    key: "fs_size_bytes",
+    label: SORT_FIELDS.fs_size_bytes.label,
+    sortable: true,
+  },
+  { key: "created_at", label: SORT_FIELDS.created_at.label, sortable: true },
+  {
+    key: "first_release_date",
+    label: SORT_FIELDS.first_release_date.label,
+    sortable: true,
+  },
+  {
+    key: "average_rating",
+    label: SORT_FIELDS.average_rating.label,
+    sortable: true,
+  },
+  { key: "length", label: SORT_FIELDS.hltb_main_story.label },
   { key: "languages", label: "Languages" },
   { key: "regions", label: "Regions" },
   { key: "verbs", label: "Actions" },
@@ -69,7 +82,7 @@ const rows = computed(() =>
       itemsPerScreen({ columns: 1, rowHeight: TABLE_ROW_HEIGHT }, box.value),
     ),
     1,
-    selectSections(store.state),
+    selectGroupHeadings(store.state),
   ),
 );
 const sortKey = computed(() => selectSortKey(store.state));

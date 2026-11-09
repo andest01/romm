@@ -44,7 +44,7 @@ export const EMPTY_STEARCH_STATE: IStearchState = {
   results: {
     ...LOADED_STEARCH_STATE.results,
     ids: [],
-    charIndex: {},
+    bucketIndex: {},
     windows: {},
   },
 };

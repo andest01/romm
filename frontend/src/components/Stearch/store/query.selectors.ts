@@ -1,16 +1,20 @@
 import { createSelector } from "./create-selector";
 import type { StearchAction } from "./stearch.actions";
 import { INITIAL_QUERY } from "./stearch.reducer";
-import { selectSearchTerm, selectSortList } from "./stearch.selectors";
+import {
+  selectGroupByMetaId,
+  selectSearchTerm,
+  selectSortList,
+} from "./stearch.selectors";
 import type { StearchSortList } from "./stearch.state-props";
 
 /** Filters go; the search and sort stay. */
 export const selectClearActions = createSelector(
-  [selectSearchTerm, selectSortList],
-  (searchTerm, sort): readonly StearchAction[] => [
+  [selectSearchTerm, selectSortList, selectGroupByMetaId],
+  (searchTerm, sort, groupByMetaId): readonly StearchAction[] => [
     {
       type: "query/set",
-      patch: { ...INITIAL_QUERY, searchTerm, sort },
+      patch: { ...INITIAL_QUERY, searchTerm, sort, groupByMetaId },
     },
   ],
 );

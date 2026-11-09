@@ -159,7 +159,7 @@ defineEmits<
 }
 .stearch-list__band-part {
   block-size: 100%;
-  background: var(--r-color-surface);
+  background: var(--r-color-bg);
 }
 /* Padding sits on the scroller, so its content box is the items' width. */
 .stearch-list__scroller {
@@ -175,8 +175,8 @@ defineEmits<
   align-items: center;
   border-bottom: 1px solid var(--r-color-border);
   color: var(--r-color-brand-primary);
-  font-size: 0.75em;
-  font-weight: 700;
+  font-size: 1em;
+  font-weight: 800;
 }
 </style>
 

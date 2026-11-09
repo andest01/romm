@@ -16,6 +16,7 @@ const meta: Meta<typeof SectionPure> = {
   },
   args: {
     label: "F",
+    value: { kind: "text", text: "F" },
     countLabel: "45 games",
     selectLabel: "Select",
     selectActions: SELECT_ACTIONS,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RBtn } from "@/lib";
 import type { ItemEmits } from "../list/item.props";
+import RailValueView from "../rail/rail-value/rail-value.pure-component.vue";
 import type { SectionProps } from "./section.props";
 
 defineProps<SectionProps>();
@@ -10,7 +11,9 @@ defineEmits<ItemEmits>();
 
 <template>
   <div class="stearch-section-band">
-    <strong class="stearch-section-band__label">{{ label }}</strong>
+    <strong class="stearch-section-band__label" :title="label">
+      <RailValueView :value="value" />
+    </strong>
     <span class="stearch-section-band__count">{{ countLabel }}</span>
     <RBtn variant="text" size="x-small" @click="$emit('press', selectActions)">
       {{ selectLabel }}
@@ -42,6 +45,8 @@ defineEmits<ItemEmits>();
 }
 .stearch-section-band__label {
   color: var(--r-color-brand-primary);
+  font-size: 1.35em;
+  font-weight: 800;
 }
 .stearch-section-band__count {
   flex: 1;
