@@ -60,6 +60,8 @@ export const INITIAL_STEARCH_STATE: IStearchState = {
     visibleSpan: { first: 0, last: 0 },
     jump: null,
     openFieldId: null,
+    isActionsOpen: false,
+    collections: [],
   },
   labels: buildLabels((key) => key),
   results: {
@@ -98,6 +100,12 @@ const added = <T>(list: readonly T[], values: readonly T[]): T[] => [
 
 const removed = <T>(list: readonly T[], values: readonly T[]): T[] =>
   list.filter((item) => !values.includes(item));
+
+const isSameSet = (a: readonly number[], b: readonly number[]): boolean => {
+  if (a.length !== b.length) return false;
+  const members = new Set(a);
+  return b.every((id) => members.has(id));
+};
 
 /** One handler per action type. Each gets its own action, already narrowed. */
 const HANDLERS: Handlers<IStearchState, StearchAction> = {
@@ -156,6 +164,11 @@ const HANDLERS: Handlers<IStearchState, StearchAction> = {
     if (!isCurrentRequest(state, requestId)) return state;
     return {
       ...state,
+      // A selection belongs to the results it was made in: a sort keeps it.
+      attention:
+        offset === 0 && !isSameSet(state.results.ids, page.rom_id_index)
+          ? { ...state.attention, selectedIds: [] }
+          : state.attention,
       results:
         offset === 0
           ? {

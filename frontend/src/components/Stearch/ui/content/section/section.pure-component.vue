@@ -18,7 +18,12 @@ defineEmits<ItemEmits>();
     <RBtn variant="text" size="x-small" @click="$emit('press', selectActions)">
       {{ selectLabel }}
     </RBtn>
-    <RBtn variant="text" size="x-small" @click="$emit('press', prevActions)">
+    <RBtn
+      variant="text"
+      size="x-small"
+      :disabled="prevActions === null"
+      @click="prevActions && $emit('press', prevActions)"
+    >
       {{ prevLabel }}
     </RBtn>
     <RBtn

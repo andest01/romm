@@ -52,9 +52,15 @@ export interface ListInputOptions {
   dispatch: (actions: readonly StearchAction[]) => void;
   /** Opens the current game, as Enter does. */
   open: () => void;
-  /** Flips the current game in or out of the selection. */
-  toggleSelected: () => void;
+  /** Flips the current game in or out of the selection, and says which. */
+  toggleSelected: () => PaintMode | null;
+  /** The game at a position, known even before its row has loaded. */
+  idAt: (position: number) => number | null;
+  /** Opens the actions menu for the current game or selection. */
+  openActions: () => void;
 }
+
+type PaintMode = "add" | "remove";
 
 /** The list's side of the machine: its drivers and the effects only a list
  *  can carry out. This is the active position's only writer. */
@@ -80,10 +86,25 @@ export function createListInput(
     return row.position + Math.min(column, row.slots.length - 1);
   }
 
+  // While set, every game the cursor lands on joins or leaves the selection.
+  let paint: PaintMode | null = null;
+
+  function paintAt(position: number): void {
+    const id = options.idAt(position);
+    if (paint === null || id === null) return;
+    options.dispatch([
+      {
+        type: paint === "add" ? "selection/add" : "selection/remove",
+        ids: [id],
+      },
+    ]);
+  }
+
   // Puts the cursor on a position and makes its game current: `null` on a
   // ghost, which has no game yet.
   function activate(position: number): void {
     activePosition.value = position;
+    paintAt(position);
     const row = options.rows()[itemRowIndexOf(options.rows(), position)];
     const slot =
       row?.kind === "items" ? row.slots[position - row.position] : null;
@@ -199,16 +220,23 @@ export function createListInput(
       options.open();
       return;
     }
+    if (event.key === "ContextMenu" && event.target === grid) {
+      event.preventDefault();
+      options.openActions();
+      return;
+    }
     if (event.key === " " && event.target === grid) {
       event.preventDefault();
       options.toggleSelected();
       return;
     }
     if (!(grid instanceof HTMLElement) || !isArrowKey(event.key)) return;
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-      return;
-    }
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     event.preventDefault();
+    if (event.shiftKey && paint === null) {
+      paint = "add";
+      paintAt(origin().position);
+    }
     // Focus stays on the list, not a tile: a virtual list unmounts tiles as
     // they scroll away, and focus on one would fall to <body>.
     if (document.activeElement !== grid) {
@@ -247,6 +275,7 @@ export function createListInput(
     },
     // The pad's synthetic keyup comes with every press; its holds end by gap.
     keyUp(event) {
+      if (event.key === "Shift") paint = null;
       if (!isPadEvent(event)) machine.dispatch({ type: "key/released" });
     },
     focusChanged() {
@@ -290,8 +319,22 @@ export function createListInput(
   };
 
   function onPadButton(name: string): void {
-    if (name === "x" && ownsTheStick()) options.toggleSelected();
+    if (!ownsTheStick()) return;
+    if (name === "x") paint = options.toggleSelected();
+    if (name === "y") options.openActions();
   }
 
-  return { stick, keys, onKey, onPadButton, activeDescendant, noteRange };
+  function onPadButtonUp(name: string): void {
+    if (name === "x") paint = null;
+  }
+
+  return {
+    stick,
+    keys,
+    onKey,
+    onPadButton,
+    onPadButtonUp,
+    activeDescendant,
+    noteRange,
+  };
 }

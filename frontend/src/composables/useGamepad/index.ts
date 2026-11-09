@@ -101,6 +101,7 @@ export interface GamepadButtonEventDetail {
 declare global {
   interface WindowEventMap {
     "gamepad:buttondown": CustomEvent<GamepadButtonEventDetail>;
+    "gamepad:buttonup": CustomEvent<GamepadButtonEventDetail>;
     "gamepad:exitchord": Event;
   }
 }
@@ -436,6 +437,13 @@ export function useGamepad() {
                   : t + REPEAT_MS;
             }
           } else {
+            if (prev.pressed && !gameOwnsInput) {
+              window.dispatchEvent(
+                new CustomEvent("gamepad:buttonup", {
+                  detail: { index: i, name: BUTTON_NAMES[i] },
+                }),
+              );
+            }
             prev.pressed = false;
             prev.nextRepeatAt = 0;
           }

@@ -2,16 +2,17 @@ import { createSelector } from "./create-selector";
 import { selectLoadedRoms, selectPositionedRoms } from "./results.selectors";
 import {
   selectActiveId,
+  selectIds,
   selectSelectedIds,
   selectVisiblePosition,
 } from "./stearch.selectors";
 
-/** The current game's position, or `null` when none is current or loaded. */
+/** The current game's position, loaded or not; `null` when none is current. */
 export const selectCurrentPosition = createSelector(
-  [selectActiveId, selectPositionedRoms],
-  (activeId, positioned) => {
-    const found = positioned.find(({ rom }) => rom.id === activeId);
-    return found ? found.position : null;
+  [selectActiveId, selectIds],
+  (activeId, ids) => {
+    const position = activeId === null ? -1 : ids.indexOf(activeId);
+    return position === -1 ? null : position;
   },
 );
 

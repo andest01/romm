@@ -12,6 +12,8 @@ Why this folder works the way it does. `AGENTS.md` holds the rules; this holds t
 
 **A saved search and a smart collection are one thing.** Saving writes the query, and loading reads it back, cautiously: a stored query can be old, so anything no longer understood is shown and dropped, never silently applied.
 
+**What I clicked on is where I start.** Any verb that moves the view also moves the current item, so the next press resumes from where the user acted. Before shipping a verb, ask what state it leaves behind.
+
 **Controller input has one owner per press.** Hardware becomes named events (Confirm, Back), and the first owner found gets the press: overlay, then panel, then view. Keep the reducer behind it, so a screen never grows a chain of `showThisMenu` conditions per direction. Argosy's owner stack and event names are the model.
 
 **Landmarks and order.** Only layouts declare landmarks, named by `aria-labelledby` and never `aria-label`. Tab order equals DOM order, with no scripted exceptions. See spec 012.

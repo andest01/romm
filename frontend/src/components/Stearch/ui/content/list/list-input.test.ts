@@ -24,7 +24,9 @@ function pressEnter(onChild: boolean) {
       follow: vi.fn(),
       dispatch: vi.fn(),
       open,
-      toggleSelected: vi.fn(),
+      toggleSelected: vi.fn(() => null),
+      idAt: () => null,
+      openActions: vi.fn(),
     },
     createAxisStore(),
     {
@@ -40,6 +42,67 @@ function pressEnter(onChild: boolean) {
   );
   return open;
 }
+
+function painting() {
+  const dispatch = vi.fn();
+  const navigate = shallowRef<((position: number) => void) | null>(null);
+  const input = createListInput(
+    {
+      rows: () => [],
+      start: () => 0,
+      currentPosition: () => null,
+      feel: () => TILES_FEEL,
+      rowHeight: () => 30,
+      headHeight: () => 28,
+      scroller: () => document.createElement("div"),
+      follow: vi.fn(),
+      dispatch,
+      open: vi.fn(),
+      toggleSelected: () => "add",
+      idAt: (position) => position + 100,
+      openActions: vi.fn(),
+    },
+    createAxisStore(),
+    {
+      activePosition: shallowRef(null),
+      isScrubbing: shallowRef(false),
+      cruiseStack: shallowRef(null),
+      navigate,
+    },
+  );
+  const added = () =>
+    dispatch.mock.calls.flatMap(([actions]) =>
+      actions.filter((a: { type: string }) => a.type === "selection/add"),
+    );
+  return { input, navigate, added };
+}
+
+describe("createListInput painting", () => {
+  it("adds each game the cursor lands on while X is held", () => {
+    // Arrange
+    const { input, navigate, added } = painting();
+    input.onPadButton("x");
+
+    // Act
+    navigate.value?.(5);
+
+    // Assert
+    expect(added()).toEqual([{ type: "selection/add", ids: [105] }]);
+  });
+
+  it("stops when X is released", () => {
+    // Arrange
+    const { input, navigate, added } = painting();
+    input.onPadButton("x");
+    input.onPadButtonUp("x");
+
+    // Act
+    navigate.value?.(5);
+
+    // Assert
+    expect(added()).toEqual([]);
+  });
+});
 
 describe("createListInput Enter", () => {
   it("opens the current game from the grid", () => {

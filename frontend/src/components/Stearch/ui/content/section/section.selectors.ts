@@ -13,10 +13,15 @@ const DESELECT_LABEL = "Deselect";
 const PREV_LABEL = "‹ Prev";
 const NEXT_LABEL = "Next ›";
 
-const jumpTo = (position: number): StearchAction => ({
-  type: "view/set",
-  patch: { jump: { position, isSmooth: true } },
-});
+/** Goes to a group's first game and makes it current: where you land is
+ *  where the next press starts from. */
+const jumpTo = (
+  position: number,
+  ids: readonly number[],
+): readonly StearchAction[] => [
+  { type: "view/set", patch: { jump: { position, isSmooth: true } } },
+  { type: "attention/set", patch: { activeId: ids[position] ?? null } },
+];
 
 /** The section at the top of the list; `null` for sorts without sections. */
 export const selectSectionProps = createSelector(
@@ -25,6 +30,7 @@ export const selectSectionProps = createSelector(
     if (!current) return null;
     const { label, value, start, size } = current;
     const index = buckets.indexOf(current);
+    const previous = buckets[index - 1];
     const next = buckets[index + 1];
     const selected = new Set(selectedIds);
     const sectionIds = ids.slice(start, start + size);
@@ -41,9 +47,9 @@ export const selectSectionProps = createSelector(
         },
       ],
       prevLabel: PREV_LABEL,
-      prevActions: [jumpTo(buckets[index - 1]?.start ?? 0)],
+      prevActions: previous ? jumpTo(previous.start, ids) : null,
       nextLabel: NEXT_LABEL,
-      nextActions: next ? [jumpTo(next.start)] : null,
+      nextActions: next ? jumpTo(next.start, ids) : null,
     };
   },
 );

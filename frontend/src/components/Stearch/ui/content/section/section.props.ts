@@ -8,7 +8,8 @@ export interface SectionProps {
   selectLabel: string;
   selectActions: readonly StearchAction[];
   prevLabel: string;
-  prevActions: readonly StearchAction[];
+  /** `null` on the first section. */
+  prevActions: readonly StearchAction[] | null;
   nextLabel: string;
   /** `null` on the last section. */
   nextActions: readonly StearchAction[] | null;

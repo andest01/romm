@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, toRef } from "vue";
+import { computed, inject, toRef } from "vue";
 import { useI18n } from "vue-i18n";
+import { GAME_MENU_EXTRA } from "@/components/GameActions/gameMenuExtra";
 import { useGameActions } from "@/composables/useGameActions";
 import { RDivider, RMenuItem } from "@/lib";
 import type { SimpleRom } from "@/stores/roms";
@@ -12,6 +13,7 @@ const props = defineProps<{ rom: SimpleRom | null }>();
 const emit = defineEmits<{ (e: "close"): void }>();
 
 const { t } = useI18n();
+const extra = inject(GAME_MENU_EXTRA, null);
 const romRef = toRef(props, "rom");
 const actions = useGameActions(() => romRef.value);
 
@@ -33,6 +35,7 @@ function run(fn: () => void | Promise<void>) {
 </script>
 
 <template>
+  <component :is="extra" v-if="extra" />
   <!-- Primary actions -->
   <RMenuItem
     v-if="actions.canPlayLocally.value"

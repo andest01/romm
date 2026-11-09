@@ -39,6 +39,21 @@ type Story = StoryObj<typeof ResultsLayout>;
 
 export const Playground: Story = {};
 
+/** Rows and their focus marks run under the rail, so it has to cover them. */
+export const RailCoversWhatRunsUnderIt: Story = {
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const rail = canvasElement.querySelector(".stearch-results__rail");
+    if (!rail) throw new Error("The layout drew no rail");
+
+    // Act
+    const { backgroundColor } = getComputedStyle(rail);
+
+    // Assert
+    await expect(backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+  },
+};
+
 /** A band reaching under the rail shows through it as a stripe. */
 export const BandStopsAtTheRail: Story = {
   args: { scrollbarWidth: 12 },

@@ -31,8 +31,40 @@ describe("selectSectionProps", () => {
     // Assert
     expect(props?.prevActions).toEqual([
       { type: "view/set", patch: { jump: { position: 0, isSmooth: true } } },
+      { type: "attention/set", patch: { activeId: 10 } },
     ]);
     expect(props?.nextActions).toBeNull();
+  });
+
+  it("has no previous on the first section", () => {
+    // Arrange
+    const state = {
+      ...STATE,
+      view: { ...STATE.view, visibleSpan: { first: 0, last: 1 } },
+    };
+
+    // Act
+    const props = selectSectionProps(state);
+
+    // Assert
+    expect(props?.prevActions).toBeNull();
+  });
+
+  it("makes the first game of the next section current", () => {
+    // Arrange
+    const state = {
+      ...STATE,
+      view: { ...STATE.view, visibleSpan: { first: 0, last: 1 } },
+    };
+
+    // Act
+    const props = selectSectionProps(state);
+
+    // Assert
+    expect(props?.nextActions).toContainEqual({
+      type: "attention/set",
+      patch: { activeId: 12 },
+    });
   });
 
   it("is null for a sort without sections", () => {

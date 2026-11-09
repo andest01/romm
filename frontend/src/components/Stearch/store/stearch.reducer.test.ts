@@ -48,6 +48,39 @@ const loaded = (requestId: number, offset: number): StearchAction => ({
   page,
 });
 
+describe("selection across searches", () => {
+  const firstLoad = (ids: readonly number[], requestId: number) =>
+    ({
+      type: "window/loaded",
+      requestId,
+      offset: 0,
+      page: { ...page, rom_id_index: ids },
+    }) satisfies StearchAction;
+  const selected = apply(
+    INITIAL,
+    { type: "window/requested", requestId: 1 },
+    firstLoad([1, 2, 3], 1),
+    { type: "selection/add", ids: [2] },
+    { type: "window/requested", requestId: 2 },
+  );
+
+  it("is dropped when the results change", () => {
+    // Act
+    const state = apply(selected, firstLoad([1, 2], 2));
+
+    // Assert
+    expect(state.attention.selectedIds).toEqual([]);
+  });
+
+  it("is kept when the same games come back in a new order", () => {
+    // Act
+    const state = apply(selected, firstLoad([3, 2, 1], 2));
+
+    // Assert
+    expect(state.attention.selectedIds).toEqual([2]);
+  });
+});
+
 describe("stearchReducer", () => {
   it("keeps the most recent selection last", () => {
     // Act

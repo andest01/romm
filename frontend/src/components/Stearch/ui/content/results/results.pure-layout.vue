@@ -53,6 +53,8 @@ defineProps<ResultsLayoutProps>();
   inset-block: var(--stearch-results-head) 0;
   inset-inline-end: var(--stearch-scrollbar-width);
   inline-size: var(--stearch-rail-width);
+  /* Opaque, so nothing a part draws can show through the rail. */
+  background: var(--r-color-bg);
 }
 /* The band floats over the top of the grid, clipped to its own height, so a
    heading can push it out of view. It stops short of the scrollbar. */
