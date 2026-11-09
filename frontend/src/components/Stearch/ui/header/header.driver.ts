@@ -2,6 +2,7 @@ import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import { isEditable } from "@/utils/editable";
 import type { KeyDriver } from "../results/list/use-key-driver";
+import { RESULTS_GRID } from "../waypoints.driver";
 
 /** Keeps the search box from trapping focus: left and right leave it once the
  *  caret is at that end of the text, so editing still works. */
@@ -24,6 +25,11 @@ export function createHeaderKeyDriver(): KeyDriver {
         !(input instanceof HTMLInputElement) ||
         !input.closest("[role='search']")
       ) {
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        focusFromInput(document.querySelector<HTMLElement>(RESULTS_GRID));
         return;
       }
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;

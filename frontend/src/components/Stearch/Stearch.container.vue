@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useEventListener } from "@vueuse/core";
 import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import romApi from "@/services/api/rom";
 import StearchLayout from "./Stearch.pure-layout.vue";
+import { selectEnteredPosition } from "./store/attention.selectors";
 import { buildLabels } from "./store/labels";
 import { selectFiltersLayout } from "./store/layout.selectors";
 import stearchStore from "./store/stearch.store";
@@ -15,11 +17,18 @@ import ResultsContainer from "./ui/results/results.container.vue";
 import SelectionHeading from "./ui/selection/selection-heading.container.vue";
 import SelectionContainer from "./ui/selection/selection.container.vue";
 import SkipLinkContainer from "./ui/skip-link/skip-link.container.vue";
-import { createWaypointKeyDriver } from "./ui/waypoints.driver";
+import { createWaypointKeyDriver, enteredElement } from "./ui/waypoints.driver";
 
-useKeyDriver(createWaypointKeyDriver());
 const { t } = useI18n();
 const store = stearchStore();
+const waypoints = createWaypointKeyDriver(() =>
+  enteredElement(selectEnteredPosition(store.state)),
+);
+useKeyDriver(waypoints);
+useEventListener(window, "gamepad:buttondown", ({ detail: { name } }) => {
+  if (name === "rt") waypoints.hop(1);
+  if (name === "lt") waypoints.hop(-1);
+});
 const filtersLayout = computed(() => selectFiltersLayout(store.state));
 
 // The one watcher that dispatches, and an open question: labels change only

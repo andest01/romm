@@ -38,6 +38,19 @@ describe("createHeaderKeyDriver", () => {
     expect(moveFocus).toHaveBeenCalledWith(input, "left");
   });
 
+  it("goes down to the results grid", () => {
+    // Arrange
+    document.body.innerHTML = `
+      <div data-waypoint="results"><div role="grid" tabindex="0" id="grid"></div></div>
+    `;
+
+    // Act
+    press("ArrowDown", "zelda", 2);
+
+    // Assert
+    expect(document.activeElement?.id).toBe("grid");
+  });
+
   it("keeps the arrow for editing inside the text", () => {
     // Act
     press("ArrowLeft", "zelda", 3);

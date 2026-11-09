@@ -60,13 +60,18 @@ function onScrub(event: PointerEvent) {
   );
 }
 
-// One tab stop: arrows walk the letters, and left or Esc returns to the results.
+// One tab stop: arrows walk the letters, and left returns to the results.
 function onKey(event: KeyboardEvent) {
   const bucket = event.target;
   if (!(bucket instanceof HTMLElement)) return;
-  if (event.key === "ArrowLeft" || event.key === "Escape") {
+  if (event.key === "ArrowLeft") {
     event.preventDefault();
     moveFocus(bucket, "left");
+    return;
+  }
+  // The rail is the right edge.
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
     return;
   }
   if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;

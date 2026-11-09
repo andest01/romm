@@ -144,6 +144,8 @@ export interface IStearchState {
     } | null;
     /** The field open in the add-a-filter menu. */
     readonly openFieldId: string | null;
+    /** The game whose own controls have the input; `null` at page level. */
+    readonly enteredId: number | null;
   };
   /** Words are state, so selectors can hand views finished content. */
   readonly labels: StearchLabels;

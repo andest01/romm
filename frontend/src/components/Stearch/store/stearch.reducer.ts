@@ -60,6 +60,7 @@ export const INITIAL_STEARCH_STATE: IStearchState = {
     visibleSpan: { first: 0, last: 0 },
     jump: null,
     openFieldId: null,
+    enteredId: null,
   },
   labels: buildLabels((key) => key),
   results: {
@@ -155,6 +156,7 @@ const HANDLERS: Handlers<IStearchState, StearchAction> = {
       patch: {
         visibleSpan: { first: 0, last: 0 },
         jump: { position: 0, isSmooth: false },
+        enteredId: null,
       },
     });
   },

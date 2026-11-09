@@ -1,14 +1,21 @@
 import { useEventListener } from "@vueuse/core";
-import { readonly } from "vue";
-import { useRouter } from "vue-router";
+import { computed, nextTick, readonly } from "vue";
+import { useEscapable } from "@/composables/useEscapable";
 import { closeTopOverlay } from "@/composables/useGamepad";
-import { ROUTES } from "@/plugins/routeNames";
+import { focusFromInput } from "@/utils/autofocus";
+import {
+  LEAVE_ACTIONS,
+  selectEnterActions,
+  selectEnteredPosition,
+} from "../../../store/attention.selectors";
 import {
   selectActiveId,
+  selectEnteredId,
   selectIds,
   selectSelectedIds,
 } from "../../../store/stearch.selectors";
 import stearchStore from "../../../store/stearch.store";
+import { enteredElement, hopWithin, ITEM_STOPS } from "../../waypoints.driver";
 import { useResultsView } from "../results.view";
 import { createAxisStore } from "./axis-store";
 import { createListInput, type ListInputOptions } from "./list-input";
@@ -20,16 +27,37 @@ import { useStickDriver } from "./use-stick-driver";
 export function useKeyFocus(
   options: Omit<
     ListInputOptions,
-    "open" | "toggleSelected" | "idAt" | "openActions" | "closeOverlay"
+    | "enter"
+    | "isEntered"
+    | "exit"
+    | "hopItem"
+    | "toggleSelected"
+    | "idAt"
+    | "openActions"
+    | "closeOverlay"
   >,
 ) {
   const view = useResultsView();
   const store = stearchStore();
-  const router = useRouter();
-  const open = (): void => {
-    const rom = selectActiveId(store.state);
-    if (rom !== null) void router.push({ name: ROUTES.ROM, params: { rom } });
+  const entered = (): HTMLElement | null =>
+    enteredElement(selectEnteredPosition(store.state));
+  const isEntered = computed(() => selectEnteredId(store.state) !== null);
+  const enter = (): void => {
+    store.dispatch(selectEnterActions(store.state));
+    void nextTick(() =>
+      focusFromInput(entered()?.querySelector<HTMLElement>(ITEM_STOPS)),
+    );
   };
+  const exit = (): void => store.dispatch(LEAVE_ACTIONS);
+  const hopItem = (step: 1 | -1): void => {
+    const root = entered();
+    if (root) hopWithin(root, step);
+  };
+  useEscapable(isEntered, () => {
+    const game = entered();
+    exit();
+    focusFromInput(game?.closest<HTMLElement>('[role="grid"]'));
+  });
   const toggleSelected: ListInputOptions["toggleSelected"] = () => {
     const id = selectActiveId(store.state);
     if (id === null) return null;
@@ -56,7 +84,10 @@ export function useKeyFocus(
   const input = createListInput(
     {
       ...options,
-      open,
+      enter,
+      isEntered: () => isEntered.value,
+      exit,
+      hopItem,
       toggleSelected,
       idAt,
       openActions,

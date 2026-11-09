@@ -16,6 +16,8 @@ Why this folder works the way it does. `AGENTS.md` holds the rules; this holds t
 
 **The button that opens a modal closes it.** Press it again and you're back where you were, without hunting for B. B still works too.
 
+**Rings go sideways, B goes up.** Hop moves among the stops of the level you are in; Enter or A goes one level in; Esc or B goes one level out, to where you entered. B follows structure, never a history of hops. See [spec 016](specs/016-focus-tree.md).
+
 **Controller input has one owner per press.** Hardware becomes named events (Confirm, Back), and the first owner found gets the press: overlay, then panel, then view. Keep the reducer behind it, so a screen never grows a chain of `showThisMenu` conditions per direction. Argosy's owner stack and event names are the model.
 
 **Landmarks and order.** Only layouts declare landmarks, named by `aria-labelledby` and never `aria-label`. Tab order equals DOM order, with no scripted exceptions. See spec 012.

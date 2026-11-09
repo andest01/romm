@@ -376,6 +376,13 @@ Nothing here is settled until the RomM side has been measured.
 - **Caught by lint:** moving `fields` under `filters` made `header.selectors.ts` import downward. The zones flagged it, so the shared `fields.props` and `fields.selectors` moved up to `ui/filters/`.
 - **Left alone:** the header keeps its `search` and `controls` waypoints. A `header` waypoint would add an F6 stop.
 
+## The focus tree
+
+- **What:** rings go sideways, B goes up (spec 016). Built from the roots: one state field, three selectors, then the drivers.
+- **Wrong first:** I proposed LB, RB and View for hopping without reading `useGamepad`, which already binds all three. Read the owning file before calling a button free.
+- **Wrong second:** I let B fall off the top of the tree into history back, so one stray B left the page. It became a ladder ending at the app nav, and B never leaves.
+- **What it didn't need:** a new event vocabulary. RomM's "everything is keyboard" and its escape stack already carry B; entering a game is one `useEscapable`.
+
 ## Next measurements
 
 1. A shared 100k library for `/stearch` and `/search`.

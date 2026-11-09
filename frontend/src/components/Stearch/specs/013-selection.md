@@ -24,9 +24,7 @@ Stearch is a file browser for games, so selection follows file browsers. Three t
 | S7  | Y opens the game menu; Like and Download act on the selection, else the active game     | Needs a pad pass                  |
 | S8  | Hold X and move paints a run; the first game decides add or remove. Shift + arrows adds | `list-input.test.ts`              |
 
-## Open
-
-What should A do on a game? Opening it is one answer. The user's better idea: A "activates" the item's inner state, so its heart and more button become reachable. Undecided, so A does nothing on the grid for now.
+A on a game enters its controls: open, heart, more. See [spec 016](016-focus-tree.md).
 
 ## Actions menu
 

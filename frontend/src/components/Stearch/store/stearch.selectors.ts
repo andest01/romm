@@ -27,6 +27,7 @@ export const selectVisiblePosition = (state: IStearchState) =>
 export const selectJump = (state: IStearchState) => state.view.jump;
 export const selectOpenFieldId = (state: IStearchState) =>
   state.view.openFieldId;
+export const selectEnteredId = (state: IStearchState) => state.view.enteredId;
 
 // labels
 export const selectLabels = (state: IStearchState) => state.labels;

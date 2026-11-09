@@ -50,8 +50,13 @@ export interface ListInputOptions {
   scroller: () => HTMLElement | null;
   follow: (rowIndex: number) => void;
   dispatch: (actions: readonly StearchAction[]) => void;
-  /** Opens the current game, as Enter does. */
-  open: () => void;
+  /** Goes one level in, onto the current game's controls. */
+  enter: () => void;
+  isEntered: () => boolean;
+  /** Back to page level, leaving focus where it is. */
+  exit: () => void;
+  /** Cycles the entered game's controls. */
+  hopItem: (step: 1 | -1) => void;
   /** Flips the current game in or out of the selection, and says which. */
   toggleSelected: () => PaintMode | null;
   /** The game at a position, known even before its row has loaded. */
@@ -133,6 +138,7 @@ export function createListInput(
 
   // The page counts: focus falls there when a tile unmounts.
   function ownsTheStick(): boolean {
+    if (options.isEntered()) return false;
     const focused = document.activeElement;
     return focused === document.body || !!gridElement()?.contains(focused);
   }
@@ -221,7 +227,7 @@ export function createListInput(
     // Only on the grid itself: a sort header inside it has its own Enter.
     if (event.key === "Enter" && event.target === grid) {
       event.preventDefault();
-      options.open();
+      options.enter();
       return;
     }
     if (event.key === "ContextMenu" && event.target === grid) {
@@ -235,6 +241,12 @@ export function createListInput(
       return;
     }
     if (!(grid instanceof HTMLElement) || !isArrowKey(event.key)) return;
+    if (options.isEntered()) {
+      event.preventDefault();
+      if (event.key === "ArrowRight") options.hopItem(1);
+      if (event.key === "ArrowLeft") options.hopItem(-1);
+      return;
+    }
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     event.preventDefault();
     if (event.shiftKey && paint === null) {
@@ -298,6 +310,9 @@ export function createListInput(
       // Falling to the page is only an unmounted tile.
       if (!isInside && document.activeElement !== document.body) {
         machine.dispatch({ type: "focus/left" });
+        if (options.isEntered() && !document.activeElement?.closest(OVERLAY)) {
+          options.exit();
+        }
       }
     },
     // The wheel and the scrollbar move only the screen: the machine has to
@@ -341,6 +356,14 @@ export function createListInput(
   }
 
   function onPadButton(name: string): void {
+    const focused = document.activeElement;
+    if (
+      name === "a" &&
+      !options.isEntered() &&
+      (focused === document.body || focused === gridElement())
+    ) {
+      options.enter();
+    }
     if (name === "y") toggleActions();
     if (name === "x" && ownsTheStick()) paint = options.toggleSelected();
   }

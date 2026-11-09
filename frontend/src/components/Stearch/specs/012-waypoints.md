@@ -18,7 +18,7 @@
 | W2  | CSS reordering in a layout names a story proving the Tab order             | `stearch/no-visual-reorder`         |
 | W3  | Tab goes grid, rail, band in Tiles and Table                               | `TabOrderIsGridRailBand`            |
 | W4  | Tab goes search, controls, pills                                           | `TabOrderIsSearchControlsPills`     |
-| W5  | Enter on the grid opens the current game                                   | `list-input.test.ts`                |
+| W5  | Enter on the grid enters the current game (spec 016)                       | `list-input.test.ts`                |
 | W6  | `/` focuses the Stearch search box while on Stearch                        | `header.driver.ts`, untested        |
 | W7  | The app nav is named and is a waypoint                                     | `AppNav.vue`                        |
 | W8  | A Filters skip link exists only while the panel is open                    | `skip-link.container.vue`, untested |

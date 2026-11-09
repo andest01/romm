@@ -11,7 +11,7 @@ function pressEnter(onChild: boolean) {
   const scroller = document.createElement("div");
   grid.append(child, scroller);
   document.body.append(grid);
-  const open = vi.fn();
+  const enter = vi.fn();
   const { onKey } = createListInput(
     {
       rows: () => [],
@@ -23,7 +23,10 @@ function pressEnter(onChild: boolean) {
       scroller: () => scroller,
       follow: vi.fn(),
       dispatch: vi.fn(),
-      open,
+      enter,
+      isEntered: () => false,
+      exit: vi.fn(),
+      hopItem: vi.fn(),
       toggleSelected: vi.fn(() => null),
       idAt: () => null,
       openActions: vi.fn(),
@@ -41,7 +44,47 @@ function pressEnter(onChild: boolean) {
   (onChild ? child : grid).dispatchEvent(
     new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
   );
-  return open;
+  return enter;
+}
+
+function enteredInput() {
+  const grid = document.createElement("div");
+  grid.setAttribute("role", "grid");
+  const scroller = document.createElement("div");
+  grid.append(scroller);
+  document.body.append(grid);
+  const hopItem = vi.fn();
+  const activePosition = shallowRef<number | null>(null);
+  const { onKey } = createListInput(
+    {
+      rows: () => [],
+      start: () => 0,
+      currentPosition: () => null,
+      feel: () => TILES_FEEL,
+      rowHeight: () => 30,
+      headHeight: () => 28,
+      scroller: () => scroller,
+      follow: vi.fn(),
+      dispatch: vi.fn(),
+      enter: vi.fn(),
+      isEntered: () => true,
+      exit: vi.fn(),
+      hopItem,
+      toggleSelected: vi.fn(() => null),
+      idAt: () => null,
+      openActions: vi.fn(),
+      closeOverlay: vi.fn(),
+    },
+    createAxisStore(),
+    {
+      activePosition,
+      isScrubbing: shallowRef(false),
+      cruiseStack: shallowRef(null),
+      navigate: shallowRef(null),
+    },
+  );
+  const press = (key: string) => onKey(new KeyboardEvent("keydown", { key }));
+  return { press, hopItem, activePosition };
 }
 
 function painting() {
@@ -60,7 +103,10 @@ function painting() {
       scroller: () => document.createElement("div"),
       follow: vi.fn(),
       dispatch,
-      open: vi.fn(),
+      enter: vi.fn(),
+      isEntered: () => false,
+      exit: vi.fn(),
+      hopItem: vi.fn(),
       toggleSelected: () => "add",
       idAt: (position) => position + 100,
       openActions,
@@ -130,19 +176,44 @@ describe("createListInput painting", () => {
 });
 
 describe("createListInput Enter", () => {
-  it("opens the current game from the grid", () => {
+  it("enters the current game from the grid", () => {
     // Act
-    const open = pressEnter(false);
+    const enter = pressEnter(false);
 
     // Assert
-    expect(open).toHaveBeenCalledOnce();
+    expect(enter).toHaveBeenCalledOnce();
   });
 
   it("leaves Enter to a control inside the grid", () => {
     // Act
-    const open = pressEnter(true);
+    const enter = pressEnter(true);
 
     // Assert
-    expect(open).not.toHaveBeenCalled();
+    expect(enter).not.toHaveBeenCalled();
+  });
+});
+
+describe("createListInput while entered", () => {
+  it("cycles the game's controls with left and right", () => {
+    // Arrange
+    const { press, hopItem } = enteredInput();
+
+    // Act
+    press("ArrowRight");
+    press("ArrowLeft");
+
+    // Assert
+    expect(hopItem.mock.calls).toEqual([[1], [-1]]);
+  });
+
+  it("keeps the cursor still", () => {
+    // Arrange
+    const { press, activePosition } = enteredInput();
+
+    // Act
+    press("ArrowDown");
+
+    // Assert
+    expect(activePosition.value).toBeNull();
   });
 });
