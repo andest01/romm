@@ -1,9 +1,50 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { h } from "vue";
+import { layoutPart, mapPart } from "../../Stearch.story-helpers";
 import ResultsLayout from "./results.pure-layout.vue";
 
 const stop = (name: string) => () => h("button", { type: "button" }, name);
+
+const GRID = mapPart(
+  {
+    field: "grid",
+    facts: [
+      "scrolls, and runs under the band above and the rail (R, 24px, opaque)",
+    ],
+    headingId: null,
+    links: [
+      {
+        label: "List",
+        title: "Stearch/ui/results/list/list.pure-component.vue",
+        story: "Playground",
+      },
+      {
+        label: "Rail",
+        title: "Stearch/ui/results/rail/rail.pure-component.vue",
+        story: "Stars",
+      },
+    ],
+  },
+  "--r-color-info",
+);
+// The layout gives the rail 24px, so its card lives on the grid's.
+const RAIL = layoutPart("R", "--r-color-warning");
+const BAND = mapPart(
+  {
+    field: "band",
+    facts: [],
+    headingId: null,
+    links: [
+      {
+        label: "Section",
+        title: "Stearch/ui/results/section/section.pure-component.vue",
+        story: "Playground",
+      },
+    ],
+  },
+  "--r-color-success",
+);
 
 const meta: Meta<typeof ResultsLayout> = {
   title: "Stearch/ui/results/results.pure-layout.vue",
@@ -12,7 +53,7 @@ const meta: Meta<typeof ResultsLayout> = {
   parameters: { layout: "fullscreen" },
   argTypes: {
     bandOffset: { control: { type: "range", min: -40, max: 0, step: 1 } },
-    bandHeight: { control: { type: "range", min: 20, max: 60, step: 1 } },
+    bandHeight: { control: { type: "range", min: 20, max: 96, step: 1 } },
     headInset: { control: { type: "range", min: 0, max: 60, step: 1 } },
     scrollbarWidth: { control: { type: "range", min: 0, max: 20, step: 1 } },
     grid: { control: false },
@@ -20,16 +61,16 @@ const meta: Meta<typeof ResultsLayout> = {
     band: { control: false },
   },
   args: {
-    grid: stop("Grid"),
-    rail: stop("Rail"),
-    band: stop("Band"),
+    grid: GRID,
+    rail: RAIL,
+    band: BAND,
     bandOffset: 0,
-    bandHeight: 28,
+    bandHeight: 72,
     headInset: 0,
     scrollbarWidth: 0,
   },
   decorators: [
-    () => ({ template: '<div style="height: 300px"><story /></div>' }),
+    () => ({ template: '<div style="height: 100vh"><story /></div>' }),
   ],
 };
 
@@ -74,6 +115,7 @@ export const BandStopsAtTheRail: Story = {
 
 /** The band is drawn on top, but Tab reaches it last. */
 export const TabOrderIsGridRailBand: Story = {
+  args: { grid: stop("Grid"), rail: stop("Rail"), band: stop("Band") },
   play: async ({ canvasElement }) => {
     // Arrange
     const canvas = within(canvasElement);

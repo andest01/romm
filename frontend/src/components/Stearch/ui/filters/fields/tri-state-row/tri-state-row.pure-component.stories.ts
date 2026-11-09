@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { computed } from "vue";
-import type { ChoicePreview, ChoiceState } from "../../fields.props";
+import type { ChoicePreview, ChoiceState } from "../../filters-fields.props";
 import { TRI_STATE_FIELD } from "../fields.story-args";
 import TriStateRow from "./tri-state-row.pure-component.vue";
 

@@ -3,7 +3,7 @@ import { computed, watchEffect } from "vue";
 import { fakeGetRoms } from "../../../Stearch.fake-api";
 import { LOADED_STEARCH_STATE } from "../../../store/fixtures";
 import stearchStore from "../../../store/stearch.store";
-import ContentContainer from "../results.container.vue";
+import ResultsContainer from "../results.container.vue";
 import { provideFeels } from "./feel";
 import { TILES_FEEL } from "./list.props";
 import {
@@ -28,7 +28,7 @@ const meta: Meta<Args> = {
   },
   args: { view: "tiles", ...feelArgs(TILES_FEEL) },
   render: (args) => ({
-    components: { ContentContainer },
+    components: { ResultsContainer },
     setup() {
       const store = stearchStore();
       store.connect(fakeGetRoms);
@@ -46,7 +46,7 @@ const meta: Meta<Args> = {
     },
     template: `
       <div style="display: grid; grid-template-rows: minmax(0, 1fr) auto; height: 100vh">
-        <ContentContainer />
+        <ResultsContainer />
         <details style="padding: 8px">
           <summary>This feel as code</summary>
           <pre style="font-size: 0.75rem">{{ feelAsCode }}</pre>

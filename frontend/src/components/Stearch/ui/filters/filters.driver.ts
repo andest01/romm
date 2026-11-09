@@ -5,7 +5,7 @@ import type { KeyDriver } from "../results/list/use-key-driver";
 /** Keeps a slider from trapping the arrows: up and down always leave it, and
  *  left and right adjust it for the pad, whose synthetic keys the browser
  *  ignores. */
-export function createSidebarKeyDriver(): KeyDriver {
+export function createFiltersKeyDriver(): KeyDriver {
   const nothing = (): void => undefined;
   return {
     keyDown(event) {
@@ -13,7 +13,7 @@ export function createSidebarKeyDriver(): KeyDriver {
       if (
         !(slider instanceof HTMLInputElement) ||
         slider.type !== "range" ||
-        !slider.closest(".stearch-sidebar")
+        !slider.closest(".stearch-filters")
       ) {
         return;
       }

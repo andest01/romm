@@ -5,7 +5,7 @@ import type {
   RangeChange,
   RangeFieldPreview,
   TriStateFieldPreview,
-} from "../../fields.props";
+} from "../../filters-fields.props";
 import FieldPicker from "../field-picker/field-picker.pure-component.vue";
 import RangeRow from "../range-row/range-row.pure-component.vue";
 import TriStateRow from "../tri-state-row/tri-state-row.pure-component.vue";

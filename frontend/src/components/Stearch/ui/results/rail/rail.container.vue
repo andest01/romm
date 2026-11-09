@@ -4,12 +4,12 @@ import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import { selectTotal } from "../../../store/results.selectors";
 import stearchStore from "../../../store/stearch.store";
-import { useContentView } from "../results.view";
+import { useResultsView } from "../results.view";
 import RailPure from "./rail.pure-component.vue";
 import { buildScrubActions, selectRailProps } from "./rail.selectors";
 
 const store = stearchStore();
-const { isScrubbing, navigate } = useContentView();
+const { isScrubbing, navigate } = useResultsView();
 const props = computed(() => selectRailProps(store.state));
 
 const DRAG_THRESHOLD_PX = 4;

@@ -2,10 +2,10 @@
 import { computed } from "vue";
 import stearchStore from "../../store/stearch.store";
 import BarPure from "./bar/bar.pure-component.vue";
-import { selectSidebarFooterProps } from "./filters.selectors";
+import { selectFiltersFooterProps } from "./filters.selectors";
 
 const store = stearchStore();
-const props = computed(() => selectSidebarFooterProps(store.state));
+const props = computed(() => selectFiltersFooterProps(store.state));
 </script>
 
 <template>

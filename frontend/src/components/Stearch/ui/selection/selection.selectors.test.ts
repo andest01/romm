@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { LOADED_STEARCH_STATE } from "../../store/fixtures";
-import { selectFooterState } from "./selection.selectors";
+import { selectSelectionState } from "./selection.selectors";
 
-describe("selectFooterState", () => {
+describe("selectSelectionState", () => {
   it("offers select all while results remain unselected", () => {
     // Act
-    const { selectAllActions } = selectFooterState(LOADED_STEARCH_STATE);
+    const { selectAllActions } = selectSelectionState(LOADED_STEARCH_STATE);
 
     // Assert
     expect(selectAllActions).toEqual([
@@ -24,7 +24,7 @@ describe("selectFooterState", () => {
     };
 
     // Act
-    const { selectAllActions } = selectFooterState(state);
+    const { selectAllActions } = selectSelectionState(state);
 
     // Assert
     expect(selectAllActions).toBeNull();

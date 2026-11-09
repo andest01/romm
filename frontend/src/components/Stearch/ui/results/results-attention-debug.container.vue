@@ -11,10 +11,10 @@ import {
   selectSelectedIds,
 } from "../../store/stearch.selectors";
 import stearchStore from "../../store/stearch.store";
-import { useContentView } from "./results.view";
+import { useResultsView } from "./results.view";
 
 const store = stearchStore();
-const { activePosition, cruiseStack } = useContentView();
+const { activePosition, cruiseStack } = useResultsView();
 const currentId = computed(() => selectActiveId(store.state));
 const currentName = computed(() => selectCurrentGame(store.state)?.name);
 const selectedIds = computed(() => selectSelectedIds(store.state));

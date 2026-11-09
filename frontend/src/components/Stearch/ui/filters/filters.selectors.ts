@@ -20,12 +20,12 @@ const CLOSE_VERB: BarVerb = {
   actions: CLOSE_ACTIONS,
 };
 
-export const SIDEBAR_HEADER_PROPS: BarProps = {
+export const FILTERS_HEADER_PROPS: BarProps = {
   title: TITLE,
   verbs: [CLOSE_VERB],
 };
 
-export const selectSidebarFooterProps = createSelector(
+export const selectFiltersFooterProps = createSelector(
   [selectClearActions, selectGroupByMetaId],
   (actions, groupByMetaId): BarProps => ({
     title: null,

@@ -4,7 +4,7 @@ import {
   type FieldRange,
   RANGE_MAX_HOURS,
   type RangeChange,
-} from "../../fields.props";
+} from "../../filters-fields.props";
 
 defineProps<{ range: FieldRange; minLabel: string; maxLabel: string }>();
 

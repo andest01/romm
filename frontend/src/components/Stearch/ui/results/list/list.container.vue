@@ -19,7 +19,7 @@ import {
 import stearchStore from "../../../store/stearch.store";
 import RailContainer from "../rail/rail.container.vue";
 import ResultsLayout from "../results.pure-layout.vue";
-import { useContentView } from "../results.view";
+import { useResultsView } from "../results.view";
 import SectionContainer from "../section/section.container.vue";
 import { selectSectionProps } from "../section/section.selectors";
 import { useFeel } from "./feel";
@@ -42,7 +42,7 @@ import Verbs from "./verbs/verbs.container.vue";
 const GRID_LABEL = "Games";
 const { t } = useI18n();
 const store = stearchStore();
-const view = useContentView();
+const view = useResultsView();
 const feel = useFeel("tiles");
 const {
   setScroller,

@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import type { SidebarLayoutProps } from "./filters.pure-layout-props";
+import type { FiltersLayoutProps } from "./filters.pure-layout-props";
 
-defineProps<SidebarLayoutProps>();
+defineProps<FiltersLayoutProps>();
 </script>
 
 <template>
-  <div class="stearch-sidebar">
-    <div class="stearch-sidebar__header"><component :is="header" /></div>
-    <div class="stearch-sidebar__body"><component :is="body" /></div>
-    <div v-if="footer" class="stearch-sidebar__footer">
+  <div class="stearch-filters">
+    <div class="stearch-filters__header"><component :is="header" /></div>
+    <div class="stearch-filters__body"><component :is="body" /></div>
+    <div v-if="footer" class="stearch-filters__footer">
       <component :is="footer" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.stearch-sidebar {
+.stearch-filters {
   display: grid;
   grid-template:
     "header" auto
@@ -24,11 +24,11 @@ defineProps<SidebarLayoutProps>();
     / minmax(0, 1fr);
   height: 100%;
 }
-.stearch-sidebar__header {
+.stearch-filters__header {
   grid-area: header;
   border-bottom: 1px solid var(--r-color-border);
 }
-.stearch-sidebar__body {
+.stearch-filters__body {
   grid-area: body;
   display: flex;
   flex-direction: column;
@@ -36,7 +36,7 @@ defineProps<SidebarLayoutProps>();
   overflow: hidden auto;
   padding: var(--r-space-2);
 }
-.stearch-sidebar__footer {
+.stearch-filters__footer {
   grid-area: footer;
   border-top: 1px solid var(--r-color-border);
 }

@@ -77,15 +77,14 @@ export const storyHref = ({ title, story }: StoryLink): string =>
 
 const CODE: CSSProperties = { fontWeight: 400, fontSize: "0.75rem" };
 
-/** A region's catalog card: its layout field, the ids it holds, and links to
- *  the stories of what really fills it. */
-export const regionPart =
+/** A layout part's card: its field, facts about it, and links to the stories
+ *  of what really fills it. `headingId` makes the field a real heading. */
+export const mapPart =
   (
-    region: {
+    part: {
       field: string;
-      regionId: string;
-      headingId: string;
-      rendersHeading: boolean;
+      facts: readonly string[];
+      headingId: string | null;
       links: readonly StoryLink[];
     },
     token: PartToken,
@@ -95,7 +94,6 @@ export const regionPart =
     h(
       "div",
       {
-        "data-region-card": region.field,
         style: {
           ...PART_LABEL,
           display: "flex",
@@ -113,20 +111,42 @@ export const regionPart =
         },
       },
       [
-        region.rendersHeading
-          ? h("h2", { id: region.headingId, style: PART_LABEL }, region.field)
-          : h("code", region.field),
-        h("code", { style: CODE }, `#${region.regionId}`),
-        h("code", { style: CODE }, `labelled by #${region.headingId}`),
+        part.headingId
+          ? h("h2", { id: part.headingId, style: PART_LABEL }, part.field)
+          : h("code", part.field),
+        ...part.facts.map((fact) => h("code", { style: CODE }, fact)),
         h(
           "span",
           { style: { display: "flex", flexWrap: "wrap", gap: "12px" } },
-          region.links.map((link) =>
+          part.links.map((link) =>
             h("a", { href: storyHref(link), target: "_top" }, link.label),
           ),
         ),
       ],
     );
+
+/** A root region's card: its field and the ids it holds. */
+export const regionPart = (
+  region: {
+    field: string;
+    regionId: string;
+    headingId: string;
+    rendersHeading: boolean;
+    links: readonly StoryLink[];
+  },
+  token: PartToken,
+  minHeight = "100%",
+): Component =>
+  mapPart(
+    {
+      field: region.field,
+      facts: [`#${region.regionId}`, `labelled by #${region.headingId}`],
+      headingId: region.rendersHeading ? region.headingId : null,
+      links: region.links,
+    },
+    token,
+    minHeight,
+  );
 
 /** A region's heading part, shown so it can be inspected. Zero height, so it
  *  never moves the part it names. */

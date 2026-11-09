@@ -1,5 +1,6 @@
 // Stearch's own lint rules, spread into frontend/eslint.config.js. Paths are
 // relative to frontend/, where the root config lives.
+import folderPrefix from "./eslint-rules/folder-prefix.js";
 import landmarks from "./eslint-rules/landmarks.js";
 import noVisualReorder from "./eslint-rules/no-visual-reorder.js";
 import pureLayoutParts from "./eslint-rules/pure-layout-parts.js";
@@ -10,6 +11,7 @@ const STEARCH = "src/components/Stearch";
 const stearchPlugin = {
   meta: { name: "stearch" },
   rules: {
+    "folder-prefix": folderPrefix,
     landmarks,
     "no-visual-reorder": noVisualReorder,
     "pure-layout-parts": pureLayoutParts,
@@ -62,6 +64,11 @@ export default [
       "stearch/pure-layout-parts": "error",
       "stearch/no-visual-reorder": "error",
     },
+  },
+  {
+    files: [`${STEARCH}/ui/**/*.{ts,vue}`],
+    plugins: { stearch: stearchPlugin },
+    rules: { "stearch/folder-prefix": "error" },
   },
   // Navigation and accessibility: the structure is checked, not reviewed.
   {

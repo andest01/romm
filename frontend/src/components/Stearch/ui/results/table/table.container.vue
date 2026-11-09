@@ -35,7 +35,7 @@ import { useScrollerJump } from "../list/use-scroller-jump";
 import Verbs from "../list/verbs/verbs.container.vue";
 import RailContainer from "../rail/rail.container.vue";
 import ResultsLayout from "../results.pure-layout.vue";
-import { useContentView } from "../results.view";
+import { useResultsView } from "../results.view";
 import SectionContainer from "../section/section.container.vue";
 import { selectSectionProps } from "../section/section.selectors";
 import RowPure from "./row/row.pure-component.vue";
@@ -76,7 +76,7 @@ const GRID_TEMPLATE =
   "minmax(0, 3fr) minmax(0, 1fr) 90px 100px 100px 80px 70px 90px 80px 64px";
 const { t } = useI18n();
 const store = stearchStore();
-const { isScrubbing } = useContentView();
+const { isScrubbing } = useResultsView();
 const feel = useFeel("table");
 const headHeight = headHeightFor(false);
 const rows = computed(() =>

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import stearchStore from "../../../../store/stearch.store";
-import { buildRangeActions, selectFieldPreviews } from "../../fields.selectors";
+import {
+  buildRangeActions,
+  selectFieldPreviews,
+} from "../../filters-fields.selectors";
 import FieldSection from "../field-section/field-section.pure-component.vue";
 import PlatformField from "../platform-field/platform-field.container.vue";
 

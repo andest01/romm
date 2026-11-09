@@ -24,16 +24,16 @@ Counts are committed files on `feature/stearch` (2d7c1bc28), 125 code files in a
 
 ## State
 
-| Suffix                          | Count | What it is                                                                                             |
-| ------------------------------- | ----- | ------------------------------------------------------------------------------------------------------ |
-| `*.actions.ts`                  | 1     | Every action, one union per domain                                                                     |
-| `*.reducer.ts`                  | 1     | Pure `(state, action) => state`                                                                        |
-| `*.store.ts`                    | 1     | The Pinia store: `dispatch`, plus effects such as fetching                                             |
-| `Stearch.selectors.ts`          | 1     | The trunk: one plain selector per state field, the only reader of `IStearchState`                      |
-| `Stearch.<family>.selectors.ts` | 5     | Branches: memoized families by state branch (results, rows, attention, query, layout)                  |
-| `<domain>.selectors.ts`         | 9     | Leaves: exactly the props a domain's pure component takes, including the action arrays views hand back |
-| `*.create-selector.ts`          | 1     | The memoizer, shaped like `reselect`                                                                   |
-| `*.schema.ts`                   | 1     | The Zod seam: checks API data and freezes it                                                           |
+| Suffix                        | Count | What it is                                                                                             |
+| ----------------------------- | ----- | ------------------------------------------------------------------------------------------------------ |
+| `*.actions.ts`                | 1     | Every action, one union per domain                                                                     |
+| `*.reducer.ts`                | 1     | Pure `(state, action) => state`                                                                        |
+| `*.store.ts`                  | 1     | The Pinia store: `dispatch`, plus effects such as fetching                                             |
+| `Stearch.selectors.ts`        | 1     | The trunk: one plain selector per state field, the only reader of `IStearchState`                      |
+| `store/<family>.selectors.ts` | 5     | Branches: memoized families by state branch (results, rows, attention, query, layout)                  |
+| `<domain>.selectors.ts`       | 9     | Leaves: exactly the props a domain's pure component takes, including the action arrays views hand back |
+| `*.create-selector.ts`        | 1     | The memoizer, shaped like `reselect`                                                                   |
+| `*.schema.ts`                 | 1     | The Zod seam: checks API data and freezes it                                                           |
 
 ## Data
 
@@ -76,6 +76,6 @@ A story or test is named after the file it covers, plus `.stories.ts` or `.test.
 
 ## Doesn't fit yet
 
-| File                                | Problem                                                                              |
-| ----------------------------------- | ------------------------------------------------------------------------------------ |
-| `results/list/use-scroller-jump.ts` | No domain and no role. It's a composable, the one kind of file we have no suffix for |
+| File                                | Problem                                                               |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| `results/list/use-scroller-jump.ts` | A composable. `use-*.ts` is their role, exempt from the folder prefix |

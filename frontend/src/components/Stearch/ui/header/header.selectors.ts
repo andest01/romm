@@ -16,8 +16,8 @@ import {
   type StearchSort,
   type StearchSortDir,
 } from "../../store/stearch.state-props";
-import type { MultiFieldPreview } from "../filters/fields.props";
-import { selectFieldPreviews } from "../filters/fields.selectors";
+import type { MultiFieldPreview } from "../filters/filters-fields.props";
+import { selectFieldPreviews } from "../filters/filters-fields.selectors";
 import type {
   HeaderFilters,
   HeaderProps,

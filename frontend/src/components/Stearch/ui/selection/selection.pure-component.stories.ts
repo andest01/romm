@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import type { StearchAction } from "../../store/stearch.actions";
-import FooterPure from "./selection.pure-component.vue";
+import SelectionPure from "./selection.pure-component.vue";
 
 const CLEAR_ACTIONS: readonly StearchAction[] = [
   { type: "attention/set", patch: { selectedIds: [] } },
@@ -10,10 +10,10 @@ const SELECT_ALL_ACTIONS: readonly StearchAction[] = [
   { type: "selection/add", ids: [1, 2, 3] },
 ];
 
-const meta: Meta<typeof FooterPure> = {
+const meta: Meta<typeof SelectionPure> = {
   title: "Stearch/ui/selection/selection.pure-component.vue",
   tags: ["!autodocs"],
-  component: FooterPure,
+  component: SelectionPure,
   parameters: { layout: "fullscreen" },
   argTypes: {
     resultCount: { control: { type: "range", min: 0, max: 100000, step: 1 } },
@@ -34,7 +34,7 @@ const meta: Meta<typeof FooterPure> = {
 
 export default meta;
 
-type Story = StoryObj<typeof FooterPure>;
+type Story = StoryObj<typeof SelectionPure>;
 
 export const Results: Story = {};
 

@@ -8,7 +8,7 @@ const CLEAR_ACTIONS: readonly StearchAction[] = [
   { type: "attention/set", patch: { selectedIds: [] } },
 ];
 
-export const selectFooterState = createSelector(
+export const selectSelectionState = createSelector(
   [selectTotal, selectSelectedCount, selectIds],
   (resultCount, selectedCount, ids) => ({
     resultCount,

@@ -4,7 +4,7 @@ import collectionApi from "@/services/api/collection";
 import { criteriaToQuery, queryToCriteria } from "../../store/saved-search";
 import { selectQuery } from "../../store/stearch.selectors";
 import stearchStore from "../../store/stearch.store";
-import SavedSearches from "./saved-searches.pure-component.vue";
+import SavedSearches from "./header-saved-searches.pure-component.vue";
 
 // Stub labels: move to locale keys before this leaves the fork.
 const LABEL = "Saved searches";

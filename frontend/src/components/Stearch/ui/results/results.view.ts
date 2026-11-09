@@ -15,7 +15,7 @@ import type { CruiseStack } from "./list/axis-machine";
 export type StearchDevice = "phone" | "wide";
 
 /** Facts about the screen, not the job, so they stay out of the store. */
-export interface ContentView {
+export interface ResultsView {
   /** Derived and read-only. */
   device: ComputedRef<StearchDevice>;
   /** Where arrow keys have put the ring, by position, so it can sit on a
@@ -32,9 +32,9 @@ export interface ContentView {
   navigate: ShallowRef<((position: number) => void) | null>;
 }
 
-const CONTENT_VIEW: InjectionKey<ContentView> = Symbol("stearch-content-view");
+const RESULTS_VIEW: InjectionKey<ResultsView> = Symbol("stearch-results-view");
 
-function createContentView(): ContentView {
+function createResultsView(): ResultsView {
   const { xs, smAndDown } = useBreakpoint();
   const isCoarsePointer = useMediaQuery("(pointer: coarse)");
   return {
@@ -50,13 +50,13 @@ function createContentView(): ContentView {
 }
 
 /** For `results.container.vue`, which shares one view with its parts. */
-export function provideContentView(): ContentView {
-  const view = createContentView();
-  provide(CONTENT_VIEW, view);
+export function provideResultsView(): ResultsView {
+  const view = createResultsView();
+  provide(RESULTS_VIEW, view);
   return view;
 }
 
 /** For a part of the content. On its own, as in a story, it makes its own. */
-export function useContentView(): ContentView {
-  return inject(CONTENT_VIEW, createContentView, true);
+export function useResultsView(): ResultsView {
+  return inject(RESULTS_VIEW, createResultsView, true);
 }

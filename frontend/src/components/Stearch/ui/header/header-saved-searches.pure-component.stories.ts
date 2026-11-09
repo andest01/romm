@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
-import SavedSearches from "./saved-searches.pure-component.vue";
+import SavedSearches from "./header-saved-searches.pure-component.vue";
 
 const meta: Meta<typeof SavedSearches> = {
-  title: "Stearch/ui/header/saved-searches.pure-component.vue",
+  title: "Stearch/ui/header/header-saved-searches.pure-component.vue",
   tags: ["!autodocs"],
   component: SavedSearches,
   args: {

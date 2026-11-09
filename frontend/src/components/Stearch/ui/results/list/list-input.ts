@@ -7,7 +7,7 @@ import {
 import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import type { StearchAction } from "../../../store/stearch.actions";
-import type { ContentView } from "../results.view";
+import type { ResultsView } from "../results.view";
 import type { CruiseStack } from "./axis-machine";
 import type { AxisStore } from "./axis-store";
 import {
@@ -75,7 +75,7 @@ export function createListInput(
     activePosition: ShallowRef<number | null>;
     isScrubbing: ShallowRef<boolean>;
     cruiseStack: ShallowRef<CruiseStack | null>;
-    navigate: ContentView["navigate"];
+    navigate: ResultsView["navigate"];
   },
 ) {
   const { activePosition, isScrubbing, cruiseStack, navigate } = view;

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { LOADED_STEARCH_STATE } from "../../store/fixtures";
 import type { StearchAction } from "../../store/stearch.actions";
 import { stearchReducer } from "../../store/stearch.reducer";
-import type { FieldPreview } from "./fields.props";
-import { buildRangeActions, selectFieldPreviews } from "./fields.selectors";
+import type { FieldPreview } from "./filters-fields.props";
+import {
+  buildRangeActions,
+  selectFieldPreviews,
+} from "./filters-fields.selectors";
 
 function previewAfter(actions: readonly StearchAction[], id: string) {
   const state = actions.reduce(stearchReducer, LOADED_STEARCH_STATE);

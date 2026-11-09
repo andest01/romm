@@ -6,12 +6,12 @@ import { selectIsAdvancedOpen } from "../../store/stearch.selectors";
 import stearchStore from "../../store/stearch.store";
 import { useKeyDriver } from "../results/list/use-key-driver";
 import FieldList from "./fields/field-list/field-list.container.vue";
-import SidebarFooter from "./filters-footer.container.vue";
-import SidebarHeader from "./filters-header.container.vue";
-import { createSidebarKeyDriver } from "./filters.driver";
-import SidebarLayout from "./filters.pure-layout.vue";
+import FiltersFooter from "./filters-footer.container.vue";
+import FiltersHeader from "./filters-header.container.vue";
+import { createFiltersKeyDriver } from "./filters.driver";
+import FiltersLayout from "./filters.pure-layout.vue";
 
-useKeyDriver(createSidebarKeyDriver());
+useKeyDriver(createFiltersKeyDriver());
 
 const store = stearchStore();
 const isOpen = computed(() => selectIsAdvancedOpen(store.state));
@@ -38,9 +38,9 @@ watch(
 </script>
 
 <template>
-  <SidebarLayout
-    :header="SidebarHeader"
+  <FiltersLayout
+    :header="FiltersHeader"
     :body="FieldList"
-    :footer="SidebarFooter"
+    :footer="FiltersFooter"
   />
 </template>

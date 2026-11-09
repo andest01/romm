@@ -1,7 +1,7 @@
 import type { Component } from "vue";
 import type { StearchAction } from "../../store/stearch.actions";
 
-export interface FooterProps {
+export interface SelectionProps {
   resultCount: number;
   selectedCount: number;
   resultsLabel: string;

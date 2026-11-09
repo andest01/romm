@@ -1,26 +1,42 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
-import { layoutPart, scrollingPart } from "../../Stearch.story-helpers";
-import SidebarLayout from "./filters.pure-layout.vue";
+import { mapPart, scrollingPart } from "../../Stearch.story-helpers";
+import FiltersLayout from "./filters.pure-layout.vue";
 
-const HEADER = layoutPart(
-  "Header · verbs stay put",
+const BAR_LINK = {
+  label: "Bar",
+  title: "Stearch/ui/filters/bar/bar.pure-component.vue",
+  story: "Playground",
+};
+const HEADER = mapPart(
+  { field: "header", facts: ["stays put"], headingId: null, links: [BAR_LINK] },
   "--r-color-brand-primary",
-  "48px",
+  "96px",
 );
-const BODY = scrollingPart("Body · scrolls", "--r-color-info", {
-  rows: 30,
-  paddingInline: "0px",
-});
-const FOOTER = layoutPart(
-  "Footer · verbs stay put",
+const BODY = mapPart(
+  {
+    field: "body",
+    facts: ["the only part that scrolls"],
+    headingId: null,
+    links: [
+      {
+        label: "Field list",
+        title: "Stearch/ui/filters/fields/field-list/field-list.container.vue",
+        story: "Playground",
+      },
+    ],
+  },
+  "--r-color-info",
+);
+const FOOTER = mapPart(
+  { field: "footer", facts: ["stays put"], headingId: null, links: [BAR_LINK] },
   "--r-color-success",
-  "48px",
+  "96px",
 );
 
-const meta: Meta<typeof SidebarLayout> = {
+const meta: Meta<typeof FiltersLayout> = {
   title: "Stearch/ui/filters/filters.pure-layout.vue",
   tags: ["!autodocs"],
-  component: SidebarLayout,
+  component: FiltersLayout,
   parameters: { layout: "fullscreen" },
   decorators: [
     () => ({
@@ -45,9 +61,20 @@ const meta: Meta<typeof SidebarLayout> = {
 
 export default meta;
 
-type Story = StoryObj<typeof SidebarLayout>;
+type Story = StoryObj<typeof FiltersLayout>;
 
+/** The map: each part, what it does and where to go deeper. */
 export const Playground: Story = {};
 
 /** Without a footer, the body takes its space. */
 export const NoFooter: Story = { args: { footer: null } };
+
+/** Only the body scrolls; the header and footer stay put. */
+export const BodyScrolls: Story = {
+  args: {
+    body: scrollingPart("body", "--r-color-info", {
+      rows: 30,
+      paddingInline: "0px",
+    }),
+  },
+};

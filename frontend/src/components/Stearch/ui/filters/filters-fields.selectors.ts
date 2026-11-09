@@ -21,7 +21,7 @@ import {
   type RangeFieldPreview,
   type TriStateFieldPreview,
   type PlatformFieldPreview,
-} from "./fields.props";
+} from "./filters-fields.props";
 
 /** A computed key alone loses the value check, so this keeps it. */
 const patchOf = <K extends keyof StearchQuery>(

@@ -2,16 +2,16 @@
 import { computed } from "vue";
 import { selectViewMode } from "../../store/stearch.selectors";
 import stearchStore from "../../store/stearch.store";
-import AttentionDebug from "./attention-debug.container.vue";
 import ListContainer from "./list/list.container.vue";
-import { provideContentView } from "./results.view";
+import AttentionDebug from "./results-attention-debug.container.vue";
+import { provideResultsView } from "./results.view";
 import TableContainer from "./table/table.container.vue";
-import { useGameMenuBulk } from "./use-game-menu-bulk";
+import { useGameMenuBulk } from "./use-results-game-menu-bulk";
 
 useGameMenuBulk();
 const isDev = import.meta.env.DEV;
 const store = stearchStore();
-const view = provideContentView();
+const view = provideResultsView();
 const isTable = computed(
   () => selectViewMode(store.state) === "table" && view.device.value === "wide",
 );

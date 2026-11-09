@@ -4,8 +4,8 @@ import type {
   MultiFieldPreview,
   RangeFieldPreview,
   TriStateFieldPreview,
-} from "../fields.props";
-import { selectFieldPreviews } from "../fields.selectors";
+} from "../filters-fields.props";
+import { selectFieldPreviews } from "../filters-fields.selectors";
 
 const previews = selectFieldPreviews({
   ...LOADED_STEARCH_STATE,

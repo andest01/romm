@@ -9,7 +9,7 @@ import {
   selectSelectedIds,
 } from "../../../store/stearch.selectors";
 import stearchStore from "../../../store/stearch.store";
-import { useContentView } from "../results.view";
+import { useResultsView } from "../results.view";
 import { createAxisStore } from "./axis-store";
 import { createListInput, type ListInputOptions } from "./list-input";
 import { itemDomId } from "./list.selectors";
@@ -23,7 +23,7 @@ export function useKeyFocus(
     "open" | "toggleSelected" | "idAt" | "openActions" | "closeOverlay"
   >,
 ) {
-  const view = useContentView();
+  const view = useResultsView();
   const store = stearchStore();
   const router = useRouter();
   const open = (): void => {

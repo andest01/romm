@@ -6,7 +6,7 @@ export interface BarVerb {
   actions: readonly StearchAction[];
 }
 
-/** One row of verbs, for the sidebar's header or footer. */
+/** One row of verbs, for the filters' header or footer. */
 export interface BarProps {
   title: string | null;
   verbs: readonly BarVerb[];

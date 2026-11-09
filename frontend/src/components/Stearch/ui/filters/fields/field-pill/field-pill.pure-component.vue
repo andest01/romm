@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RChip, RMenu } from "@/lib";
 import type { StearchAction } from "../../../../store/stearch.actions";
-import type { FieldPreview } from "../../fields.props";
+import type { FieldPreview } from "../../filters-fields.props";
 import FieldPicker from "../field-picker/field-picker.pure-component.vue";
 
 defineProps<{ field: FieldPreview }>();

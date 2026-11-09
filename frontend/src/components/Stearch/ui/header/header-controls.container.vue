@@ -2,8 +2,8 @@
 import { computed } from "vue";
 import stearchStore from "../../store/stearch.store";
 import HeaderControls from "./header-controls.pure-component.vue";
+import SavedSearchesContainer from "./header-saved-searches.container.vue";
 import { selectHeaderProps } from "./header.selectors";
-import SavedSearchesContainer from "./saved-searches.container.vue";
 
 // Stub label: move to a locale key before this leaves the fork.
 const GROUP_LABEL = "Results options";

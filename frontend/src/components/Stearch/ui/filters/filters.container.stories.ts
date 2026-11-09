@@ -6,13 +6,13 @@ import {
   type ContainerStoryArgs,
 } from "../../Stearch.story-helpers";
 import { LOADED_STEARCH_STATE as loaded } from "../../store/fixtures";
-import SidebarContainer from "./filters.container.vue";
+import FiltersContainer from "./filters.container.vue";
 
 const meta: Meta<ContainerStoryArgs> = {
   title: "Stearch/ui/filters/filters.container.vue",
   tags: ["!autodocs"],
   ...CONTAINER_STORY_META,
-  render: renderContainer(SidebarContainer),
+  render: renderContainer(FiltersContainer),
 };
 
 export default meta;
