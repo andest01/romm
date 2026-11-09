@@ -35,13 +35,13 @@ export default [
               message: UP_ONLY,
             },
             {
-              target: `./${STEARCH}/*/*.selectors.ts`,
-              from: `./${STEARCH}/*/*/**`,
+              target: `./${STEARCH}/ui/*/*.selectors.ts`,
+              from: `./${STEARCH}/ui/*/*/**`,
               message: UP_ONLY,
             },
             {
-              target: `./${STEARCH}/*/*/*.selectors.ts`,
-              from: `./${STEARCH}/*/*/*/**`,
+              target: `./${STEARCH}/ui/*/*/*.selectors.ts`,
+              from: `./${STEARCH}/ui/*/*/*/**`,
               message: UP_ONLY,
             },
           ],

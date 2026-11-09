@@ -47,13 +47,13 @@ Stearch.pure-layout-props.ts
 Stearch.state-props.ts        IStearchStateProps, the root state
 Stearch.actions.ts            action objects: one union per domain, StearchAction joins them
 Stearch.reducer.ts            pure state transitions
-Stearch.store.ts              one dispatch()
-Stearch.selectors.ts          the trunk: one selector per state field
-Stearch.<family>.selectors.ts  branches: results, rows, attention, query, layout
-Stearch.create-selector.ts    memoizer, same call shape as reselect
-Stearch.fixtures.ts           shared story and test data
-content/content.container.vue  items plus scroll: the one `content` the app sees
-<domain>/                     header, sidebar, footer, content/list, content/table, content/rail
+store/stearch.store.ts        one dispatch()
+store/stearch.selectors.ts    the trunk: one selector per state field
+store/<family>.selectors.ts   branches: results, rows, attention, query, layout
+store/create-selector.ts      memoizer, same call shape as reselect
+store/fixtures.ts             shared story and test data
+ui/content/content.container.vue  items plus scroll: the one `content` the app sees
+ui/<domain>/                  header, sidebar, footer, content/list, content/table, content/rail
   <domain>.pure-component.vue
   <domain>.container.vue
   <domain>.props.ts
