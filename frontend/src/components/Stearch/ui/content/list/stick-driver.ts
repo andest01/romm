@@ -1,5 +1,5 @@
 import { claimStickY, keyRepeatMs } from "@/composables/useGamepad";
-import { canPan, isInsideBox } from "./axis-machine";
+import { type AxisGeometry, canPan, isInsideBox } from "./axis-machine";
 import type { AxisStore } from "./axis-store";
 import type { ScrollRow, StickFeel } from "./list.props";
 import {
@@ -35,7 +35,7 @@ export function createListStickDriver(options: {
   deflection: () => number;
   onRow: (rowIndex: number) => void;
   onEnd: () => void;
-}): StickDriver {
+}): StickDriver & { measure: () => void } {
   const { machine } = options;
   let currentRow = -1;
 
@@ -55,6 +55,23 @@ export function createListStickDriver(options: {
       options.headHeight(),
     ) +
     options.rowHeight() / 2;
+
+  function geometryOf(element: HTMLElement): AxisGeometry {
+    const { scrollTop, clientHeight, scrollHeight } = element;
+    const centre = scrollTop + clientHeight / 2;
+    const height = options.rowHeight();
+    currentRow = options.currentRow() ?? rowAtCentre(centre);
+    return {
+      isInBand: isInsideBox(
+        0,
+        centre - (rowMiddle(currentRow) - height / 2),
+        height,
+        options.bandRows(),
+      ),
+      canPanNegative: canPan(scrollTop, clientHeight, scrollHeight, -1),
+      canPanPositive: canPan(scrollTop, clientHeight, scrollHeight, 1),
+    };
+  }
 
   machine.onEffect((effect) => {
     if (effect.type === "stickEnded") options.onEnd();
@@ -99,26 +116,22 @@ export function createListStickDriver(options: {
         });
         return;
       }
-      const { scrollTop, clientHeight, scrollHeight } = element;
-      const centre = scrollTop + clientHeight / 2;
-      const height = options.rowHeight();
-      currentRow = options.currentRow() ?? rowAtCentre(centre);
       machine.dispatch({
         ...common,
         push: Math.abs(y),
         cellsPerSecond: stickRowsPerSecond(y, feel),
         keyCellsPerSecond: 1000 / keyRepeatMs(),
-        geometry: {
-          isInBand: isInsideBox(
-            0,
-            centre - (rowMiddle(currentRow) - height / 2),
-            height,
-            options.bandRows(),
-          ),
-          canPanNegative: canPan(scrollTop, clientHeight, scrollHeight, -1),
-          canPanPositive: canPan(scrollTop, clientHeight, scrollHeight, 1),
-        },
+        geometry: geometryOf(element),
       });
+    },
+    measure() {
+      const element = options.scroller();
+      if (element) {
+        machine.dispatch({
+          type: "view/measured",
+          geometry: geometryOf(element),
+        });
+      }
     },
   };
 }

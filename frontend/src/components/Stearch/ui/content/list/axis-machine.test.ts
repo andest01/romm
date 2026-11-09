@@ -160,6 +160,80 @@ describe("transition", () => {
     expect(effects).toEqual([{ type: "handOver", index: 6 }]);
   });
 
+  it("a command flies and activates, in one event", () => {
+    // Act
+    const { state, effects } = transition(AXIS_AT_REST, {
+      type: "navigate/started",
+      index: 64,
+    });
+
+    // Assert
+    expect([state.axis, effects]).toEqual([
+      "flying",
+      [{ type: "activate", index: 64 }, { type: "fly" }],
+    ]);
+  });
+
+  it("stays flying until the cell reaches the band", () => {
+    // Arrange
+    const flying = apply({ type: "navigate/started", index: 64 });
+
+    // Act
+    const passing = transition(flying, {
+      type: "view/measured",
+      geometry: OUTSIDE,
+    });
+    const arrived = transition(flying, {
+      type: "view/measured",
+      geometry: CAPTURED,
+    });
+
+    // Assert
+    expect([passing.state.axis, arrived.state.axis]).toEqual([
+      "flying",
+      "captured",
+    ]);
+  });
+
+  it("settles a flight that can't reach the band, like a corner", () => {
+    // Arrange
+    const flying = apply({ type: "navigate/started", index: 0 });
+
+    // Act
+    const { state } = transition(flying, {
+      type: "view/settled",
+      geometry: OUTSIDE,
+    });
+
+    // Assert
+    expect([state.axis, state.isFlying]).toEqual(["free", false]);
+  });
+
+  it("ends a flight on any key", () => {
+    // Arrange
+    const flying = apply({ type: "navigate/started", index: 64 });
+
+    // Act
+    const { state } = transition(flying, press(0));
+
+    // Assert
+    expect(state.isFlying).toBe(false);
+  });
+
+  it("drops to free when the wheel moves the view away", () => {
+    // Arrange
+    const captured = apply({ type: "view/measured", geometry: CAPTURED });
+
+    // Act
+    const { state } = transition(captured, {
+      type: "view/measured",
+      geometry: OUTSIDE,
+    });
+
+    // Assert
+    expect(state.axis).toBe("free");
+  });
+
   it("does nothing, identically, for an idle stick", () => {
     // Act
     const { state } = transition(AXIS_AT_REST, sample({ isPushed: false }));

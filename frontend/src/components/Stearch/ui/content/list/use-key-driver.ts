@@ -6,6 +6,8 @@ export interface KeyDriver {
   keyDown: (event: KeyboardEvent) => void;
   keyUp: (event: KeyboardEvent) => void;
   focusChanged: () => void;
+  /** Anything scrolled, like the wheel or the scrollbar. */
+  scrolled: (event: Event) => void;
   dispose: () => void;
 }
 
@@ -15,5 +17,9 @@ export function useKeyDriver(driver: KeyDriver): void {
   useEventListener(window, "keyup", driver.keyUp);
   useEventListener(document, "focusin", driver.focusChanged);
   useEventListener(document, "focusout", driver.focusChanged);
+  useEventListener(window, "scroll", driver.scrolled, {
+    capture: true,
+    passive: true,
+  });
   onBeforeUnmount(driver.dispose);
 }

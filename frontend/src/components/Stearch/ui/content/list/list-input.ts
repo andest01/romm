@@ -204,6 +204,11 @@ export function createListInput(
         machine.dispatch({ type: "focus/left" });
       }
     },
+    // The wheel and the scrollbar move only the screen: the machine has to
+    // hear it, or the next key would judge against a stale view.
+    scrolled(event) {
+      if (event.target === options.scroller()) stick.measure();
+    },
     dispose: () => releaseRepeat?.(),
   };
 

@@ -304,6 +304,9 @@
 
       <p class="eyebrow">Fig. 2 · state machine · one per axis</p>
       <h1>What the stick does, by where the active cell stands</h1>
+      <p class="eyebrow">
+        Captured with a full push held becomes cruising (Fig. 3)
+      </p>
       <div class="diagram-container">
         <svg
           viewBox="0 0 960 620"
@@ -536,6 +539,83 @@
           <text x="556" y="604" class="legend">Less common transition</text>
         </svg>
       </div>
+
+      <section class="figure" style="margin-top: 3rem">
+        <p class="eyebrow">
+          Fig. 3 · the machine · ui/content/list/axis-machine.ts
+        </p>
+        <h1>One reducer, every input</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Sent by</th>
+              <th>Machine decides</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>stick/sampled</code></td>
+              <td>stick driver, every frame</td>
+              <td>
+                captured: pan. Pinned or free: steps. Full push held 1 s:
+                <code>cruising</code>, stacking 1x, 2x, 5x, a second each
+              </td>
+            </tr>
+            <tr>
+              <td><code>key/pressed</code></td>
+              <td>key driver: keyboard and D-pad</td>
+              <td>one step, times the held key's stack; the stick yields</td>
+            </tr>
+            <tr>
+              <td><code>step/landed</code></td>
+              <td>the view, after a step</td>
+              <td>follow if out of view or past the centre; else walk</td>
+            </tr>
+            <tr>
+              <td><code>view/panned</code></td>
+              <td>the view, after a pan</td>
+              <td>hand over once active leaves the band</td>
+            </tr>
+            <tr>
+              <td><code>view/measured</code></td>
+              <td>the view: scroll, click, resize</td>
+              <td>captured, pinned or free</td>
+            </tr>
+            <tr>
+              <td><code>focus/left</code></td>
+              <td>key driver</td>
+              <td>a true exit: every cruise ends</td>
+            </tr>
+          </tbody>
+        </table>
+        <table>
+          <thead>
+            <tr>
+              <th>Push held</th>
+              <th>Stack cap</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>90% and up</td>
+              <td>5x</td>
+            </tr>
+            <tr>
+              <td>75% to 90%</td>
+              <td>2x</td>
+            </tr>
+            <tr>
+              <td>40% to 75%</td>
+              <td>1x</td>
+            </tr>
+            <tr>
+              <td>Under 40%</td>
+              <td>out of cruise, back to smooth</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
     </div>
   </body>
 </html>

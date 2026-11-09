@@ -202,6 +202,14 @@ for (const axis of ["y", "x"] as const) {
     if (effect.type === "follow" && viewport.value) {
       follow(viewport.value, axis);
     }
+    if (effect.type === "activate") {
+      active.value =
+        axis === "y"
+          ? { ...active.value, row: effect.index }
+          : { ...active.value, col: effect.index };
+    }
+    // Both axes ask; one smooth scroll serves both, once both have activated.
+    if (effect.type === "fly" && axis === "y") flyToCentre(active.value);
     if (effect.type === "handOver") {
       syncScroll();
       active.value =
@@ -322,7 +330,8 @@ const targets = computed(() => {
 type GridAction =
   | { type: "attention/set"; patch: { active: Cell } }
   | { type: "selection/add"; cell: Cell }
-  | { type: "view/flyTo"; cell: Cell };
+  | { type: "view/flyTo"; cell: Cell }
+  | { type: "view/navigate"; cell: Cell };
 
 const setActiveAction = (cell: Cell): GridAction => ({
   type: "attention/set",
@@ -340,7 +349,7 @@ const COMMANDS: readonly {
 }[] = [
   {
     name: "navigateTo",
-    actions: (cell) => [setActiveAction(cell), flyToAction(cell)],
+    actions: (cell) => [{ type: "view/navigate", cell }],
   },
   { name: "setActive", actions: (cell) => [setActiveAction(cell)] },
   { name: "flyTo", actions: (cell) => [flyToAction(cell)] },
@@ -354,7 +363,11 @@ function dispatch(actions: GridAction[]): void {
   for (const action of actions) {
     if (action.type === "attention/set") setActive(action.patch.active);
     else if (action.type === "selection/add") addSelected(action.cell);
-    else flyToCentre(action.cell);
+    else if (action.type === "view/flyTo") flyToCentre(action.cell);
+    else {
+      machines.x.dispatch({ type: "navigate/started", index: action.cell.col });
+      machines.y.dispatch({ type: "navigate/started", index: action.cell.row });
+    }
   }
 }
 
@@ -409,6 +422,7 @@ useKeyDriver({
     machines.y.dispatch({ type: "key/released" });
   },
   focusChanged: () => undefined,
+  scrolled: () => undefined,
   dispose: () => undefined,
 });
 
@@ -466,6 +480,15 @@ function onPress(cell: Cell, event: MouseEvent): void {
   }
   setActive(cell);
   note(`mouse: setActive(${nameOf(cell)})`);
+}
+
+function onSettled(): void {
+  for (const axis of ["y", "x"] as const) {
+    machines[axis].dispatch({
+      type: "view/settled",
+      geometry: geometryOf(axis),
+    });
+  }
 }
 
 function onScroll(event: Event): void {
@@ -530,6 +553,7 @@ const feelAsCode = computed(() => JSON.stringify(feel.value, null, 2));
         role="listbox"
         aria-label="A 128 by 128 grid"
         @scroll="onScroll"
+        @scrollend="onSettled"
       >
         <div
           class="grid-2d__plane"

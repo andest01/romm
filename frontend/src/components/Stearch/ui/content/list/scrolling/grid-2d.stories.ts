@@ -248,6 +248,52 @@ export const FlyToAnimates: Story = {
   },
 };
 
+/** A held key earns stacks: past two seconds, each press moves two rows. */
+export const HeldKeyStacks: Story = {
+  tags: ["!dev"],
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const canvas = within(canvasElement);
+    const list = canvas.getByRole("listbox");
+    const presses = 50;
+
+    // Act
+    for (let press = 0; press < presses; press++) {
+      await fireEvent.keyDown(list, { key: "ArrowDown" });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Assert
+    const row = Number(
+      canvas.getByTestId("active").textContent.match(/r(\d+)/)?.[1],
+    );
+    await expect(row).toBeGreaterThan(presses);
+  },
+};
+
+/** A key mid-push takes over, and a resting stick can't fight it. */
+export const KeyYieldsTheStick: Story = {
+  tags: ["!dev"],
+  args: { standInY: 0.5 },
+  play: async ({ canvasElement }) => {
+    // Arrange
+    const canvas = within(canvasElement);
+    const list = canvas.getByRole("listbox");
+    const wait = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+    await wait(300);
+
+    // Act
+    await fireEvent.keyDown(list, { key: "ArrowRight" });
+    await wait(50);
+    const afterKey = canvas.getByTestId("active").textContent;
+    await wait(400);
+
+    // Assert
+    await expect(canvas.getByTestId("active").textContent).toBe(afterKey);
+  },
+};
+
 /** A held full push becomes cruise: steps, with the view locked on. */
 export const FullPushCruises: Story = {
   tags: ["!dev"],

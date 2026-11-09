@@ -13,7 +13,7 @@ import { type ArrowKey, stickCurrentRow } from "./list.selectors";
  *    cell walks by steps, and is captured again once it's back in the band.
  *  - `cruising`: captured, with the stick held at full push. Steps replace
  *    the pan, so the view follows the cell like a held key. */
-export type AxisState = "captured" | "pinned" | "free" | "cruising";
+export type AxisState = "captured" | "pinned" | "free" | "cruising" | "flying";
 
 /** What the stick does on an axis in that state: move the view, or send
  *  steps exactly as a D-pad press would. */
@@ -169,6 +169,8 @@ export interface AxisMachineState {
   carried: number;
   cruise: Cruise;
   heldKey: HeldKey;
+  /** A commanded move is under way; any input ends it. */
+  isFlying: boolean;
 }
 
 export const AXIS_AT_REST: AxisMachineState = {
@@ -179,6 +181,7 @@ export const AXIS_AT_REST: AxisMachineState = {
   carried: 0,
   cruise: CRUISE_AT_REST,
   heldKey: KEY_AT_REST,
+  isFlying: false,
 };
 
 /** Everything that can happen to an axis. Inputs and the DOM only send these. */
@@ -194,6 +197,8 @@ export type AxisEvent =
       geometry: AxisGeometry;
     }
   | { type: "stick/yielded" }
+  | { type: "navigate/started"; index: number }
+  | { type: "view/settled"; geometry: AxisGeometry }
   | { type: "key/pressed"; key: ArrowKey; direction: -1 | 0 | 1; now: number }
   | { type: "key/released" }
   | { type: "focus/left" }
@@ -222,6 +227,8 @@ export type AxisEffect =
       direction: -1 | 0 | 1;
       count: number;
     }
+  | { type: "activate"; index: number }
+  | { type: "fly" }
   | { type: "follow"; index: number }
   | { type: "handOver"; index: number }
   | { type: "stack"; stack: CruiseStack | null }
@@ -264,6 +271,7 @@ const yielded = (state: AxisMachineState): AxisMachineState => ({
   phase: state.phase === "active" ? "yielded" : state.phase,
   cruise: CRUISE_AT_REST,
   carried: 0,
+  isFlying: false,
 });
 
 const HANDLERS: Handlers<AxisResult, AxisEvent> = {
@@ -291,6 +299,7 @@ const HANDLERS: Handlers<AxisResult, AxisEvent> = {
       axis,
       direction,
       cruise,
+      isFlying: false,
     };
     if (sign === 0) return resolved(state, next);
     if (axisMode(axis) === "pan") {
@@ -313,6 +322,19 @@ const HANDLERS: Handlers<AxisResult, AxisEvent> = {
     );
   },
   "stick/yielded": ({ state }) => resolved(state, yielded(state)),
+  "navigate/started": ({ state }, { index }) => ({
+    state: { ...yielded(state), isFlying: true, axis: "flying" },
+    effects: [{ type: "activate", index }, { type: "fly" }],
+  }),
+  "view/settled": ({ state }, { geometry }) => ({
+    state: {
+      ...state,
+      geometry,
+      isFlying: false,
+      axis: axisFor(geometry, state.direction, state.cruise),
+    },
+    effects: [],
+  }),
   "key/pressed": ({ state }, { key, direction, now }) => {
     const heldKey = nextHeldKey(state.heldKey, key, now);
     const next = { ...yielded(state), heldKey };
@@ -348,7 +370,14 @@ const HANDLERS: Handlers<AxisResult, AxisEvent> = {
     };
   },
   "view/measured": ({ state }, { geometry }) => {
+    if (state.isFlying && !geometry.isInBand) return { state, effects: [] };
     const axis = axisFor(geometry, state.direction, state.cruise);
+    if (state.isFlying) {
+      return {
+        state: { ...state, geometry, axis, isFlying: false },
+        effects: [],
+      };
+    }
     return {
       state:
         axis === state.axis &&

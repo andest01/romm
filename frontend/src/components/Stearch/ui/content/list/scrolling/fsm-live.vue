@@ -10,6 +10,7 @@ defineProps<{
 
 const NODES = [
   { state: "cruising", x: 8, y: -34 },
+  { state: "flying", x: 120, y: -34 },
   { state: "captured", x: 8, y: 8 },
   { state: "pinned", x: 120, y: 8 },
   { state: "free", x: 64, y: 78 },
