@@ -4,7 +4,7 @@ import type {
   MultiKey,
   StearchFilterValues,
   TriStateKey,
-} from "./store/state-props";
+} from "./store/stearch.state-props";
 
 type ValuesKey = Exclude<keyof StearchFilterValues, "platforms" | "game_modes">;
 

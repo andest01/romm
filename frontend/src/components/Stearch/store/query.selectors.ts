@@ -1,7 +1,11 @@
-import type { StearchAction } from "./actions";
 import { createSelector } from "./create-selector";
-import { INITIAL_QUERY } from "./reducer";
-import { selectSearchTerm, selectSortDir, selectSortKey } from "./selectors";
+import type { StearchAction } from "./stearch.actions";
+import { INITIAL_QUERY } from "./stearch.reducer";
+import {
+  selectSearchTerm,
+  selectSortDir,
+  selectSortKey,
+} from "./stearch.selectors";
 
 /** Filters go; the search and sort stay. */
 export const selectClearActions = createSelector(

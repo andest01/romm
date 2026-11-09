@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RBtn } from "@/lib";
-import type { StearchAction } from "../store/actions";
+import type { StearchAction } from "../store/stearch.actions";
 import type { FooterProps } from "./footer.props";
 
 defineProps<FooterProps>();

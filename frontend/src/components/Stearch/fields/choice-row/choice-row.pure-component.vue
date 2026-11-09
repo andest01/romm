@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RCheckbox } from "@/lib";
-import type { StearchAction } from "../../store/actions";
+import type { StearchAction } from "../../store/stearch.actions";
 import type { ChoicePreview } from "../fields.props";
 
 defineProps<{ choice: ChoicePreview }>();

@@ -1,11 +1,11 @@
-import type { StearchAction } from "../../store/actions";
 import { createSelector } from "../../store/create-selector";
 import { selectSections } from "../../store/results.selectors";
+import type { StearchAction } from "../../store/stearch.actions";
 import {
   selectIds,
   selectSelectedIds,
   selectVisiblePosition,
-} from "../../store/selectors";
+} from "../../store/stearch.selectors";
 import type { SectionProps } from "./section.props";
 
 // Stub labels: move to locale keys before this leaves the fork.

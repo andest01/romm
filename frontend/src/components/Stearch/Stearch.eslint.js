@@ -23,9 +23,9 @@ export default [
         {
           zones: [
             {
-              target: `./${STEARCH}/store/selectors.ts`,
+              target: `./${STEARCH}/store/stearch.selectors.ts`,
               from: `./${STEARCH}`,
-              except: ["./store/state-props.ts"],
+              except: ["./store/stearch.state-props.ts"],
               message:
                 "The trunk reads state only. It imports nothing else from Stearch.",
             },
@@ -89,7 +89,7 @@ export default [
           ],
           patterns: [
             {
-              group: ["@/stores/*", "**/store/store", "@/composables/*"],
+              group: ["@/stores/*", "**/*.store", "@/composables/*"],
               message:
                 "Pure components have no state. Connect it in the container.",
             },
@@ -98,14 +98,14 @@ export default [
       ],
     },
   },
-  // The trunk: only store/selectors.ts (and the reducer and store that write
+  // The trunk: only stearch.selectors.ts (and the reducer and store that write
   // state) may read IStearchState's branches. Everything else goes through it.
   {
     files: [`${STEARCH}/**/*.{ts,vue}`],
     ignores: [
-      `${STEARCH}/store/selectors.ts`,
-      `${STEARCH}/store/reducer.ts`,
-      `${STEARCH}/store/store.ts`,
+      `${STEARCH}/store/stearch.selectors.ts`,
+      `${STEARCH}/store/stearch.reducer.ts`,
+      `${STEARCH}/store/stearch.store.ts`,
       `${STEARCH}/store/fixtures.ts`,
       `${STEARCH}/**/*.test.ts`,
       `${STEARCH}/**/*.stories.ts`,
@@ -137,7 +137,7 @@ export default [
           selector:
             "MemberExpression[property.name=/^(query|view|results|attention|labels)$/]:matches([object.name='state'], [object.property.name='state'])",
           message:
-            "Read state through a selector in store/selectors.ts, the only file that touches IStearchState.",
+            "Read state through a selector in store/stearch.selectors.ts, the only file that touches IStearchState.",
         },
       ],
     },

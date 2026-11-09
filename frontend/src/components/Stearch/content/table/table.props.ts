@@ -1,5 +1,8 @@
 import type { RTableColumn } from "@/lib";
-import type { StearchSortDir, StearchSortKey } from "../../store/state-props";
+import type {
+  StearchSortDir,
+  StearchSortKey,
+} from "../../store/stearch.state-props";
 import type { ItemPart } from "../list/item.props";
 import type { ListProps, ScrollRow } from "../list/list.props";
 import type { RowProps } from "./row/row.props";

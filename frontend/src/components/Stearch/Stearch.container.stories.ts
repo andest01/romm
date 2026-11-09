@@ -12,7 +12,7 @@ import {
   LOADED_STEARCH_STATE as loaded,
   LOADING_STEARCH_STATE,
 } from "./store/fixtures";
-import { INITIAL_STEARCH_STATE } from "./store/reducer";
+import { INITIAL_STEARCH_STATE } from "./store/stearch.reducer";
 
 // The whole page: any app state is one arg away.
 const meta: Meta<ContainerStoryArgs> = {

@@ -4,7 +4,7 @@ import {
   selectActiveId,
   selectSelectedIds,
   selectVisiblePosition,
-} from "./selectors";
+} from "./stearch.selectors";
 
 /** The current game's position, or `null` when none is current or loaded. */
 export const selectCurrentPosition = createSelector(

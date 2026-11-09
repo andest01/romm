@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StearchAction } from "../../store/actions";
+import type { StearchAction } from "../../store/stearch.actions";
 import FieldPicker from "../field-picker/field-picker.pure-component.vue";
 import type {
   MultiFieldPreview,

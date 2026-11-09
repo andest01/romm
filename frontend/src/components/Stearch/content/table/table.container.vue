@@ -17,8 +17,8 @@ import {
   selectSortDir,
   selectSortKey,
   selectVisiblePosition,
-} from "../../store/selectors";
-import stearchStore from "../../store/store";
+} from "../../store/stearch.selectors";
+import stearchStore from "../../store/stearch.store";
 import { useContentView } from "../content.view";
 import { useFeel } from "../list/feel";
 import { RESULTS_HELP, type VisibleRange } from "../list/list.props";

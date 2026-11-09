@@ -15,8 +15,8 @@ import {
   selectActiveId,
   selectViewMode,
   selectVisiblePosition,
-} from "../../store/selectors";
-import stearchStore from "../../store/store";
+} from "../../store/stearch.selectors";
+import stearchStore from "../../store/stearch.store";
 import { useContentView } from "../content.view";
 import RailContainer from "../rail/rail.container.vue";
 import SectionContainer from "../section/section.container.vue";

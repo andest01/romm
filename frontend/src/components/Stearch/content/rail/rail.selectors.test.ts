@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INITIAL_STEARCH_STATE } from "../../store/reducer";
+import { INITIAL_STEARCH_STATE } from "../../store/stearch.reducer";
 import {
   buildNavigateActions,
   buildScrubActions,

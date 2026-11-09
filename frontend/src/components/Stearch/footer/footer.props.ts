@@ -1,4 +1,4 @@
-import type { StearchAction } from "../store/actions";
+import type { StearchAction } from "../store/stearch.actions";
 
 export interface FooterProps {
   resultCount: number;

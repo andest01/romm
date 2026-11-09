@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { computed, watchEffect } from "vue";
 import { fakeGetRoms } from "../../Stearch.fake-api";
 import { LOADED_STEARCH_STATE } from "../../store/fixtures";
-import stearchStore from "../../store/store";
+import stearchStore from "../../store/stearch.store";
 import ContentContainer from "../content.container.vue";
 import { provideFeels } from "./feel";
 import { TILES_FEEL } from "./list.props";

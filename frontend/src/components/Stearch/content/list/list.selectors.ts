@@ -1,5 +1,4 @@
 import { LIST_ROW_HEIGHT_PX } from "@/components/Gallery/listColumns";
-import type { StearchAction } from "../../store/actions";
 import {
   itemsAheadAt,
   type LoadPace,
@@ -7,7 +6,11 @@ import {
   type ReadAheadPolicy,
 } from "../../store/read-ahead";
 import type { ListSlot } from "../../store/rows.selectors";
-import type { StearchViewMode, VisibleSpan } from "../../store/state-props";
+import type { StearchAction } from "../../store/stearch.actions";
+import type {
+  StearchViewMode,
+  VisibleSpan,
+} from "../../store/stearch.state-props";
 import type { StearchDevice } from "../content.view";
 import { LIST_ITEMS } from "./list.items";
 import type {

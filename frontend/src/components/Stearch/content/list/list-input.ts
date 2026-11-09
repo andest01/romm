@@ -2,7 +2,7 @@ import { computed, shallowRef, type ShallowRef } from "vue";
 import { claimKeyRateRepeat, isPadEvent } from "@/composables/useGamepad";
 import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
-import type { StearchAction } from "../../store/actions";
+import type { StearchAction } from "../../store/stearch.actions";
 import type { CruiseStack } from "./axis-machine";
 import type { AxisStore } from "./axis-store";
 import type { ScrollFeel, ScrollRow, VisibleRange } from "./list.props";

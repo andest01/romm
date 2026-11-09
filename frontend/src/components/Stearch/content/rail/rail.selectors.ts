@@ -1,9 +1,9 @@
-import type { StearchAction } from "../../store/actions";
 import { createSelector } from "../../store/create-selector";
 import { selectSections, selectTotal } from "../../store/results.selectors";
 import { selectSlots } from "../../store/rows.selectors";
-import { selectVisibleSpan } from "../../store/selectors";
-import type { VisibleSpan } from "../../store/state-props";
+import type { StearchAction } from "../../store/stearch.actions";
+import { selectVisibleSpan } from "../../store/stearch.selectors";
+import type { VisibleSpan } from "../../store/stearch.state-props";
 import type { RailProps, RailThumb } from "./rail.props";
 
 // Stub label: move to a locale key before this leaves the fork.

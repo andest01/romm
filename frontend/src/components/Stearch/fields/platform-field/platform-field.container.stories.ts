@@ -4,7 +4,7 @@ import storePlatforms from "@/stores/platforms";
 import { platformFixture } from "@/utils/platform.fixtures";
 import type { ContainerStoryArgs } from "../../Stearch.story-helpers";
 import { LOADED_STEARCH_STATE as loaded } from "../../store/fixtures";
-import stearchStore from "../../store/store";
+import stearchStore from "../../store/stearch.store";
 import PlatformField from "./platform-field.container.vue";
 
 const PLATFORMS = [

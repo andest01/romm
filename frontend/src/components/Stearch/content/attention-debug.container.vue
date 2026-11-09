@@ -6,8 +6,8 @@ import {
   selectCurrentGame,
   selectSelectedGames,
 } from "../store/attention.selectors";
-import { selectActiveId, selectSelectedIds } from "../store/selectors";
-import stearchStore from "../store/store";
+import { selectActiveId, selectSelectedIds } from "../store/stearch.selectors";
+import stearchStore from "../store/stearch.store";
 import { useContentView } from "./content.view";
 
 const store = stearchStore();

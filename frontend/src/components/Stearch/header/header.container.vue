@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import stearchStore from "../store/store";
+import stearchStore from "../store/stearch.store";
 import HeaderPure from "./header.pure-component.vue";
 import { selectHeaderProps } from "./header.selectors";
 

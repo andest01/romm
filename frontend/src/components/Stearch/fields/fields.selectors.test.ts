@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { StearchAction } from "../store/actions";
 import { LOADED_STEARCH_STATE } from "../store/fixtures";
-import { stearchReducer } from "../store/reducer";
+import type { StearchAction } from "../store/stearch.actions";
+import { stearchReducer } from "../store/stearch.reducer";
 import type { FieldPreview } from "./fields.props";
 import { buildRangeActions, selectFieldPreviews } from "./fields.selectors";
 

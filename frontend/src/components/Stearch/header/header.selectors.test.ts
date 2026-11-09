@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { StearchAction } from "../store/actions";
-import { INITIAL_STEARCH_STATE, stearchReducer } from "../store/reducer";
+import type { StearchAction } from "../store/stearch.actions";
+import {
+  INITIAL_STEARCH_STATE,
+  stearchReducer,
+} from "../store/stearch.reducer";
 import { selectHeaderProps } from "./header.selectors";
 
 describe("selectHeaderProps sort", () => {

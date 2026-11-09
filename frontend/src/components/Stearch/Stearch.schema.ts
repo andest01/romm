@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { CustomLimitOffsetPage_SimpleRomSchema_ as GetRomsResponse } from "@/__generated__/models/CustomLimitOffsetPage_SimpleRomSchema_";
-import type { StearchCheckedRom, StearchPage } from "./store/state-props";
+import type {
+  StearchCheckedRom,
+  StearchPage,
+} from "./store/stearch.state-props";
 
 const romSchema = z.object({
   id: z.number(),

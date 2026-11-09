@@ -7,9 +7,9 @@ import {
   STEARCH_ROW,
 } from "./fixtures";
 import { selectPanelLayout } from "./layout.selectors";
-import { INITIAL_STEARCH_STATE, stearchReducer } from "./reducer";
 import { selectLoadedRoms } from "./results.selectors";
 import { coverUrlOf, selectRows, titleOf } from "./rows.selectors";
+import { INITIAL_STEARCH_STATE, stearchReducer } from "./stearch.reducer";
 
 const { results, query } = LOADED_STEARCH_STATE;
 const withWindows = (windows: typeof results.windows) => ({

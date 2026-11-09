@@ -4,7 +4,7 @@ import {
   selectIds,
   selectStatus,
   selectWindows,
-} from "./selectors";
+} from "./stearch.selectors";
 
 export const selectTotal = createSelector([selectIds], (ids) => ids.length);
 

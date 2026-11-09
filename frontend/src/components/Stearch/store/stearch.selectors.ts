@@ -1,4 +1,4 @@
-import type { IStearchState } from "./state-props";
+import type { IStearchState } from "./stearch.state-props";
 
 // The trunk: the only code allowed to read IStearchState. Each selector returns
 // one field as stored. Branches in Stearch.<family>.selectors.ts build on these.

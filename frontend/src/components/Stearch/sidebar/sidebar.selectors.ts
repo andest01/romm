@@ -1,6 +1,6 @@
-import type { StearchAction } from "../store/actions";
 import { createSelector } from "../store/create-selector";
 import { selectClearActions } from "../store/query.selectors";
+import type { StearchAction } from "../store/stearch.actions";
 import type { BarProps, BarVerb } from "./sidebar.props";
 
 // Stub labels: move to locale keys before this leaves the fork.

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { StearchAction } from "./actions";
 import { LOADED_STEARCH_STATE } from "./fixtures";
 import { selectClearActions } from "./query.selectors";
+import type { StearchAction } from "./stearch.actions";
 import {
   INITIAL_QUERY,
   INITIAL_STEARCH_STATE as INITIAL,
   stearchReducer,
-} from "./reducer";
-import type { IStearchState, StearchPage } from "./state-props";
+} from "./stearch.reducer";
+import type { IStearchState, StearchPage } from "./stearch.state-props";
 
 /** Folds actions into a state, the same way `dispatch` does. */
 const apply = (state: IStearchState, ...actions: readonly StearchAction[]) =>

@@ -1,6 +1,10 @@
-import { reducerOf, type Handlers, type StearchAction } from "./actions";
 import { buildLabels } from "./labels";
-import type { IStearchState, StearchQuery } from "./state-props";
+import {
+  reducerOf,
+  type Handlers,
+  type StearchAction,
+} from "./stearch.actions";
+import type { IStearchState, StearchQuery } from "./stearch.state-props";
 
 export const INITIAL_QUERY: StearchQuery = {
   searchTerm: null,

@@ -6,7 +6,7 @@ import type {
   MultiKey,
   StearchPage,
   StearchQuery,
-} from "./state-props";
+} from "./stearch.state-props";
 
 type StearchView = IStearchState["view"];
 

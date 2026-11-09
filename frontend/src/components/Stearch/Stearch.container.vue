@@ -10,7 +10,7 @@ import SidebarContainer from "./sidebar/sidebar.container.vue";
 import SkipLinkContainer from "./skip-link/skip-link.container.vue";
 import { buildLabels } from "./store/labels";
 import { selectPanelLayout } from "./store/layout.selectors";
-import stearchStore from "./store/store";
+import stearchStore from "./store/stearch.store";
 
 const { t } = useI18n();
 const store = stearchStore();

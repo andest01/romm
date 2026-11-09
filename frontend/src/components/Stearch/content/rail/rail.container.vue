@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { moveFocus } from "@/composables/useSpatialNav";
 import { focusFromInput } from "@/utils/autofocus";
 import { selectTotal } from "../../store/results.selectors";
-import stearchStore from "../../store/store";
+import stearchStore from "../../store/stearch.store";
 import { useContentView } from "../content.view";
 import RailPure from "./rail.pure-component.vue";
 import { buildScrubActions, selectRailProps } from "./rail.selectors";

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RBtn } from "@/lib";
-import type { StearchAction } from "../../store/actions";
+import type { StearchAction } from "../../store/stearch.actions";
 import type { LogicPreview } from "../fields.props";
 
 defineProps<{ options: readonly LogicPreview[] }>();
