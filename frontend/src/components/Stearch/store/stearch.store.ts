@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { shallowRef } from "vue";
 import type { StearchSource } from "../Stearch.data-source";
 import { parsePage } from "../Stearch.schema";
+import { apiSortOf } from "./query.selectors";
 import { type LoadPace, READ_AHEAD, type WindowRequest } from "./read-ahead";
 import type { StearchAction } from "./stearch.actions";
 import { INITIAL_STEARCH_STATE, stearchReducer } from "./stearch.reducer";
@@ -36,8 +37,10 @@ export default defineStore("stearch", () => {
       // Only the first window carries aggregates; the reducer reads them there.
       const isFirstWindow = offset === 0;
       if (!source) throw new Error("No data source connected to Stearch");
+      const { sort, ...params } = state.value.query;
       const { data } = await source({
-        ...state.value.query,
+        ...params,
+        ...apiSortOf(sort),
         limit,
         offset,
         signal,

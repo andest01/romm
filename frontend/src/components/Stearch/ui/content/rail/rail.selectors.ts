@@ -1,21 +1,26 @@
 import { createSelector } from "../../../store/create-selector";
 import { selectSections, selectTotal } from "../../../store/results.selectors";
 import type { StearchAction } from "../../../store/stearch.actions";
-import { selectVisibleSpan } from "../../../store/stearch.selectors";
+import {
+  selectSortKey,
+  selectVisibleSpan,
+} from "../../../store/stearch.selectors";
 import type { VisibleSpan } from "../../../store/stearch.state-props";
+import { railValueOf } from "./rail.fields";
 import type { RailProps, RailThumb } from "./rail.props";
 
 // Stub label: move to a locale key before this leaves the fork.
 const RAIL_LABEL = "Jump to letter";
 
 export const selectRailProps = createSelector(
-  [selectSections, selectTotal, selectVisibleSpan],
-  (sections, total, span): RailProps => {
+  [selectSections, selectTotal, selectVisibleSpan, selectSortKey],
+  (sections, total, span, sortKey): RailProps => {
     const current = sections.findLast(({ start }) => start <= span.first);
     return {
       buckets: sections.map(({ key, size, start }) => ({
         key,
         label: key,
+        value: railValueOf(sortKey, key),
         share: size / total,
         isCurrent: key === current?.key,
         position: start,

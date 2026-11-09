@@ -8,7 +8,10 @@ const ADVANCED_ACTIONS: readonly StearchAction[] = [
   { type: "view/set", patch: { isAdvancedOpen: true } },
 ];
 const SORT_ACTIONS: readonly StearchAction[] = [
-  { type: "query/set", patch: { orderBy: "fs_size_bytes" } },
+  {
+    type: "query/set",
+    patch: { sort: [{ param: "fs_size_bytes", dir: "asc" }] },
+  },
 ];
 const VIEW_ACTIONS: readonly StearchAction[] = [
   { type: "view/set", patch: { mode: "tiles" } },

@@ -17,7 +17,7 @@ describe("selectHeaderProps sort", () => {
     expect(option?.actions).toEqual([
       {
         type: "query/set",
-        patch: { orderBy: "average_rating", orderDir: "asc" },
+        patch: { sort: [{ param: "average_rating", dir: "asc" }] },
       },
     ]);
   });
@@ -28,7 +28,10 @@ describe("selectHeaderProps sort", () => {
 
     // Assert
     expect(option?.actions).toEqual([
-      { type: "query/set", patch: { orderBy: "name", orderDir: "desc" } },
+      {
+        type: "query/set",
+        patch: { sort: [{ param: "name", dir: "desc" }] },
+      },
     ]);
   });
 });

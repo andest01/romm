@@ -11,5 +11,5 @@ export function buildSortActions({
 }: RTableSortPayload): readonly StearchAction[] {
   const sortKey = STEARCH_SORT_KEYS.find((candidate) => candidate === key);
   if (!sortKey) return [];
-  return [{ type: "query/set", patch: { orderBy: sortKey, orderDir: dir } }];
+  return [{ type: "query/set", patch: { sort: [{ param: sortKey, dir }] } }];
 }

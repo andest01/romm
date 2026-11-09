@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RailValueView from "./rail-value/rail-value.pure-component.vue";
 import type { RailEmits, RailProps } from "./rail.props";
 
 defineProps<RailProps>();
@@ -24,10 +25,11 @@ defineEmits<RailEmits>();
       :data-current="bucket.isCurrent"
       :style="{ flexGrow: bucket.share }"
       :title="bucket.label"
+      :aria-label="bucket.label"
       @click="$emit('press', bucket.position)"
       @keydown="$emit('key', $event)"
     >
-      {{ bucket.label }}
+      <RailValueView :value="bucket.value" />
     </button>
     <div
       class="stearch-rail__thumb"

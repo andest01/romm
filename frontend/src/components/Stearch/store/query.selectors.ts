@@ -1,19 +1,22 @@
 import { createSelector } from "./create-selector";
 import type { StearchAction } from "./stearch.actions";
 import { INITIAL_QUERY } from "./stearch.reducer";
-import {
-  selectSearchTerm,
-  selectSortDir,
-  selectSortKey,
-} from "./stearch.selectors";
+import { selectSearchTerm, selectSortList } from "./stearch.selectors";
+import type { StearchSortList } from "./stearch.state-props";
 
 /** Filters go; the search and sort stay. */
 export const selectClearActions = createSelector(
-  [selectSearchTerm, selectSortKey, selectSortDir],
-  (searchTerm, orderBy, orderDir): readonly StearchAction[] => [
+  [selectSearchTerm, selectSortList],
+  (searchTerm, sort): readonly StearchAction[] => [
     {
       type: "query/set",
-      patch: { ...INITIAL_QUERY, searchTerm, orderBy, orderDir },
+      patch: { ...INITIAL_QUERY, searchTerm, sort },
     },
   ],
 );
+
+/** The API takes one sort level, so later ones are ignored for now. */
+export const apiSortOf = ([{ param, dir }]: StearchSortList) => ({
+  orderBy: param,
+  orderDir: dir,
+});

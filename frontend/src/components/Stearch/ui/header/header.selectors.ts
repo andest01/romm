@@ -80,8 +80,12 @@ const selectSort = createSelector(
           {
             type: "query/set",
             patch: {
-              orderBy: key,
-              orderDir: isActive && sortDir === "asc" ? "desc" : "asc",
+              sort: [
+                {
+                  param: key,
+                  dir: isActive && sortDir === "asc" ? "desc" : "asc",
+                },
+              ],
             },
           },
         ],

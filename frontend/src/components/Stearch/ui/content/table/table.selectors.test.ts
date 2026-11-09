@@ -13,7 +13,7 @@ describe("buildSortActions", () => {
     expect(actions).toEqual([
       {
         type: "query/set",
-        patch: { orderBy: "average_rating", orderDir: "desc" },
+        patch: { sort: [{ param: "average_rating", dir: "desc" }] },
       },
     ]);
   });

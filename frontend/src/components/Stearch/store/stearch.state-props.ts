@@ -42,15 +42,24 @@ type SearchParams = Omit<
   | "releasedBeforeYear"
 >;
 
-/** The search object: the API's own params, so calling it needs no mapping. */
+/** One level of a sort. */
+export interface StearchSort {
+  readonly param: StearchSortKey;
+  readonly dir: StearchSortDir;
+}
+
+/** The sort by, then by, then by. Always at least one level. */
+export type StearchSortList = readonly [StearchSort, ...StearchSort[]];
+
+/** The search object: the API's own params, apart from `sort`, which the API
+ *  takes one level of. */
 export type StearchQuery = Readonly<
   Omit<
     Required<SearchParams>,
     "orderBy" | "orderDir" | MultiKey | "platformIds"
   > &
     Record<MultiKey, string[]> & {
-      orderBy: StearchSortKey;
-      orderDir: StearchSortDir;
+      sort: StearchSortList;
       platformIds: number[];
     }
 >;

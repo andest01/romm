@@ -1,6 +1,13 @@
+/** What a bucket means, so each surface can draw it its own way. */
+export type RailValue =
+  | { kind: "text"; text: string }
+  | { kind: "stars"; stars: number }
+  | { kind: "year"; year: number };
+
 export interface RailBucket {
   key: string;
   label: string;
+  value: RailValue;
   /** Its share of the rail's height, so the rail maps to the whole list. */
   share: number;
   isCurrent: boolean;

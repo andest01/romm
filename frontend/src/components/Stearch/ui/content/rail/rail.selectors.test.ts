@@ -1,10 +1,29 @@
 import { describe, expect, it } from "vitest";
 import { INITIAL_STEARCH_STATE } from "../../../store/stearch.reducer";
+import { railValueOf } from "./rail.fields";
 import {
   buildScrubActions,
   railThumb,
   selectRailProps,
 } from "./rail.selectors";
+
+describe("railValueOf", () => {
+  it("reads a rating bucket as stars", () => {
+    // Act
+    const value = railValueOf("average_rating", "4");
+
+    // Assert
+    expect(value).toEqual({ kind: "stars", stars: 4 });
+  });
+
+  it("falls back to text for a bucket it can't read", () => {
+    // Act
+    const value = railValueOf("first_release_date", "none");
+
+    // Assert
+    expect(value).toEqual({ kind: "text", text: "none" });
+  });
+});
 
 describe("railThumb", () => {
   it("covers the visible share of the list", () => {

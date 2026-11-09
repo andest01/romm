@@ -7,8 +7,10 @@ import type { IStearchState } from "./stearch.state-props";
 export const selectQuery = (state: IStearchState) => state.query;
 export const selectSearchTerm = (state: IStearchState) =>
   state.query.searchTerm;
-export const selectSortKey = (state: IStearchState) => state.query.orderBy;
-export const selectSortDir = (state: IStearchState) => state.query.orderDir;
+export const selectSortList = (state: IStearchState) => state.query.sort;
+export const selectSortKey = (state: IStearchState) =>
+  state.query.sort[0].param;
+export const selectSortDir = (state: IStearchState) => state.query.sort[0].dir;
 export const selectPlatformIds = (state: IStearchState) =>
   state.query.platformIds;
 

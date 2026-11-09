@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LOADED_STEARCH_STATE } from "./fixtures";
-import { selectClearActions } from "./query.selectors";
+import { apiSortOf, selectClearActions } from "./query.selectors";
 import type { StearchAction } from "./stearch.actions";
 import {
   INITIAL_QUERY,
@@ -122,7 +122,7 @@ describe("stearchReducer", () => {
     // Arrange
     const before = apply(INITIAL, USA, ZELDA, {
       type: "query/set",
-      patch: { orderDir: "desc" },
+      patch: { sort: [{ param: "name", dir: "desc" }] },
     });
 
     // Act
@@ -132,8 +132,19 @@ describe("stearchReducer", () => {
     expect(state.query).toMatchObject({
       selectedRegions: [],
       searchTerm: "zelda",
-      orderDir: "desc",
+      sort: [{ param: "name", dir: "desc" }],
     });
+  });
+
+  it("sends only the first sort level to the API", () => {
+    // Act
+    const params = apiSortOf([
+      { param: "average_rating", dir: "desc" },
+      { param: "name", dir: "asc" },
+    ]);
+
+    // Assert
+    expect(params).toEqual({ orderBy: "average_rating", orderDir: "desc" });
   });
 
   it("starts a new search at the top", () => {

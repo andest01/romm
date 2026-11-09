@@ -8,8 +8,7 @@ import type { IStearchState, StearchQuery } from "./stearch.state-props";
 
 export const INITIAL_QUERY: StearchQuery = {
   searchTerm: null,
-  orderBy: "name",
-  orderDir: "asc",
+  sort: [{ param: "name", dir: "asc" }],
   platformIds: [],
   filterMatched: null,
   filterFavorites: null,

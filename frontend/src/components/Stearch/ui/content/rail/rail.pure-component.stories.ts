@@ -20,10 +20,43 @@ type Story = StoryObj<typeof RailPure>;
 const bucket = (key: string, share: number, isCurrent: boolean) => ({
   key,
   label: key,
+  value: { kind: "text", text: key } as const,
   share,
   isCurrent,
   position: 0,
 });
+
+/** The rail's HUD for a rating sort, drawn from typed values. */
+export const Stars: Story = {
+  args: {
+    buckets: [5, 4, 3, 2].map((stars, index) => ({
+      key: String(stars),
+      label: `${stars} stars`,
+      value: { kind: "stars", stars },
+      share: 0.25,
+      isCurrent: index === 0,
+      position: index,
+    })),
+    thumb: { start: 0, size: 0.2 },
+    label: "Jump to rating",
+  },
+};
+
+/** The rail's HUD for a release date sort. */
+export const Years: Story = {
+  args: {
+    buckets: [1991, 1994, 1998].map((year, index) => ({
+      key: String(year),
+      label: String(year),
+      value: { kind: "year", year },
+      share: 0.33,
+      isCurrent: index === 0,
+      position: index,
+    })),
+    thumb: { start: 0, size: 0.2 },
+    label: "Jump to year",
+  },
+};
 
 export const Letters: Story = {
   args: {
