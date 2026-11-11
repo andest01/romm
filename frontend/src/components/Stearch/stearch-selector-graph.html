@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stearch: selector graph</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;600&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: Geist, system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #2d3142;
+        padding: 3rem 2rem;
+        display: flex;
+        justify-content: center;
+      }
+      .frame {
+        max-width: 1220px;
+        width: 100%;
+      }
+      .eyebrow {
+        font:
+          500 0.66rem "Geist Mono",
+          monospace;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #4f5d75;
+        margin-bottom: 0.5rem;
+      }
+      h1 {
+        font:
+          400 2rem/1.15 "Instrument Serif",
+          serif;
+        letter-spacing: -0.02em;
+        margin-bottom: 1.5rem;
+      }
+      .diagram-container {
+        width: 100%;
+        overflow-x: auto;
+      }
+      svg {
+        width: 100%;
+        min-width: 1180px;
+        display: block;
+      }
+      .name {
+        font:
+          600 13px Geist,
+          sans-serif;
+        fill: #2d3142;
+      }
+      .sub {
+        font:
+          400 10px "Geist Mono",
+          monospace;
+        fill: #4f5d75;
+      }
+      .col {
+        font:
+          600 11px "Geist Mono",
+          monospace;
+        fill: #2d3142;
+      }
+      .col-accent {
+        font:
+          600 11px "Geist Mono",
+          monospace;
+        fill: #bf4520;
+      }
+      .slice {
+        font:
+          400 9px "Geist Mono",
+          monospace;
+        letter-spacing: 0.06em;
+        fill: #4f5d75;
+      }
+      .head {
+        font:
+          500 9px "Geist Mono",
+          monospace;
+        letter-spacing: 0.14em;
+        fill: #4f5d75;
+      }
+      .legend {
+        font:
+          400 11px Geist,
+          sans-serif;
+        fill: #4f5d75;
+      }
+      @media print {
+        .diagram-container {
+          overflow-x: visible;
+        }
+        svg {
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <p class="eyebrow">Dependency graph · Stearch selectors</p>
+      <h1>Which selectors feed which parts</h1>
+      <p class="eyebrow">
+        Paths predate the move: parts are now under ui/, selectors under store/
+      </p>
+      <div class="diagram-container">
+        <svg
+          viewBox="0 0 1180 720"
+          xmlns="http://www.w3.org/2000/svg"
+          role="img"
+          aria-labelledby="stearch-selector-graph-title stearch-selector-graph-desc"
+        >
+          <title id="stearch-selector-graph-title">
+            Stearch selector graph
+          </title>
+          <desc id="stearch-selector-graph-desc">
+            Six core selectors in Stearch.selectors.ts feed eight parts through
+            domain selectors; a dot shows that a part's selector reads that core
+            selector, and selectSections is shared by the band, rail and list.
+          </desc>
+          <defs>
+            <marker
+              id="arrow"
+              markerWidth="8"
+              markerHeight="6"
+              refX="7"
+              refY="3"
+              orient="auto"
+            >
+              <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
+            </marker>
+          </defs>
+          <rect width="100%" height="100%" fill="#f5f5f5" />
+
+          <text x="40" y="36" class="head">PART · CONTAINER FILE</text>
+          <text x="300" y="36" class="head">DOMAIN SELECTOR</text>
+          <text x="540" y="36" class="head">
+            CORE SELECTORS · Stearch.selectors.ts · READS STATE SLICE
+          </text>
+
+          <!-- Core selector columns -->
+          <text x="560" y="72" text-anchor="middle" class="col">
+            FieldPreviews
+          </text>
+          <text x="560" y="88" text-anchor="middle" class="slice">
+            query · results
+          </text>
+          <text x="670" y="72" text-anchor="middle" class="col">
+            ClearActions
+          </text>
+          <text x="670" y="88" text-anchor="middle" class="slice">query</text>
+          <text x="780" y="72" text-anchor="middle" class="col-accent">
+            Sections
+          </text>
+          <text x="780" y="88" text-anchor="middle" class="slice">
+            results.charIndex
+          </text>
+          <text x="890" y="72" text-anchor="middle" class="col">Slots</text>
+          <text x="890" y="88" text-anchor="middle" class="slice">
+            results.windows
+          </text>
+          <text x="1000" y="72" text-anchor="middle" class="col">Total</text>
+          <text x="1000" y="88" text-anchor="middle" class="slice">
+            results.ids
+          </text>
+          <text x="1110" y="72" text-anchor="middle" class="col">
+            VisibleSpan
+          </text>
+          <text x="1110" y="88" text-anchor="middle" class="slice">
+            view.visibleSpan
+          </text>
+
+          <line
+            x1="560"
+            y1="104"
+            x2="560"
+            y2="648"
+            stroke="rgba(45,49,66,0.18)"
+          />
+          <line
+            x1="670"
+            y1="104"
+            x2="670"
+            y2="648"
+            stroke="rgba(45,49,66,0.18)"
+          />
+          <line
+            x1="780"
+            y1="104"
+            x2="780"
+            y2="648"
+            stroke="#bf4520"
+            stroke-opacity="0.5"
+          />
+          <line
+            x1="890"
+            y1="104"
+            x2="890"
+            y2="648"
+            stroke="rgba(45,49,66,0.18)"
+          />
+          <line
+            x1="1000"
+            y1="104"
+            x2="1000"
+            y2="648"
+            stroke="rgba(45,49,66,0.18)"
+          />
+          <line
+            x1="1110"
+            y1="104"
+            x2="1110"
+            y2="648"
+            stroke="rgba(45,49,66,0.18)"
+          />
+
+          <!-- Row separators -->
+          <g stroke="rgba(45,49,66,0.08)">
+            <line x1="40" y1="180" x2="1140" y2="180" />
+            <line x1="40" y1="248" x2="1140" y2="248" />
+            <line x1="40" y1="316" x2="1140" y2="316" />
+            <line x1="40" y1="384" x2="1140" y2="384" />
+            <line x1="40" y1="452" x2="1140" y2="452" />
+            <line x1="40" y1="520" x2="1140" y2="520" />
+            <line x1="40" y1="588" x2="1140" y2="588" />
+          </g>
+
+          <!-- Domain selector to part arrows -->
+          <g
+            stroke="#4f5d75"
+            stroke-width="1.2"
+            fill="none"
+            marker-end="url(#arrow)"
+          >
+            <path d="M300 146 H260" />
+            <path d="M300 214 H260" />
+            <path d="M300 282 H260" />
+            <path d="M300 350 H260" />
+            <path d="M300 418 H260" />
+            <path d="M300 486 H260" />
+            <path d="M300 554 H260" />
+            <path d="M300 622 H260" />
+          </g>
+
+          <!-- Rows: part, domain selector, dots -->
+          <g>
+            <rect
+              x="40"
+              y="124"
+              width="220"
+              height="44"
+              rx="6"
+              fill="#ffffff"
+              stroke="#2d3142"
+            />
+            <text x="52" y="142" class="name">Header</text>
+            <text x="52" y="158" class="sub">header/header.container.vue</text>
+            <rect
+              x="300"
+              y="132"
+              width="200"
+              height="28"
+              rx="4"
+              fill="#ffffff"
+              stroke="rgba(45,49,66,0.3)"
+            />
+            <text x="312" y="150" class="sub">selectHeaderProps</text>
+            <circle cx="560" cy="146" r="5" fill="#2d3142" />
+            <circle cx="670" cy="146" r="5" fill="#2d3142" />
+            <circle cx="1000" cy="146" r="5" fill="#2d3142" />
+
+            <rect
+              x="40"
+              y="192"
+              width="220"
+              height="44"
+              rx="6"
+              fill="#ffffff"
+              stroke="#2d3142"
+            />
+            <text x="52" y="210" class="name">Field list</text>
+            <text x="52" y="226" class="sub">
+              fields/field-list/…container.vue
+            </text>
+            <rect
+              x="300"
+              y="200"
+              width="200"
+              height="28"
+              rx="4"
+              fill="#ffffff"
+              stroke="rgba(45,49,66,0.3)"
+            />
+            <text x="312" y="218" class="sub">reads the core directly</text>
+            <circle cx="560" cy="214" r="5" fill="#2d3142" />
+
+            <rect
+              x="40"
+              y="260"
+              width="220"
+              height="44"
+              rx="6"
+              fill="#ffffff"
+              stroke="#2d3142"
+            />
+            <text x="52" y="278" class="name">Sidebar footer</text>
+            <text x="52" y="294" class="sub">
+              sidebar/sidebar-footer.container.vue
+            </text>
+            <rect
+              x="300"
+              y="268"
+              width="200"
+              height="28"
+              rx="4"
+              fill="#ffffff"
+              stroke="rgba(45,49,66,0.3)"
+            />
+            <text x="312" y="286" class="sub">selectSidebarFooterProps</text>
+            <circle cx="670" cy="282" r="5" fill="#2d3142" />
+
+            <rect
+              x="40"
+              y="328"
+              width="220"
+              height="44"
+              rx="6"
+              fill="#ffffff"
+              stroke="#2d3142"
+            />
+            <text x="52" y="346" class="name">Section band</text>
+            <text x="52" y="362" class="sub">
+              content/section/…container.vue
+            </text>
+            <rect
+              x="300"
+              y="336"
+              width="200"
+              height="28"
+              rx="4"
+              fill="#ffffff"
+              stroke="rgba(45,49,66,0.3)"
+            />
+            <text x="312" y="354" class="sub">selectSectionProps</text>
+            <circle cx="780" cy="350" r="5" fill="#bf4520" />
+            <circle cx="1110" cy="350" r="5" fill="#2d3142" />
+
+            <rect
+              x="40"
+              y="396"
+              width="220"
+              height="44"
+              rx="6"
+              fill="#ffffff"
+              stroke="#2d3142"
+            />
+            <text x="52" y="414" class="name">Rail</text>
+            <text x="52" y="430" class="sub">
+              content/rail/rail.container.vue
+            </text>
+            <rect
+              x="300"
+              y="404"
+              width="200"
+              height="28"
+              rx="4"
+              fill="#ffffff"
+              stroke="rgba(45,49,66,0.3)"
+            />
+            <text x="312" y="422" class="sub">selectRailProps</text>
+            <circle cx="780" cy="418" r="5" fill="#bf4520" />
+            <circle cx="1000" cy="418" r="5" fill="#2d3142" />
+            <circle cx="1110" cy="418" r="5" fill="#2d3142" />
+
+            <rect
+              x="40"
+              y="464"
+              width="220"
+              height="44"
+              rx="6"
+              fill="#ffffff"
+              stroke="#2d3142"
+            />
+            <text x="52" y="482" class="name">List and table</text>
+            <text x="52" y="498" class="sub">
+              content/list/list.container.vue
+            </text>
+            <rect
+              x="300"
+              y="472"
+              width="200"
+              height="28"
+              rx="4"
+              fill="#ffffff"
+              stroke="rgba(45,49,66,0.3)"
+            />
+            <text x="312" y="490" class="sub">buildScrollRows</text>
+            <circle cx="780" cy="486" r="5" fill="#bf4520" />
+            <circle cx="890" cy="486" r="5" fill="#2d3142" />
+
+            <rect
+              x="40"
+              y="532"
+              width="220"
+              height="44"
+              rx="6"
+              fill="#ffffff"
+              stroke="#2d3142"
+            />
+            <text x="52" y="550" class="name">Footer</text>
+            <text x="52" y="566" class="sub">footer/footer.container.vue</text>
+            <rect
+              x="300"
+              y="540"
+              width="200"
+              height="28"
+              rx="4"
+              fill="#ffffff"
+              stroke="rgba(45,49,66,0.3)"
+            />
+            <text x="312" y="558" class="sub">selectFooterState</text>
+            <circle cx="1000" cy="554" r="5" fill="#2d3142" />
+
+            <rect
+              x="40"
+              y="600"
+              width="220"
+              height="44"
+              rx="6"
+              fill="#ffffff"
+              stroke="#2d3142"
+            />
+            <text x="52" y="618" class="name">Page layout</text>
+            <text x="52" y="634" class="sub">Stearch.container.vue</text>
+            <rect
+              x="300"
+              y="608"
+              width="200"
+              height="28"
+              rx="4"
+              fill="#ffffff"
+              stroke="rgba(45,49,66,0.3)"
+            />
+            <text x="312" y="626" class="sub">
+              selectPanelLayout: view only
+            </text>
+          </g>
+
+          <!-- Legend -->
+          <line
+            x1="40"
+            y1="672"
+            x2="1140"
+            y2="672"
+            stroke="rgba(45,49,66,0.12)"
+          />
+          <circle cx="48" cy="696" r="5" fill="#2d3142" />
+          <text x="60" y="700" class="legend">
+            The part's selector reads this core selector
+          </text>
+          <circle cx="340" cy="696" r="5" fill="#bf4520" />
+          <text x="352" y="700" class="legend">
+            selectSections: one source for the band, rail and headings
+          </text>
+          <line
+            x1="720"
+            y1="696"
+            x2="748"
+            y2="696"
+            stroke="#4f5d75"
+            marker-end="url(#arrow)"
+          />
+          <text x="756" y="700" class="legend">
+            Selector output becomes the part's props and actions
+          </text>
+        </svg>
+      </div>
+    </div>
+  </body>
+</html>

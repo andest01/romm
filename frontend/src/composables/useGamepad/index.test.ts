@@ -10,6 +10,9 @@ import storePlaying from "@/stores/playing";
 import { buttonsHolding, gamepadFixture } from "@/utils/gamepad.fixtures";
 import {
   AXIS_THRESHOLD,
+  claimKeyRateRepeat,
+  claimStickX,
+  claimStickY,
   EXIT_CHORD_HOLD_MS,
   isPadEvent,
   PAD_BUTTON,
@@ -120,6 +123,32 @@ describe("useGamepad", () => {
     expect(modality.value).toBe("pad");
   });
 
+  it("sends no up or down while a view claims the stick's Y axis", () => {
+    // Arrange
+    const release = claimStickY();
+    installOnMouse(padWithStick(0, -PUSHED));
+
+    // Act
+    step();
+
+    // Assert
+    release();
+    expect(keys).toEqual([]);
+  });
+
+  it("sends no left or right while a view claims the stick's X axis", () => {
+    // Arrange
+    const release = claimStickX();
+    installOnMouse(padWithStick(PUSHED, 0));
+
+    // Act
+    step();
+
+    // Assert
+    release();
+    expect(keys).toEqual([]);
+  });
+
   it("still claims the pad while the emulator owns the stick", () => {
     installOnMouse(padWithStick(PUSHED, 0));
     storePlaying().setPlaying(true);
@@ -140,6 +169,52 @@ describe("useGamepad", () => {
 
     expect(keys).toEqual(["ArrowDown", "ArrowDown"]);
     expect(modality.value).toBe("pad");
+  });
+
+  it("repeats a held d-pad at key rate while claimed", () => {
+    // Arrange
+    const now = vi.spyOn(performance, "now").mockReturnValue(0);
+    const release = claimKeyRateRepeat();
+    installOnMouse(padHolding(PAD_BUTTON["dpad-down"]));
+    step();
+    now.mockReturnValue(400);
+    step();
+    now.mockReturnValue(440);
+
+    // Act
+    step();
+    release();
+
+    // Assert
+    expect(keys).toEqual(["ArrowDown", "ArrowDown", "ArrowDown"]);
+  });
+
+  it("repeats a held d-pad at the keyboard's measured rate", () => {
+    // Arrange
+    const now = vi.spyOn(performance, "now").mockReturnValue(0);
+    const release = claimKeyRateRepeat();
+    const press = (at: number, repeat: boolean) => {
+      now.mockReturnValue(at);
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "a", repeat }));
+    };
+    press(0, false);
+    press(300, true);
+    press(350, true);
+    installOnMouse(padHolding(PAD_BUTTON["dpad-down"]));
+    now.mockReturnValue(1000);
+    step();
+    now.mockReturnValue(1300);
+    step();
+    now.mockReturnValue(1349);
+    step();
+    now.mockReturnValue(1350);
+
+    // Act
+    step();
+    release();
+
+    // Assert
+    expect(keys.filter((key) => key === "ArrowDown")).toHaveLength(3);
   });
 
   it("ignores a stick resting below the threshold", () => {
@@ -186,7 +261,7 @@ describe("useGamepad", () => {
 
       step();
 
-      expect(router.push).toHaveBeenCalledWith("/search");
+      expect(router.push).toHaveBeenCalledWith("/stearch");
     });
 
     it("lands on Home from a page outside the sections", () => {
@@ -394,6 +469,7 @@ describe("useGamepad", () => {
       now = vi.spyOn(performance, "now").mockReturnValue(1000);
       window.addEventListener("gamepad:exitchord", onChord);
       installOnMouse(() => pads);
+      window.dispatchEvent(new Event("gamepadconnected"));
       storePlaying().setPlaying(true);
     });
 

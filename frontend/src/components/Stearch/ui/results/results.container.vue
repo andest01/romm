@@ -1,0 +1,24 @@
+<script setup lang="ts">
+import { computed } from "vue";
+import { selectViewMode } from "../../store/stearch.selectors";
+import stearchStore from "../../store/stearch.store";
+import ListContainer from "./list/list.container.vue";
+import AttentionDebug from "./results-attention-debug.container.vue";
+import { provideResultsView } from "./results.view";
+import TableContainer from "./table/table.container.vue";
+import { useGameMenuBulk } from "./use-results-game-menu-bulk";
+
+useGameMenuBulk();
+const isDev = import.meta.env.DEV;
+const store = stearchStore();
+const view = provideResultsView();
+const isTable = computed(
+  () => selectViewMode(store.state) === "table" && view.device.value === "wide",
+);
+</script>
+
+<template>
+  <!-- Each view owns its scroll edge: band, rail and scrollbar. -->
+  <component :is="isTable ? TableContainer : ListContainer" />
+  <AttentionDebug v-if="isDev" />
+</template>

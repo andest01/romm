@@ -92,6 +92,7 @@ const preview: Preview = {
     options: {
       storySort: {
         order: [
+          "Stearch",
           "Primitives",
           "Forms",
           "Structural",

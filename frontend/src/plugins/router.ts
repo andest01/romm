@@ -3,8 +3,8 @@ import { watch } from "vue";
 import {
   createRouter,
   createWebHistory,
-  type NavigationGuardWithThis,
   type RouteLocationNormalized,
+  type RouteRecordRaw,
 } from "vue-router";
 import { DEFAULT_TITLE } from "@/composables/usePageTitle";
 import i18n, { loadLocale } from "@/locales";
@@ -117,6 +117,14 @@ const routes = [
         component: routeComponent(ROUTES.SEARCH),
       },
       {
+        path: "stearch",
+        name: ROUTES.STEARCH,
+        meta: {
+          title: "common.search",
+        },
+        component: routeComponent(ROUTES.STEARCH),
+      },
+      {
         path: "music/:mode?",
         name: ROUTES.MUSIC,
         meta: { title: "common.jukebox" },
@@ -146,21 +154,21 @@ const routes = [
         path: "rom/:rom",
         name: ROUTES.ROM,
         component: routeComponent(ROUTES.ROM),
-        beforeEnter: (async (to, _from, next) => {
+        beforeEnter: async (to, _from, next) => {
           const romsStore = storeRoms();
 
           // Read the ROM on every entry, a matching id included: a play page
           // writes saves server-side, then navigates here to hand the tab back.
           try {
             const data = await romApi.getRom({
-              romId: parseInt(to.params.rom as string),
+              romId: parseInt(String(to.params.rom), 10),
             });
             romsStore.setCurrentRom(data.data);
           } catch (error) {
             console.error(error);
           }
           next();
-        }) as NavigationGuardWithThis<undefined>,
+        },
       },
       {
         path: "rom/:rom/ejs",
@@ -382,7 +390,7 @@ const routes = [
     name: ROUTES.PAIR,
     component: routeComponent(ROUTES.PAIR),
   },
-];
+] satisfies RouteRecordRaw[];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),

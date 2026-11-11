@@ -6,7 +6,7 @@ const push = vi.fn();
 const playingStore = { playing: false };
 
 vi.mock("vue-router", () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, currentRoute: { value: { name: "home" } } }),
 }));
 vi.mock("@/stores/playing", () => ({
   default: () => playingStore,

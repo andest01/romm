@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stearch: the four hearts</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;600&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: Geist, system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #2d3142;
+        padding: 3rem 2rem;
+        display: flex;
+        justify-content: center;
+      }
+      .frame {
+        max-width: 1000px;
+        width: 100%;
+      }
+      .eyebrow {
+        font:
+          500 0.66rem "Geist Mono",
+          monospace;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #4f5d75;
+        margin-bottom: 0.5rem;
+      }
+      h1 {
+        font:
+          400 2rem/1.15 "Instrument Serif",
+          serif;
+        letter-spacing: -0.02em;
+        margin-bottom: 1.5rem;
+      }
+      .diagram-container {
+        width: 100%;
+        overflow-x: auto;
+      }
+      svg {
+        width: 100%;
+        min-width: 960px;
+        display: block;
+      }
+      .name {
+        font:
+          600 14px Geist,
+          sans-serif;
+        fill: #2d3142;
+      }
+      .sub {
+        font:
+          400 11px "Geist Mono",
+          monospace;
+        fill: #4f5d75;
+      }
+      .tag {
+        font:
+          500 9px "Geist Mono",
+          monospace;
+        letter-spacing: 0.08em;
+        fill: #4f5d75;
+      }
+      .tag-accent {
+        font:
+          500 9px "Geist Mono",
+          monospace;
+        letter-spacing: 0.08em;
+        fill: #bf4520;
+      }
+      .label {
+        font:
+          500 9px "Geist Mono",
+          monospace;
+        letter-spacing: 0.06em;
+        fill: #4f5d75;
+      }
+      .label-accent {
+        font:
+          500 9px "Geist Mono",
+          monospace;
+        letter-spacing: 0.06em;
+        fill: #bf4520;
+      }
+      .label-link {
+        font:
+          500 9px "Geist Mono",
+          monospace;
+        letter-spacing: 0.06em;
+        fill: #2e5aa8;
+      }
+      .legend {
+        font:
+          400 11px Geist,
+          sans-serif;
+        fill: #4f5d75;
+      }
+      .note {
+        font:
+          italic 400 16px "Instrument Serif",
+          serif;
+        fill: #4f5d75;
+      }
+      @media print {
+        .diagram-container {
+          overflow-x: visible;
+        }
+        svg {
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <p class="eyebrow">Loop · Stearch state and logic</p>
+      <h1>The four hearts</h1>
+      <p class="eyebrow">
+        Paths predate the move: Stearch.*.ts files are now under store/
+      </p>
+      <div class="diagram-container">
+        <svg
+          viewBox="0 0 960 600"
+          xmlns="http://www.w3.org/2000/svg"
+          role="img"
+          aria-labelledby="stearch-four-hearts-title stearch-four-hearts-desc"
+        >
+          <title id="stearch-four-hearts-title">Stearch: the four hearts</title>
+          <desc id="stearch-four-hearts-desc">
+            Every click in Stearch runs one loop: selectors read the state and
+            hand views props and actions, a press sends those actions to
+            dispatch, the reducer makes a new state, and effects fetch pages
+            through the seam.
+          </desc>
+          <defs>
+            <marker
+              id="arrow"
+              markerWidth="8"
+              markerHeight="6"
+              refX="7"
+              refY="3"
+              orient="auto"
+            >
+              <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
+            </marker>
+            <marker
+              id="arrow-accent"
+              markerWidth="8"
+              markerHeight="6"
+              refX="7"
+              refY="3"
+              orient="auto"
+            >
+              <polygon points="0 0, 8 3, 0 6" fill="#bf4520" />
+            </marker>
+            <marker
+              id="arrow-link"
+              markerWidth="8"
+              markerHeight="6"
+              refX="7"
+              refY="3"
+              orient="auto"
+            >
+              <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" />
+            </marker>
+          </defs>
+          <rect width="100%" height="100%" fill="#f5f5f5" />
+
+          <!-- Connectors first -->
+          <path
+            d="M180 216 V98 Q180 90 188 90 H380"
+            fill="none"
+            stroke="#4f5d75"
+            stroke-width="1.2"
+            marker-end="url(#arrow)"
+          />
+          <rect x="258" y="70" width="40" height="14" fill="#f5f5f5" />
+          <text x="278" y="80" text-anchor="middle" class="label">READ</text>
+
+          <path
+            d="M580 90 H772 Q780 90 780 98 V216"
+            fill="none"
+            stroke="#bf4520"
+            stroke-width="1.4"
+            marker-end="url(#arrow-accent)"
+          />
+          <rect x="620" y="70" width="104" height="14" fill="#f5f5f5" />
+          <text x="672" y="80" text-anchor="middle" class="label-accent">
+            PROPS + ACTIONS
+          </text>
+
+          <path
+            d="M760 284 V332 Q760 340 752 340 H488 Q480 340 480 348 V392"
+            fill="none"
+            stroke="#4f5d75"
+            stroke-width="1.2"
+            marker-end="url(#arrow)"
+          />
+          <rect x="574" y="318" width="92" height="14" fill="#f5f5f5" />
+          <text x="620" y="328" text-anchor="middle" class="label">
+            PRESS: ACTIONS
+          </text>
+
+          <path
+            d="M380 426 H280"
+            fill="none"
+            stroke="#4f5d75"
+            stroke-width="1.2"
+            marker-end="url(#arrow)"
+          />
+          <rect x="304" y="402" width="52" height="14" fill="#f5f5f5" />
+          <text x="330" y="412" text-anchor="middle" class="label">REDUCE</text>
+
+          <path
+            d="M180 392 V284"
+            fill="none"
+            stroke="#4f5d75"
+            stroke-width="1.2"
+            marker-end="url(#arrow)"
+          />
+          <rect x="190" y="331" width="68" height="14" fill="#f5f5f5" />
+          <text x="194" y="341" class="label">NEW STATE</text>
+
+          <path
+            d="M580 416 H680"
+            fill="none"
+            stroke="#2e5aa8"
+            stroke-width="1.2"
+            stroke-dasharray="5,4"
+            marker-end="url(#arrow-link)"
+          />
+          <rect x="608" y="394" width="44" height="14" fill="#f5f5f5" />
+          <text x="630" y="404" text-anchor="middle" class="label-link">
+            FETCH
+          </text>
+
+          <path
+            d="M680 436 H580"
+            fill="none"
+            stroke="#2e5aa8"
+            stroke-width="1.2"
+            stroke-dasharray="5,4"
+            marker-end="url(#arrow-link)"
+          />
+          <rect x="612" y="444" width="36" height="14" fill="#f5f5f5" />
+          <text x="630" y="454" text-anchor="middle" class="label-link">
+            PAGE
+          </text>
+
+          <!-- Heart 4: selectors (focal) -->
+          <rect x="380" y="56" width="200" height="68" rx="6" fill="#f5f5f5" />
+          <rect
+            x="380"
+            y="56"
+            width="200"
+            height="68"
+            rx="6"
+            fill="rgba(191,69,32,0.08)"
+            stroke="#bf4520"
+            stroke-width="1.4"
+          />
+          <text x="392" y="74" class="tag-accent">HEART 4</text>
+          <text x="392" y="96" class="name">Selectors</text>
+          <text x="392" y="112" class="sub">*.selectors.ts</text>
+
+          <!-- Heart 1: state -->
+          <rect
+            x="80"
+            y="216"
+            width="200"
+            height="68"
+            rx="6"
+            fill="#ffffff"
+            stroke="#2d3142"
+            stroke-width="1.2"
+          />
+          <text x="92" y="234" class="tag">HEART 1</text>
+          <text x="92" y="256" class="name">State</text>
+          <text x="92" y="272" class="sub">Stearch.state-props.ts</text>
+
+          <!-- View -->
+          <rect
+            x="680"
+            y="216"
+            width="200"
+            height="68"
+            rx="6"
+            fill="#ffffff"
+            stroke="#4f5d75"
+            stroke-width="1"
+            stroke-dasharray="4,3"
+          />
+          <text x="692" y="234" class="tag">VIEW</text>
+          <text x="692" y="256" class="name">Pure + container</text>
+          <text x="692" y="272" class="sub">*.pure-component.vue</text>
+
+          <!-- Heart 2: reducer -->
+          <rect
+            x="80"
+            y="392"
+            width="200"
+            height="68"
+            rx="6"
+            fill="#ffffff"
+            stroke="#2d3142"
+            stroke-width="1.2"
+          />
+          <text x="92" y="410" class="tag">HEART 2</text>
+          <text x="92" y="432" class="name">Reducer</text>
+          <text x="92" y="448" class="sub">Stearch.reducer.ts</text>
+
+          <!-- Heart 3: dispatch -->
+          <rect
+            x="380"
+            y="392"
+            width="200"
+            height="68"
+            rx="6"
+            fill="#ffffff"
+            stroke="#2d3142"
+            stroke-width="1.2"
+          />
+          <text x="392" y="410" class="tag">HEART 3</text>
+          <text x="392" y="432" class="name">dispatch + effects</text>
+          <text x="392" y="448" class="sub">
+            Stearch.store.ts · settle, cap 2
+          </text>
+
+          <!-- Guard: seam -->
+          <rect
+            x="680"
+            y="392"
+            width="200"
+            height="68"
+            rx="6"
+            fill="#ffffff"
+            stroke="#2e5aa8"
+            stroke-width="1.2"
+          />
+          <text x="692" y="410" class="tag">GUARD</text>
+          <text x="692" y="432" class="name">Seam: romApi.getRoms</text>
+          <text x="692" y="448" class="sub">Stearch.schema.ts</text>
+
+          <text x="80" y="508" class="note">
+            Behaviour lives in the selectors: change one array there, and a
+            press does something else.
+          </text>
+
+          <!-- Legend -->
+          <line
+            x1="80"
+            y1="540"
+            x2="880"
+            y2="540"
+            stroke="rgba(45,49,66,0.12)"
+          />
+          <rect
+            x="80"
+            y="556"
+            width="16"
+            height="12"
+            rx="2"
+            fill="rgba(191,69,32,0.08)"
+            stroke="#bf4520"
+          />
+          <text x="104" y="566" class="legend">Where behaviour is decided</text>
+          <rect
+            x="280"
+            y="556"
+            width="16"
+            height="12"
+            rx="2"
+            fill="#ffffff"
+            stroke="#2d3142"
+          />
+          <text x="304" y="566" class="legend">A heart of the loop</text>
+          <rect
+            x="440"
+            y="556"
+            width="16"
+            height="12"
+            rx="2"
+            fill="#ffffff"
+            stroke="#4f5d75"
+            stroke-dasharray="4,3"
+          />
+          <text x="464" y="566" class="legend">Holds no state</text>
+          <line
+            x1="580"
+            y1="562"
+            x2="608"
+            y2="562"
+            stroke="#2e5aa8"
+            stroke-dasharray="5,4"
+          />
+          <text x="616" y="566" class="legend">
+            Effect: leaves the pure loop
+          </text>
+        </svg>
+      </div>
+    </div>
+  </body>
+</html>

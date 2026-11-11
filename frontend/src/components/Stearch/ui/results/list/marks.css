@@ -1,0 +1,85 @@
+/* Read by screen readers, not drawn. */
+.stearch-results-help {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The attention marks (spec 007, "Attention states"), shared by tiles, the
+   table and the centre-band story. One visual channel each, so they can
+   overlap and still read apart: selected is a green tint, current purple
+   stripes, the key position a dashed blue outline.
+
+   Each mark's strength is a registered number from 0 to 1 that transitions.
+   A transition takes its timing from the style it ends in, so a mark that
+   turns on uses the fade-in timing and one that turns off the fade-out
+   timing. The timings come from `markVariables` on the list's root. */
+
+@property --stearch-selected {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --stearch-current {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --stearch-key {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.stearch-mark {
+  --stearch-selected-ms: var(--stearch-mark-out-ms, 0ms);
+  --stearch-selected-curve: var(--stearch-mark-out-curve, linear);
+  --stearch-current-ms: var(--stearch-mark-out-ms, 0ms);
+  --stearch-current-curve: var(--stearch-mark-out-curve, linear);
+  --stearch-key-ms: var(--stearch-mark-out-ms, 0ms);
+  --stearch-key-curve: var(--stearch-mark-out-curve, linear);
+  transition:
+    --stearch-selected var(--stearch-selected-ms) var(--stearch-selected-curve),
+    --stearch-current var(--stearch-current-ms) var(--stearch-current-curve),
+    --stearch-key var(--stearch-key-ms) var(--stearch-key-curve);
+  background-color: color-mix(
+    in srgb,
+    var(--r-color-success) calc(22% * var(--stearch-selected)),
+    transparent
+  );
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(
+        in srgb,
+        var(--r-color-brand-primary) calc(40% * var(--stearch-current)),
+        transparent
+      )
+      0 6px,
+    transparent 6px 12px
+  );
+  outline: 2px dashed
+    color-mix(
+      in srgb,
+      var(--r-color-info) calc(100% * var(--stearch-key)),
+      transparent
+    );
+  outline-offset: -2px;
+}
+.stearch-mark[data-selected="true"] {
+  --stearch-selected: 1;
+  --stearch-selected-ms: var(--stearch-mark-in-ms, 0ms);
+  --stearch-selected-curve: var(--stearch-mark-in-curve, linear);
+}
+.stearch-mark[data-current="true"] {
+  --stearch-current: 1;
+  --stearch-current-ms: var(--stearch-mark-in-ms, 0ms);
+  --stearch-current-curve: var(--stearch-mark-in-curve, linear);
+}
+.stearch-mark[data-key-position="true"] {
+  --stearch-key: 1;
+  --stearch-key-ms: var(--stearch-mark-in-ms, 0ms);
+  --stearch-key-curve: var(--stearch-mark-in-curve, linear);
+}

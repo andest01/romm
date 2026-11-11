@@ -49,6 +49,8 @@ export function useGlobalHotkeys() {
 
       // Slash / ?: jump to search.
       if ((e.key === "/" || e.key === "?") && !pendingPrefix) {
+        // Stearch focuses its own search box.
+        if (router.currentRoute.value.name === ROUTES.STEARCH) return;
         void router.push({ name: ROUTES.SEARCH });
         e.preventDefault();
         return;

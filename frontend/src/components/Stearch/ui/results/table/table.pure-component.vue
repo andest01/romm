@@ -1,0 +1,179 @@
+<script setup lang="ts">
+import { REmptyState, RSortHeader, RVirtualScroller } from "@/lib";
+import type { RTableSortPayload } from "@/lib";
+import type { ItemEmits } from "../list/item.props";
+import {
+  markVariables,
+  RESULTS_HELP_ID,
+  SCROLLER_OVERSCAN,
+  type VisibleRange,
+} from "../list/list.props";
+import { itemDomId } from "../list/list.selectors";
+import type { TableProps } from "./table.props";
+
+defineProps<TableProps>();
+
+defineEmits<
+  ItemEmits & {
+    sort: [payload: RTableSortPayload];
+    range: [range: VisibleRange];
+    key: [event: KeyboardEvent];
+  }
+>();
+</script>
+
+<template>
+  <div class="stearch-table" :style="markVariables(marks)">
+    <REmptyState
+      v-if="errorMessage"
+      icon="mdi-alert-circle-outline"
+      :title="errorMessage"
+    />
+    <REmptyState
+      v-else-if="rows.length === 0"
+      icon="mdi-magnify-close"
+      :title="emptyMessage"
+    />
+    <div v-else class="stearch-table__frame">
+      <div
+        class="stearch-table__grid"
+        role="grid"
+        :aria-label="tableLabel"
+        :aria-activedescendant="activeDescendantId ?? undefined"
+        :aria-rowcount="rows.length + 1"
+        :aria-describedby="RESULTS_HELP_ID"
+        tabindex="0"
+        @keydown="$emit('key', $event)"
+      >
+        <div
+          class="stearch-table__head"
+          role="row"
+          :aria-rowindex="1"
+          :style="{ gridTemplateColumns: gridTemplate }"
+        >
+          <RSortHeader
+            v-for="column in columns"
+            :key="column.key"
+            :label="column.label"
+            :hide-label="column.key === 'verbs'"
+            :sortable="column.sortable"
+            :active="column.key === sortKey"
+            :dir="sortDir"
+            @sort="$emit('sort', { key: column.key, dir: $event })"
+          />
+        </div>
+        <div class="stearch-table__body">
+          <RVirtualScroller
+            :ref="setScroller"
+            :items="rows"
+            :overscan="SCROLLER_OVERSCAN"
+            :get-item-height="
+              (_, index) =>
+                rows[index]?.kind === 'head' ? headHeight : rowHeight
+            "
+            @update:viewport-range="$emit('range', $event)"
+          >
+            <template #default="{ index }">
+              <template
+                v-for="line in rows.slice(index, index + 1)"
+                :key="line.key"
+              >
+                <div
+                  v-if="line.kind === 'head'"
+                  class="stearch-table__section"
+                  role="row"
+                  :aria-rowindex="index + 2"
+                  :style="{ height: `${headHeight}px` }"
+                >
+                  <span role="gridcell">{{ line.label }}</span>
+                </div>
+                <template v-else>
+                  <component
+                    :is="item"
+                    v-for="(row, column) in line.slots"
+                    :id="itemDomId(line.position + column)"
+                    :key="column"
+                    :aria-selected="row !== null && row.isSelected"
+                    :aria-rowindex="index + 2"
+                    :row="row"
+                    :verbs="verbs"
+                    :grid-template="gridTemplate"
+                    :cell-count="columns.length"
+                    class="stearch-mark"
+                    :data-key-position="
+                      line.position + column === activePosition
+                    "
+                    :data-current="row !== null && row.id === currentId"
+                    :data-selected="row !== null && row.isSelected"
+                    @press="$emit('press', $event)"
+                  />
+                </template>
+              </template>
+            </template>
+          </RVirtualScroller>
+        </div>
+      </div>
+      <p :id="RESULTS_HELP_ID" class="stearch-results-help">{{ gridHelp }}</p>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.stearch-table {
+  height: 100%;
+  /* Items are picked, not read: Shift and drag must not select text. */
+  user-select: none;
+  min-height: 0;
+}
+.stearch-table__head,
+.stearch-table__section {
+  box-sizing: border-box;
+  padding-inline: var(--r-row-pad) calc(var(--stearch-rail-width, 0px) + 6px);
+}
+.stearch-table__section {
+  display: flex;
+  align-items: center;
+  margin-inline-end: var(--stearch-rail-width, 0px);
+  padding-inline-end: 6px;
+  border-bottom: 1px solid var(--r-color-border);
+  background: var(--r-color-bg);
+  color: var(--r-color-brand-primary);
+  font-size: 1em;
+  font-weight: 800;
+}
+/* The rail and band sit beside the grid: a grid may only own rows. */
+.stearch-table__frame {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+.stearch-table__grid {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.stearch-table__head {
+  display: grid;
+  flex: none;
+  gap: var(--r-space-2);
+  block-size: var(--stearch-results-head, 30px);
+  align-items: center;
+}
+.stearch-table__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+/* Ghosts hold still. Each skeleton's shimmer is a gradient repainted every
+   frame, and a screen of ghost rows ran hundreds of them during a scroll. */
+.stearch-table__body :deep(.r-skeleton::after) {
+  content: none;
+}
+/* One compositor layer per row made Layerize the top scroll cost. */
+.stearch-table__body :deep(.r-virtual-scroller__item) {
+  will-change: auto;
+}
+</style>
+
+<style scoped src="../list/marks.css"></style>

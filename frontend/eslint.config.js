@@ -8,6 +8,7 @@ import vuea11y from "eslint-plugin-vuejs-accessibility";
 import globals from "globals";
 import romm from "./eslint-plugin-romm/index.js";
 import e2eConfig from "./eslint.e2e.config.js";
+import stearchConfig from "./src/components/Stearch/Stearch.eslint.js";
 
 // Heavy modules that belong in a lazy chunk; add the next one here.
 const heavyImports = [
@@ -372,6 +373,8 @@ export default withVueTs(
       "romm/no-unscoped-local-storage": "off",
     },
   },
+  // Stearch keeps its own rules in its folder.
+  ...stearchConfig,
   // After the base configs, so its exceptions win.
   ...e2eConfig,
   // Keep last: Prettier owns formatting, so this switches off every
