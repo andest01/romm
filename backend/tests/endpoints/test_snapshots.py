@@ -9,7 +9,8 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 from httpx2 import Response
-from sqlalchemy import update
+from sqlalchemy import select, update
+from sqlalchemy.orm import aliased
 from tests._zipfile_shim import reload_zipfile
 from tests.factories import make_device_token, make_rom
 from tests.handler.snapshots.pushes import SRAM, md5
@@ -1471,6 +1472,147 @@ def test_a_fork_of_another_users_snapshot_holds_copies(
     assert body["save"]["content_hash"] == md5(SRAM)
     state = body["states"]["snes9x"]["auto"]
     assert state["id"] != shared["states"]["snes9x"]["auto"]["id"]
+    assert content.content == SRAM
+
+
+def _fork(
+    client: TestClient,
+    headers: dict[str, str],
+    editor_headers: dict[str, str],
+    game_file: RomFile,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    shared = first_push(client, headers, game_file)
+    _share(client, headers, shared)
+    fork = post(
+        client,
+        editor_headers,
+        manifest(game_file, label="mine", parent_snapshot_id=shared["id"]),
+    )
+    assert fork.status_code == status.HTTP_201_CREATED, fork.text
+    return shared, fork.json()
+
+
+def _unlink_cross_user_parents() -> None:
+    # Mirrors the planned social purge: the only core write it makes.
+    parent = aliased(Snapshot)
+    with sync_session.begin() as session:
+        session.execute(
+            update(Snapshot)
+            .where(
+                Snapshot.parent_snapshot_id.in_(
+                    select(parent.id).where(parent.user_id != Snapshot.user_id)
+                )
+            )
+            .values(parent_snapshot_id=None)
+            .execution_options(synchronize_session=False)
+        )
+
+
+def test_a_fork_outlives_its_deleted_parent_with_the_same_content(
+    client: TestClient,
+    headers: dict[str, str],
+    editor_headers: dict[str, str],
+    game_file: RomFile,
+    admin_user: User,
+):
+    # Arrange
+    from handler.database import db_user_handler
+
+    shared, fork = _fork(client, headers, editor_headers, game_file)
+
+    # Act
+    db_user_handler.delete_user(admin_user.id)
+
+    # Assert
+    after = client.get(f"/api/snapshots/{fork['id']}", headers=editor_headers).json()
+    content = client.get(after["save"]["download_path"], headers=editor_headers)
+    assert fork["parent_snapshot_id"] == shared["id"]
+    assert after["parent_snapshot_id"] is None
+    assert after["digest"] == fork["digest"]
+    assert content.content == SRAM
+
+
+def test_unlinking_cross_user_parents_leaves_the_fork_unchanged(
+    client: TestClient,
+    headers: dict[str, str],
+    editor_headers: dict[str, str],
+    game_file: RomFile,
+):
+    # Arrange
+    shared, fork = _fork(client, headers, editor_headers, game_file)
+    path = f"/api/snapshots/{fork['id']}"
+    before = client.get(path, headers=editor_headers).json()
+
+    # Act
+    _unlink_cross_user_parents()
+
+    # Assert
+    after = client.get(path, headers=editor_headers).json()
+    source = client.get(f"/api/snapshots/{shared['id']}", headers=headers).json()
+    content = client.get(after["save"]["download_path"], headers=editor_headers)
+    assert after["parent_snapshot_id"] is None
+    assert {k: v for k, v in after.items() if k != "parent_snapshot_id"} == {
+        k: v for k, v in before.items() if k != "parent_snapshot_id"
+    }
+    assert source["digest"] == shared["digest"]
+    assert content.content == SRAM
+
+
+def test_unlinking_cross_user_parents_keeps_same_user_history(
+    client: TestClient,
+    headers: dict[str, str],
+    editor_headers: dict[str, str],
+    game_file: RomFile,
+):
+    # Arrange
+    _, fork = _fork(client, headers, editor_headers, game_file)
+    progress = b"later-progress"
+    next_push = post(
+        client,
+        editor_headers,
+        manifest(
+            game_file,
+            channel_id=fork["channel_id"],
+            expected_current_id=fork["id"],
+            save=save_entry(progress),
+        ),
+        {"save": ("game.srm", progress)},
+    )
+    assert next_push.status_code == status.HTTP_201_CREATED, next_push.text
+    later = next_push.json()
+
+    # Act
+    _unlink_cross_user_parents()
+
+    # Assert
+    after = client.get(f"/api/snapshots/{later['id']}", headers=editor_headers).json()
+    assert later["parent_snapshot_id"] == fork["id"]
+    assert after["parent_snapshot_id"] == fork["id"]
+
+
+def test_unsharing_the_source_keeps_the_fork_readable_to_its_owner(
+    client: TestClient,
+    headers: dict[str, str],
+    editor_headers: dict[str, str],
+    game_file: RomFile,
+):
+    # Arrange
+    shared, fork = _fork(client, headers, editor_headers, game_file)
+
+    # Act
+    client.patch(
+        f"/api/channels/{shared['channel_id']}",
+        json={"is_public": False},
+        headers=headers,
+    )
+
+    # Assert
+    mine = client.get(f"/api/snapshots/{fork['id']}", headers=editor_headers)
+    source = client.get(f"/api/snapshots/{shared['id']}", headers=editor_headers)
+    content = client.get(mine.json()["save"]["download_path"], headers=editor_headers)
+    assert mine.status_code == status.HTTP_200_OK
+    assert mine.json()["parent_snapshot_id"] == shared["id"]
+    assert source.status_code == status.HTTP_404_NOT_FOUND
     assert content.content == SRAM
 
 
