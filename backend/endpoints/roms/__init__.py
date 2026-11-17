@@ -148,6 +148,7 @@ from models.audit_event import AuditAction, AuditTargetType
 from models.collection import Collection, SmartCollection, VirtualCollection
 from models.permission import PermAction, PermEntity
 from models.rom import (
+    DERIVED_FIELD_PROVIDER_METADATA_COLUMNS,
     HAS_FILE_ON_DISK_FILTERS,
     METADATA_SOURCE_COLUMNS,
     PINNED_MEDIA_KEY_MAX_LENGTH,
@@ -959,13 +960,21 @@ def get_roms(
         if page_ids:
             # The ids already passed the filters and the sibling grouping, so the
             # rows load without re-running either.
+            # Without provider metadata, read only what the derived fields need.
+            provider_columns: tuple[str, ...] = (
+                PROVIDER_METADATA_COLUMNS
+                if with_provider_metadata
+                else DERIVED_FIELD_PROVIDER_METADATA_COLUMNS
+            )
             page_rows = session.scalars(
                 db_rom_handler.get_page_rows_query(
                     page_ids,
                     visibility=perms.rom_visibility,
                     include_file_stats=not with_files,
+                    provider_columns=provider_columns,
                 )
             ).all()
+            db_rom_handler.blank_unread_provider_columns(page_rows, provider_columns)
             rows_by_id = {rom.id: rom for rom in page_rows}
             page_items = [rows_by_id[i] for i in page_ids if i in rows_by_id]
         else:

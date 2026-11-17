@@ -558,6 +558,33 @@ def test_get_roms_without_provider_metadata(
     assert default["igdb_metadata"] and default["merged_ra_metadata"]
 
 
+def test_get_roms_without_provider_metadata_reads_only_derived_field_columns(
+    client: TestClient,
+    access_token: str,
+    platform: Platform,
+    executed_statements: list[str],
+):
+    make_rom(
+        platform,
+        "bare",
+        ss_metadata={"video_path": "roms/1/v.mp4"},
+        ra_metadata={"achievements": [], "hash_match": True},
+    )
+    before = len(executed_statements)
+
+    (item,) = client.get(
+        "/api/roms",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={"platform_id": platform.id, "with_provider_metadata": False},
+    ).json()["items"]
+
+    assert item["path_video"] == "roms/1/v.mp4"
+    assert item["ss_metadata"] is None
+    rom_selects = [s for s in executed_statements[before:] if "FROM roms" in s]
+    assert rom_selects
+    assert not any("ra_metadata" in s for s in rom_selects)
+
+
 def test_get_roms_sorted_by_user_field_keeps_all_roms(
     client: TestClient,
     access_token: str,
