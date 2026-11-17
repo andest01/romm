@@ -42,6 +42,8 @@ class PermEntity(enum.StrEnum):
     LOGS = "logs"
     STREAMING = "streaming"
     EMULATION = "emulation"
+    # Seeing and acting with other members. No system group grants it.
+    SOCIAL = "social"
 
 
 # Entities whose rows belong to a user, so an own_only grant has something to

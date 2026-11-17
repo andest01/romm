@@ -71,6 +71,8 @@ _GRANT_SCOPES: dict[tuple[PermEntity, PermAction], frozenset[Scope]] = {
     (PermEntity.USERS, PermAction.WRITE): frozenset({Scope.USERS_WRITE}),
     (PermEntity.TASKS, PermAction.WRITE): frozenset({Scope.TASKS_RUN}),
     (PermEntity.LOGS, PermAction.READ): frozenset({Scope.LOGS_READ}),
+    (PermEntity.SOCIAL, PermAction.READ): frozenset({Scope.SOCIAL_READ}),
+    (PermEntity.SOCIAL, PermAction.WRITE): frozenset({Scope.SOCIAL_WRITE}),
 }
 
 # --- Legacy group matrices ----------------------------------------------------

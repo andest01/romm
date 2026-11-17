@@ -298,6 +298,7 @@ export type { SnapshotSaveSchema } from './models/SnapshotSaveSchema';
 export type { SnapshotSchema } from './models/SnapshotSchema';
 export type { SnapshotStateSchema } from './models/SnapshotStateSchema';
 export type { SnapshotUpdatePayload } from './models/SnapshotUpdatePayload';
+export type { SocialMemberSchema } from './models/SocialMemberSchema';
 export type { SoundtrackTrackMetaSchema } from './models/SoundtrackTrackMetaSchema';
 export type { SSAgeRating } from './models/SSAgeRating';
 export type { SSPhysicalDisc } from './models/SSPhysicalDisc';

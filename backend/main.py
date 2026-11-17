@@ -58,6 +58,7 @@ from endpoints.saves import router as saves_router
 from endpoints.screenshots import router as screenshots_router
 from endpoints.search import router as search_router
 from endpoints.snapshots import router as snapshots_router
+from endpoints.social import router as social_router
 from endpoints.states import router as states_router
 from endpoints.stats import router as stats_router
 from endpoints.streaming import router as streaming_router
@@ -193,6 +194,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(activity_router, prefix="/api")
 app.include_router(audit_events_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
+app.include_router(social_router, prefix="/api")
 app.include_router(client_tokens_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")
 app.include_router(notification_channels_router, prefix="/api")

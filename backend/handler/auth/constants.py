@@ -33,6 +33,8 @@ class Scope(enum.StrEnum):
     USERS_WRITE = "users.write"
     TASKS_RUN = "tasks.run"
     LOGS_READ = "logs.read"
+    SOCIAL_READ = "social.read"
+    SOCIAL_WRITE = "social.write"
 
 
 READ_SCOPES_MAP: Final = {
@@ -67,6 +69,9 @@ FULL_SCOPES_MAP: Final = {
     Scope.USERS_WRITE: "Modify users",
     Scope.TASKS_RUN: "Run tasks",
     Scope.LOGS_READ: "View backend logs",
+    # Admin tier so no legacy role gains them; a group grant hands them out.
+    Scope.SOCIAL_READ: "View other members",
+    Scope.SOCIAL_WRITE: "Act with other members",
 }
 
 READ_SCOPES: Final = list(READ_SCOPES_MAP.keys())
