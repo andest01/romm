@@ -263,30 +263,6 @@ def refresh_scoped_smart_collections(collection_id: int) -> None:
         log.error(f"Couldn't refresh smart collections scoped to {collection_id}: {e}")
 
 
-def build_unscoped_sidecar_cache_key(
-    user_id: int,
-    order_by: str,
-    order_dir: str,
-    group_by_meta_id: bool,
-    is_unscoped: bool,
-) -> str | None:
-    """Cache key for the unscoped char-index / rom-id-index sidecars; None for
-    scoped/searched sets, which are computed live. Embeds the per-user sort
-    version on RomUser-column sorts and the sibling version on grouped sets,
-    so exactly the writes that move a set rotate its key.
-    """
-    if not is_unscoped:
-        return None
-
-    user_part = f"u{user_id}"
-    if sorts_by_rom_user_column(order_by, user_id):
-        user_part = f"{user_part}.{user_sort_cache_version(user_id)}"
-    if group_by_meta_id:
-        user_part = f"{user_part}.s{user_sibling_cache_version(user_id)}"
-
-    return f"all:{user_part}:o{order_by}:d{order_dir}:g{int(group_by_meta_id)}"
-
-
 def build_unscoped_filter_values_cache_key(
     user_id: int, is_unscoped: bool
 ) -> str | None:
@@ -822,48 +798,35 @@ def get_roms(
         include_related=False,
     )
 
-    # Cache only the fully unscoped library scan: the sidecar cache key encodes
-    # user/order/grouping but not the filters, so anything that narrows `query`
-    # has to gate caching or a narrowed list leaks under the shared "all" key.
-    #
-    # The filter-value list is gated on the scope alone: it is computed with
-    # only the scope applied, so a filter it never applies cannot stale it.
+    # The filter-value list is cached for the unscoped library only: it is
+    # computed with only the scope applied, so a filter it never applies
+    # cannot stale it.
     is_unscoped_scope = not filters.has_scope()
-    is_unscoped = (
-        is_unscoped_scope
-        and not filters.has_filters()
-        and not updated_after
-        and not parsed_released_days
-    )
 
-    # One key for both ordered sidecars: the same request must not read the
-    # char index and the id index under different per-user versions.
-    sidecar_cache_key = build_unscoped_sidecar_cache_key(
-        request.user.id, order_by, order_dir, filters.group_by_meta_id, is_unscoped
+    # The id list backs virtual scroll and the letter strip jumps within it, so
+    # one statement builds both. Relevance order has no letter runs. Callers
+    # that only need a page (e.g. the home rails) skip it.
+    with_letters = (
+        with_char_index
+        and db_rom_handler.sorts_by_letter(sort_key.column)
+        and not db_rom_handler.search_relevance_leads(order_by, filters.search_term)
     )
-
     rom_id_index: list[int] = []
-    char_index_dict = {}
-    if group_defaults:
-        rom_id_index, char_index = db_rom_handler.get_gallery_index(
+    char_index_dict: dict[str, int] = {}
+    if with_rom_id_index or with_letters:
+        ids, char_index = db_rom_handler.get_gallery_index(
             db_rom_handler.group_defaults_index_rows(
                 query, user_id=request.user.id, order_dir=order_dir
-            ),
-            cache_key=sidecar_cache_key,
+            )
+            if group_defaults
+            else db_rom_handler.index_rows(
+                query, letter_of=sort_key.column if with_letters else None
+            )
         )
-        if with_char_index:
+        if with_rom_id_index:
+            rom_id_index = ids
+        if with_letters:
             char_index_dict = dict(char_index)
-    # Get the char index for the roms. Relevance order has no letter runs.
-    elif with_char_index and not db_rom_handler.search_relevance_leads(
-        order_by, filters.search_term
-    ):
-        char_index = db_rom_handler.with_char_index(
-            query=query,
-            order_by_attr=sort_key.column,
-            order_dir=order_dir,
-            cache_key=sidecar_cache_key,
-        )
-        char_index_dict = {char: index for (char, index) in char_index}
 
     filter_values = RomFiltersDict(
         genres=[],
@@ -897,14 +860,6 @@ def get_roms(
             cache_key=build_unscoped_filter_values_cache_key(
                 request.user.id, is_unscoped_scope
             ),
-        )
-
-    # The full ordered id list backs virtual scroll, so it's computed over the
-    # whole result set. Callers that only need a page (e.g. the home rails) opt
-    # out with with_rom_id_index=false and avoid the full-library scan.
-    if with_rom_id_index and not group_defaults:
-        rom_id_index = db_rom_handler.get_rom_id_index(
-            query=query, cache_key=sidecar_cache_key
         )
 
     # Hydrate the requested page and its additional data

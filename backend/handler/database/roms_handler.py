@@ -2286,12 +2286,32 @@ class DBRomsHandler(DBBaseHandler):
             gallery.c.id.desc() if descending else gallery.c.id,
         )
 
+    @staticmethod
+    def sorts_by_letter(column: Any) -> bool:
+        """Whether a sort column orders lexically, so letter offsets index it."""
+        # `Enum` subclasses `String`, but the database orders native enums by
+        # declaration order.
+        return isinstance(column.type, (String, Text)) and not isinstance(
+            column.type, Enum
+        )
+
+    @staticmethod
+    def index_rows(
+        query: RomSelect, *, letter_of: Any | None
+    ) -> Select[int, str | None]:
+        """Each row's id and the first letter of `letter_of`, in the query's order."""
+        letter = (
+            func.substring(letter_of, 1, 1)
+            if letter_of is not None
+            else literal(None, type_=String)
+        )
+        return query.with_only_columns(Rom.id, letter)
+
     @begin_session
     def get_gallery_index(
         self,
         rows: Select[int, str | None],
         *,
-        cache_key: str | None = None,
         session: Session = INJECTED_SESSION,
     ) -> tuple[list[int], list[tuple[str, int]]]:
         """Every tile's id in gallery order, and where each first letter starts.
@@ -2302,32 +2322,13 @@ class DBRomsHandler(DBBaseHandler):
         Args:
             rows: each tile's id and first letter, in gallery order.
         """
-        id_key: str | None = None
-        letter_key: str | None = None
-        version: str | None = None
-        if cache_key:
-            version = _filter_values_cache_version()
-            id_key = _rom_id_index_redis_key(cache_key, version)
-            letter_key = _char_index_redis_key(cache_key, version)
-            cached_ids = sync_cache.get(id_key)
-            cached_letters = sync_cache.get(letter_key)
-            if cached_ids is not None and cached_letters is not None:
-                rom_ids: list[int] = json.loads(cached_ids)
-                char_index: list[tuple[str, int]] = json.loads(cached_letters)
-                return rom_ids, char_index
-
         ids: list[int] = []
         starts: dict[str, int] = {}
         for position, (rom_id, letter) in enumerate(session.execute(rows)):
             ids.append(rom_id)
             if letter is not None:
                 starts.setdefault(letter, position)
-        letters = sorted(starts.items())
-
-        if version is not None and id_key is not None and letter_key is not None:
-            _store_versioned_cache(id_key, version, ids)
-            _store_versioned_cache(letter_key, version, letters)
-        return ids, letters
+        return ids, sorted(starts.items())
 
     @begin_session
     def get_rom_count(

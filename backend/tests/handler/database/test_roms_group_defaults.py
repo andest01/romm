@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import select
 from tests.factories import make_rom
 
-from handler.auth.rom_visibility import UNRESTRICTED
+from handler.auth.rom_visibility import UNRESTRICTED, RomVisibilityFilter
 from handler.database import db_rom_handler
 from handler.database.base_handler import sync_session
 from handler.database.rom_filters import RomFilterParams
@@ -30,7 +30,13 @@ def _group_defaults() -> set[int]:
         )
 
 
-def _filtered(user_id: int | None, order_dir: str, *, grouped: bool):
+def _filtered(
+    user_id: int | None,
+    order_dir: str,
+    *,
+    grouped: bool,
+    visibility: RomVisibilityFilter = UNRESTRICTED,
+):
     query, sort_key = db_rom_handler.get_roms_query(
         order_by="name", order_dir=order_dir, user_id=user_id
     )
@@ -41,13 +47,18 @@ def _filtered(user_id: int | None, order_dir: str, *, grouped: bool):
         order_by="name",
         order_dir=order_dir,
         user_id=user_id,
+        visibility=visibility,
         include_related=False,
     )
     return query, sort_key
 
 
-def _window_index(user_id: int | None, order_dir: str):
-    query, sort_key = _filtered(user_id, order_dir, grouped=True)
+def _window_index(
+    user_id: int | None,
+    order_dir: str,
+    visibility: RomVisibilityFilter = UNRESTRICTED,
+):
+    query, sort_key = _filtered(user_id, order_dir, grouped=True, visibility=visibility)
     ids = db_rom_handler.get_rom_id_index(query=query)
     letters = db_rom_handler.with_char_index(
         query, sort_key.column, order_dir=order_dir
@@ -55,8 +66,12 @@ def _window_index(user_id: int | None, order_dir: str):
     return ids, [tuple(entry) for entry in letters]
 
 
-def _stored_index(user_id: int | None, order_dir: str):
-    query, _ = _filtered(user_id, order_dir, grouped=False)
+def _stored_index(
+    user_id: int | None,
+    order_dir: str,
+    visibility: RomVisibilityFilter = UNRESTRICTED,
+):
+    query, _ = _filtered(user_id, order_dir, grouped=False, visibility=visibility)
     ids, letters = db_rom_handler.get_gallery_index(
         db_rom_handler.group_defaults_index_rows(
             query, user_id=user_id, order_dir=order_dir
@@ -119,6 +134,23 @@ def test_the_stored_path_matches_the_window(
 
     for user_id in (admin_user.id, None):
         assert _stored_index(user_id, order_dir) == _window_index(user_id, order_dir)
+
+
+def test_the_stored_path_matches_the_window_for_a_non_admin(
+    platform: Platform, other_platform: Platform, viewer_user: User, current_picks
+):
+    make_rom(platform, "Plain", fs_stem="Plain (USA)", igdb_id=1)
+    make_rom(platform, "Plain", fs_stem="Plain (Demo)", igdb_id=1)
+    hidden = make_rom(platform, "Hidden", fs_stem="Hidden (USA)", igdb_id=2)
+    make_rom(platform, "Hidden", fs_stem="Hidden (Europe)", igdb_id=2)
+    make_rom(other_platform, "Elsewhere", fs_stem="Elsewhere (USA)", igdb_id=3)
+    rom_user = db_rom_handler.add_rom_user(hidden.id, viewer_user.id)
+    db_rom_handler.update_rom_user(rom_user.id, {"hidden": True})
+    visibility = RomVisibilityFilter(hidden_platform_ids=frozenset({other_platform.id}))
+
+    stored = _stored_index(viewer_user.id, "asc", visibility)
+
+    assert stored == _window_index(viewer_user.id, "asc", visibility)
 
 
 def test_the_stored_path_waits_for_the_current_region_priority():
