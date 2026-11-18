@@ -1519,3 +1519,28 @@ def test_the_sort_key_backfill_keeps_its_original_rule(mocker):
     assert (
         migration._sort_key("The Legend of Zelda 2") == "legend of zelda 000000000002"
     )
+
+
+def test_the_sibling_key_revision_reverses_replays_and_fills(platform: Platform):
+    """0162 computes both columns for rows that already exist."""
+    migration = _load_migration("0162_roms_sibling_key.py")
+    rom = make_rom(platform, "Keyed", fs_stem="Keyed (Demo)", igdb_id=5)
+
+    with sync_engine.begin() as connection:
+        before = _schema_of(connection, "roms")
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.downgrade()
+            assert not has_column(connection, "roms", "sibling_key")
+            assert not has_column(connection, "roms", "prerelease_rank")
+            assert "idx_roms_sibling_key_cover" not in _schema_of(connection, "roms")[1]
+            migration.downgrade()
+
+            migration.upgrade()
+            migration.upgrade()
+            row = connection.execute(
+                sa.text("SELECT sibling_key, prerelease_rank FROM roms WHERE id = :id"),
+                {"id": rom.id},
+            ).one()
+
+        assert _schema_of(connection, "roms") == before
+    assert tuple(row) == (f"igdb-{platform.id}-5", 1)
