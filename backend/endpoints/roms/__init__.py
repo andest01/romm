@@ -860,6 +860,8 @@ def get_roms(
     # computed with only the scope applied, so a filter it never applies
     # cannot stale it.
     is_unscoped_scope = not filters.has_scope()
+    # Debug: no Valkey gallery cache, so every load runs the queries.
+    is_unscoped_scope = False
 
     # The id list backs virtual scroll and the letter strip jumps within it, so
     # one statement builds both. Relevance order has no letter runs. Callers
