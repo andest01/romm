@@ -821,6 +821,8 @@ def get_roms(
         and not updated_after
         and not parsed_released_days
     )
+    # Debug: no Valkey gallery cache, so every load runs the queries.
+    is_unscoped_scope = is_unscoped = False
 
     # One key for both ordered sidecars: the same request must not read the
     # char index and the id index under different per-user versions.
