@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import storeGalleryFilter from "@/stores/galleryFilter";
 // Import after the mock so the store binds to the mocked rom API.
 import storeGalleryRoms, {
+  CARD_METADATA_FIELDS,
   orderSupportsLetters,
   SELECT_ALL_PAGE_SIZE,
   type GalleryOrderKey,
@@ -55,6 +56,17 @@ describe("galleryRoms windowed fetch", () => {
     store.syncVisibleWindows([0]);
 
     expect(getRoms.mock.calls[0]![0].orderBy).toBe("");
+  });
+
+  it("asks a window for a card's provider metadata only", () => {
+    getRoms.mockImplementation(() => Promise.resolve(windowResponse()));
+    const store = storeGalleryRoms();
+
+    store.syncVisibleWindows([0]);
+
+    expect(getRoms.mock.calls[0]![0].metadataFields).toEqual(
+      CARD_METADATA_FIELDS,
+    );
   });
 
   it("collapses many visible positions into one request per 72-item window", async () => {
@@ -390,6 +402,8 @@ describe("galleryRoms whole-result fetch", () => {
 
     expect(roms).toHaveLength(SELECT_ALL_PAGE_SIZE + 2);
     expect(getRoms).toHaveBeenCalledTimes(2);
+    // Bulk actions get every provider, unlike the cards.
+    expect(getRoms.mock.calls[0]![0].metadataFields).toBeUndefined();
     expect(getRoms.mock.calls.map((c) => c[0].offset)).toEqual([
       0,
       SELECT_ALL_PAGE_SIZE,
@@ -475,6 +489,9 @@ describe("galleryRoms refresh", () => {
     expect(getRoms).toHaveBeenCalledTimes(1);
     expect(getRoms.mock.calls[0]![0].withCharIndex).toBeUndefined();
     expect(getRoms.mock.calls[0]![0].offset).toBe(0);
+    expect(getRoms.mock.calls[0]![0].metadataFields).toEqual(
+      CARD_METADATA_FIELDS,
+    );
   });
 
   it("fills the displayed result with its own request while refreshing", () => {
