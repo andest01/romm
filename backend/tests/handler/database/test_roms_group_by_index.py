@@ -154,3 +154,21 @@ class TestGroupByMetaIdCoverage:
         referenced = _dedup_window_referenced_columns(order_by="last_played", user_id=1)
 
         assert referenced <= set(INDEX_COLUMNS)
+
+
+class TestSiblingTieBreak:
+    def test_the_window_breaks_every_tie_by_id(self):
+        # Two dumps of one release (a .cue and an .iso) tie on every other key,
+        # and a parallel plan then picks between them per query. A small table
+        # can't reproduce that, so the rule itself is checked.
+        sql = str(
+            _dedup_window_select().compile(
+                dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}
+            )
+        )
+
+        window_order = re.search(
+            r"OVER \(PARTITION BY .* ORDER BY (.*)\) AS row_num", sql
+        )
+        assert window_order is not None
+        assert window_order.group(1).rstrip().endswith(".id ASC")

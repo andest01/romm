@@ -1790,6 +1790,9 @@ class DBRomsHandler(DBBaseHandler):
                 base_subquery.c.prerelease_rank.asc(),
                 base_subquery.c.region_rank.asc(),
                 base_subquery.c.fs_name_no_ext.asc(),
+                # Two dumps of one release (a .cue and an .iso) tie on all the
+                # above, and the database would pick between them per query.
+                base_subquery.c.id.asc(),
             ]
             if user_id:
                 # A sibling the visibility filter below drops can't represent
