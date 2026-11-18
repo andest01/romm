@@ -65,7 +65,7 @@ from handler.filesystem.roms_handler import rom_file_unchanged
 from handler.redis_handler import sync_cache
 from logger.logger import log
 from models.assets import Save, Screenshot, State
-from models.base import PRERELEASE_FILENAME_TAGS, compute_file_name_parts
+from models.base import compute_file_name_parts
 from models.collection import Collection, CollectionRom, SmartCollection
 from models.music import MusicFavoriteTrack, MusicPlaylistTrack
 from models.platform import Platform
@@ -529,31 +529,12 @@ def _store_versioned_cache(redis_key: str, version: str, result: Any) -> None:
             pass
 
 
-def _create_metadata_id_case(
-    prefix: str,
-    id_column: ColumnElement[Any],
-    platform_id_column: ColumnElement[Any],
-) -> ColumnElement[Any]:
-    return case(
-        (
-            id_column.isnot(None),
-            func.concat(
-                f"{prefix}-",
-                platform_id_column,
-                "-",
-                id_column,
-            ),
-        ),
-        else_=None,
-    )
-
-
 def _region_rank() -> ColumnElement[Any]:
     """Rank a rom by where its region sits in the configured region priority.
 
     Reads the generated scalar rather than the `regions` JSON so the dedup
-    window stays inside idx_roms_sibling_cover. Roms whose region is not in the
-    list rank last, so a Japan-only release still wins a group of one.
+    window stays inside idx_roms_sibling_key_cover. Roms whose region is not in
+    the list rank last, so a Japan-only release still wins a group of one.
     """
     # Imported here because handler.filesystem and handler.metadata import each
     # other, and reaching filesystem first from this module trips the cycle.
@@ -568,26 +549,6 @@ def _region_rank() -> ColumnElement[Any]:
         value=Rom.generated_primary_region,
         else_=max(ranks.values()) + 1,
     )
-
-
-# "(" then any tag, so "(Demo)", "(Beta 2)" and "(Prototype)" match and a title that
-# merely contains "demo" does not.
-_PRERELEASE_PATTERN = (
-    rf"\(({'|'.join(re.escape(tag) for tag in PRERELEASE_FILENAME_TAGS)})"
-)
-
-
-def _prerelease_rank() -> ColumnElement[Any]:
-    """Rank pre-release dumps after full releases within a sibling group."""
-    # The filename: `tags` keeps the dumper's casing and the covering index lacks it.
-    # One regex beats a LOWER() per ILIKE on MariaDB; PostgreSQL's ILIKEs are faster.
-    is_prerelease = DialectCase(
-        postgresql=or_(
-            *[Rom.fs_name_no_ext.ilike(f"%({tag}%") for tag in PRERELEASE_FILENAME_TAGS]
-        ),
-        mysql=Rom.fs_name_no_ext.regexp_match(_PRERELEASE_PATTERN, flags="i"),
-    )
-    return case((is_prerelease, 1), else_=0)
 
 
 # The RomUser column types whose MIN/MAX matches ORDER BY semantics on every
@@ -1548,8 +1509,6 @@ class DBRomsHandler(DBBaseHandler):
         visibility: RomVisibilityFilter = UNRESTRICTED,
         session: Session = INJECTED_SESSION,
     ) -> S:
-        from handler.scan.sources import MetadataSource
-
         filters = filters or RomFilterParams()
         order_dir = order_dir.lower()
 
@@ -1715,73 +1674,17 @@ class DBRomsHandler(DBBaseHandler):
                 .with_only_columns(
                     Rom.id,
                     Rom.fs_name_no_ext,
-                    _prerelease_rank().label("prerelease_rank"),
+                    Rom.prerelease_rank,
                     _region_rank().label("region_rank"),
-                    Rom.platform_id,
-                    Rom.igdb_id,
-                    Rom.ss_id,
-                    Rom.moby_id,
-                    Rom.ra_id,
-                    Rom.hasheous_id,
-                    Rom.launchbox_id,
-                    Rom.tgdb_id,
-                    Rom.flashpoint_id,
-                    Rom.steam_id,
+                    Rom.sibling_key,
                 )
                 .subquery()
             )
-            partition_key = func.coalesce(
-                _create_metadata_id_case(
-                    MetadataSource.IGDB,
-                    base_subquery.c.igdb_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    MetadataSource.SS,
-                    base_subquery.c.ss_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    MetadataSource.MOBY,
-                    base_subquery.c.moby_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    MetadataSource.RA,
-                    base_subquery.c.ra_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    MetadataSource.HASHEOUS,
-                    base_subquery.c.hasheous_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    MetadataSource.LAUNCHBOX,
-                    base_subquery.c.launchbox_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    MetadataSource.TGDB,
-                    base_subquery.c.tgdb_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    MetadataSource.FLASHPOINT,
-                    base_subquery.c.flashpoint_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    MetadataSource.STEAM,
-                    base_subquery.c.steam_id,
-                    base_subquery.c.platform_id,
-                ),
-                _create_metadata_id_case(
-                    "romm",
-                    base_subquery.c.id,
-                    base_subquery.c.platform_id,
-                ),
-            )
+            # A game with no provider id has no key, so its own id groups it alone.
+            partition_key = [
+                base_subquery.c.sibling_key,
+                case((base_subquery.c.sibling_key.is_(None), base_subquery.c.id)),
+            ]
 
             # Only id, the row number and the group sort key flow downstream;
             # wider columns here spill the window's temp-table sort to disk.

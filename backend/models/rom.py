@@ -60,6 +60,8 @@ from utils.database import CustomJSON, is_non_blank
 NAME_SORT_KEY_MAX_LENGTH = 500
 # Length of the sha256 hex digest stored in `Rom.full_path_hash`.
 FULL_PATH_HASH_LENGTH = 64
+# Fits "flashpoint-", a platform id, "-" and a 100-character flashpoint id.
+SIBLING_KEY_LENGTH = 128
 # Max length for free-text audio tag columns (title/artist/album).
 AUDIO_TAG_MAX_LENGTH = 512
 # Max length for the binary identity columns (title id and save target).
@@ -869,9 +871,18 @@ class Rom(BaseModel):
         Index("idx_roms_fs_name_no_ext", "fs_name_no_ext"),
         # Covers the group_by_meta_id dedup window, which reads only these
         # columns, so the index has to carry every one of them: a single
-        # missing column (flashpoint_id or fs_name_no_ext, the window's
-        # partition tail and sort tiebreaker) drops the plan to a full scan of
-        # the wide roms row, JSON metadata blobs included.
+        # missing column drops the plan to a full scan of the wide roms row,
+        # JSON metadata blobs included.
+        Index(
+            "idx_roms_sibling_key_cover",
+            "platform_id",
+            "sibling_key",
+            "prerelease_rank",
+            "generated_primary_region",
+            "fs_name_no_ext",
+            "id",
+        ),
+        # The sibling_roms self-join, which matches on each provider id.
         Index(
             "idx_roms_sibling_cover",
             "platform_id",
@@ -1093,6 +1104,21 @@ class Rom(BaseModel):
     # so the dedup window can rank regions without reading the JSON.
     generated_primary_region: Mapped[str | None] = mapped_column(
         String(length=50),
+        nullable=True,
+        server_default=FetchedValue(),
+        server_onupdate=FetchedValue(),
+    )
+    # STORED generated columns the grouping window reads instead of building
+    # them per query: the first provider id set, and whether the file is a
+    # pre-release. Their expressions live in `utils.roms_columns`.
+    sibling_key: Mapped[str | None] = mapped_column(
+        String(length=SIBLING_KEY_LENGTH),
+        nullable=True,
+        server_default=FetchedValue(),
+        server_onupdate=FetchedValue(),
+    )
+    prerelease_rank: Mapped[int | None] = mapped_column(
+        SmallInteger(),
         nullable=True,
         server_default=FetchedValue(),
         server_onupdate=FetchedValue(),
