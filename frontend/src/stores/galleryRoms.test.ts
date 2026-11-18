@@ -295,6 +295,7 @@ describe("galleryRoms windowed fetch", () => {
       // Assert
       const windowCall = getRoms.mock.calls.find((c) => c[0].romIds);
       expect(Object.keys(windowCall?.[0] ?? {}).sort()).toEqual([
+        "metadataFields",
         "romIds",
         "signal",
       ]);

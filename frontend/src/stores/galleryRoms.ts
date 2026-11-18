@@ -671,6 +671,7 @@ export default defineStore("v2GalleryRoms", {
         const response = await romApi.getRoms({
           ...params,
           ...sidecars,
+          ...CARD_METADATA,
           limit: WINDOW_SIZE,
           signal: controller.signal,
         });
