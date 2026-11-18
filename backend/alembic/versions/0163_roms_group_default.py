@@ -20,7 +20,7 @@ from handler.database.roms_handler import (
     refresh_group_defaults,
 )
 from handler.redis_handler import sync_cache
-from utils.database import has_column
+from utils.database import has_column, is_postgresql
 from utils.roms_columns import (
     GROUP_DEFAULT_COLUMN,
     GROUP_DEFAULT_NAME_SORT_INDEX,
@@ -40,6 +40,11 @@ def upgrade() -> None:
     ensure_roms_columns(conn)
     refresh_group_defaults(conn)
     record_region_priority_applied()
+    # The table copy leaves the planner without statistics for the new columns,
+    # so the gallery would skip their indexes until autovacuum caught up.
+    conn.execute(
+        sa.text(f"ANALYZE {TABLE}" if is_postgresql(conn) else f"ANALYZE TABLE {TABLE}")
+    )
 
 
 def downgrade() -> None:

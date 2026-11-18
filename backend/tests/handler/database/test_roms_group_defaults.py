@@ -5,12 +5,11 @@ touched, and the grouped gallery reads the pick only where it must equal what
 the window would choose.
 """
 
-from datetime import datetime, timezone
-
 import pytest
 from sqlalchemy import select
 from tests.factories import make_rom
 
+from handler.auth.rom_visibility import UNRESTRICTED
 from handler.database import db_rom_handler
 from handler.database.base_handler import sync_session
 from handler.database.rom_filters import RomFilterParams
@@ -23,9 +22,6 @@ from models.platform import Platform
 from models.rom import Rom
 from models.user import User
 
-# Keeps every row while switching the stored path off, so the window decides.
-EVERY_ROW = datetime(1970, 1, 1, tzinfo=timezone.utc)
-
 
 def _group_defaults() -> set[int]:
     with sync_session.begin() as session:
@@ -34,20 +30,39 @@ def _group_defaults() -> set[int]:
         )
 
 
-def _grouped(
-    user_id: int | None, *, updated_after: datetime | None = None
-) -> list[int]:
-    query, sort_key = db_rom_handler.get_roms_query(order_by="name", user_id=user_id)
+def _filtered(user_id: int | None, order_dir: str, *, grouped: bool):
+    query, sort_key = db_rom_handler.get_roms_query(
+        order_by="name", order_dir=order_dir, user_id=user_id
+    )
     query = db_rom_handler.filter_roms(
         query=query,
-        filters=RomFilterParams(group_by_meta_id=True),
+        filters=RomFilterParams(group_by_meta_id=grouped),
         sort_key=sort_key,
         order_by="name",
+        order_dir=order_dir,
         user_id=user_id,
-        updated_after=updated_after,
+        include_related=False,
     )
-    with sync_session.begin() as session:
-        return list(session.scalars(query.with_only_columns(Rom.id)))
+    return query, sort_key
+
+
+def _window_index(user_id: int | None, order_dir: str):
+    query, sort_key = _filtered(user_id, order_dir, grouped=True)
+    ids = db_rom_handler.get_rom_id_index(query=query)
+    letters = db_rom_handler.with_char_index(
+        query, sort_key.column, order_dir=order_dir
+    )
+    return ids, [tuple(entry) for entry in letters]
+
+
+def _stored_index(user_id: int | None, order_dir: str):
+    query, _ = _filtered(user_id, order_dir, grouped=False)
+    ids, letters = db_rom_handler.get_gallery_index(
+        db_rom_handler.group_defaults_index_rows(
+            query, user_id=user_id, order_dir=order_dir
+        )
+    )
+    return ids, [tuple(entry) for entry in letters]
 
 
 @pytest.fixture
@@ -87,8 +102,9 @@ def test_deleting_the_primary_promotes_the_next(platform: Platform):
     assert demo.id in _group_defaults()
 
 
+@pytest.mark.parametrize("order_dir", ["asc", "desc"])
 def test_the_stored_path_matches_the_window(
-    platform: Platform, admin_user: User, current_picks
+    platform: Platform, admin_user: User, current_picks, order_dir: str
 ):
     make_rom(platform, "Plain", fs_stem="Plain (USA)", igdb_id=1)
     make_rom(platform, "Plain", fs_stem="Plain (Demo)", igdb_id=1)
@@ -102,19 +118,21 @@ def test_the_stored_path_matches_the_window(
         db_rom_handler.update_rom_user(rom_user.id, props)
 
     for user_id in (admin_user.id, None):
-        assert _grouped(user_id) == _grouped(user_id, updated_after=EVERY_ROW)
+        assert _stored_index(user_id, order_dir) == _window_index(user_id, order_dir)
 
 
-def test_the_stored_path_waits_for_the_current_region_priority(platform: Platform):
-    query, _ = db_rom_handler.get_roms_query(order_by="name")
+def test_the_stored_path_waits_for_the_current_region_priority():
+    _, sort_key = db_rom_handler.get_roms_query(order_by="name")
     filters = RomFilterParams(group_by_meta_id=True)
 
     sync_cache.delete(APPLIED_REGION_PRIORITY_KEY)
-    stale = str(db_rom_handler.filter_roms(query=query, filters=filters))
+    stale = db_rom_handler.group_defaults_apply(
+        filters, sort_key=sort_key, visibility=UNRESTRICTED
+    )
     record_region_priority_applied()
-    current = str(db_rom_handler.filter_roms(query=query, filters=filters))
+    current = db_rom_handler.group_defaults_apply(
+        filters, sort_key=sort_key, visibility=UNRESTRICTED
+    )
     sync_cache.delete(APPLIED_REGION_PRIORITY_KEY)
 
-    # The select list names every column; only the WHERE clause tells the paths apart.
-    assert "is_group_default" not in stale.split("WHERE", 1)[1]
-    assert "is_group_default" in current.split("WHERE", 1)[1]
+    assert (stale, current) == (False, True)

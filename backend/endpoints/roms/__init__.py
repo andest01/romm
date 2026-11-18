@@ -791,10 +791,24 @@ def get_roms(
         search_term=filters.search_term,
     )
 
+    # The stored group defaults build the id list and the letter strip in one
+    # statement, so the grouping window stays out of the query below.
+    group_defaults = with_rom_id_index and db_rom_handler.group_defaults_apply(
+        filters,
+        sort_key=sort_key,
+        visibility=perms.rom_visibility,
+        updated_after=updated_after,
+        released_days=parsed_released_days,
+    )
+
     # Filter down the query
     query = db_rom_handler.filter_roms(
         query=unfiltered_query,
-        filters=filters,
+        filters=(
+            filters.model_copy(update={"group_by_meta_id": False})
+            if group_defaults
+            else filters
+        ),
         sort_key=sort_key,
         order_by=order_by,
         order_dir=order_dir,
@@ -828,9 +842,19 @@ def get_roms(
         request.user.id, order_by, order_dir, filters.group_by_meta_id, is_unscoped
     )
 
-    # Get the char index for the roms. Relevance order has no letter runs.
+    rom_id_index: list[int] = []
     char_index_dict = {}
-    if with_char_index and not db_rom_handler.search_relevance_leads(
+    if group_defaults:
+        rom_id_index, char_index = db_rom_handler.get_gallery_index(
+            db_rom_handler.group_defaults_index_rows(
+                query, user_id=request.user.id, order_dir=order_dir
+            ),
+            cache_key=sidecar_cache_key,
+        )
+        if with_char_index:
+            char_index_dict = dict(char_index)
+    # Get the char index for the roms. Relevance order has no letter runs.
+    elif with_char_index and not db_rom_handler.search_relevance_leads(
         order_by, filters.search_term
     ):
         char_index = db_rom_handler.with_char_index(
@@ -878,8 +902,7 @@ def get_roms(
     # The full ordered id list backs virtual scroll, so it's computed over the
     # whole result set. Callers that only need a page (e.g. the home rails) opt
     # out with with_rom_id_index=false and avoid the full-library scan.
-    rom_id_index: list[int] = []
-    if with_rom_id_index:
+    if with_rom_id_index and not group_defaults:
         rom_id_index = db_rom_handler.get_rom_id_index(
             query=query, cache_key=sidecar_cache_key
         )

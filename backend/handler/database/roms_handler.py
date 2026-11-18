@@ -30,7 +30,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy import inspect as sa_inspect
-from sqlalchemy import literal, not_, or_, select, true, union, update
+from sqlalchemy import literal, not_, or_, select, true, union, union_all, update
 from sqlalchemy.dialects import mysql as sa_mysql
 from sqlalchemy.dialects import postgresql as sa_pg
 from sqlalchemy.exc import IntegrityError
@@ -1805,35 +1805,6 @@ class DBRomsHandler(DBBaseHandler):
             aggregates_sort_key = sort_key.source == "rom_user" and isinstance(
                 sort_key.column.type, _GROUP_SORT_AGGREGATE_TYPES
             )
-            # The stored pick answers when nothing narrows a group's versions:
-            # no filter but a platform, no per-rom or age rule, the region
-            # priority it was made with. A group this user hid a version of or
-            # picked a main version in still goes through the window below.
-            use_group_defaults = (
-                not aggregates_sort_key
-                and not filters.has_filters()
-                and not filters.scopes_beyond_platforms()
-                and updated_after is None
-                and not released_days
-                and not visibility.hidden_rom_ids
-                and not visibility.has_age_rule
-                and group_defaults_current()
-            )
-            group_source = query
-            if use_group_defaults:
-                personal_pick_keys = (
-                    select(Rom.group_key)
-                    .join(RomUser, RomUser.rom_id == Rom.id)
-                    .where(
-                        RomUser.user_id == user_id,
-                        Rom.group_key.is_not(None),
-                        or_(
-                            RomUser.hidden.is_(True), RomUser.is_main_sibling.is_(True)
-                        ),
-                    )
-                )
-                group_source = query.where(Rom.group_key.in_(personal_pick_keys))
-
             # Create a subquery that identifies the primary ROM in each group.
             # Priority order: visible to this user, then is_main_sibling (desc),
             # then a full release over a pre-release, then the configured
@@ -1842,7 +1813,7 @@ class DBRomsHandler(DBBaseHandler):
             # Rom, whose JSON metadata blobs make the derived table huge), and
             # drop the carried-over ORDER BY the window doesn't use.
             base_subquery = (
-                group_source.order_by(None)
+                query.order_by(None)
                 .with_only_columns(
                     Rom.id,
                     Rom.fs_name_no_ext,
@@ -1933,25 +1904,12 @@ class DBRomsHandler(DBBaseHandler):
                     )
                 )
             else:
-                # Keep only the primary ROM of each group.
-                window_winners = Rom.id.in_(
-                    select(group_subquery.c.id).where(group_subquery.c.row_num == 1)
-                )
-                if use_group_defaults:
-                    query = query.filter(
-                        or_(
-                            and_(
-                                Rom.is_group_default.is_(True),
-                                or_(
-                                    Rom.group_key.is_(None),
-                                    Rom.group_key.not_in(personal_pick_keys),
-                                ),
-                            ),
-                            window_winners,
-                        )
+                # Add a filter to the original query to only include the primary ROM from each group
+                query = query.filter(
+                    Rom.id.in_(
+                        select(group_subquery.c.id).where(group_subquery.c.row_num == 1)
                     )
-                else:
-                    query = query.filter(window_winners)
+                )
 
         if user_id:
             query = query.filter(rom_user_visible)
@@ -2227,6 +2185,149 @@ class DBRomsHandler(DBBaseHandler):
         if redis_key is not None and version is not None:
             _store_versioned_cache(redis_key, version, ids)
         return ids
+
+    def group_defaults_apply(
+        self,
+        filters: RomFilterParams,
+        *,
+        sort_key: _GallerySortKey,
+        visibility: RomVisibilityFilter,
+        updated_after: datetime | None = None,
+        released_days: Sequence[tuple[int, int]] | None = None,
+    ) -> bool:
+        """Whether the stored group defaults answer this grouped, name-sorted gallery.
+
+        They do when nothing narrows a group's versions: no filter but a
+        platform, no per-rom or age rule, and the region priority they were
+        picked with.
+        """
+        return bool(
+            filters.group_by_meta_id
+            and sort_key.column is Rom.name_sort_key
+            and not filters.has_filters()
+            and not filters.scopes_beyond_platforms()
+            and updated_after is None
+            and not released_days
+            and not visibility.hidden_rom_ids
+            and not visibility.has_age_rule
+            and group_defaults_current()
+        )
+
+    def group_defaults_index_rows(
+        self, query: RomSelect, *, user_id: int | None, order_dir: str
+    ) -> Select[int, str | None]:
+        """Each tile's id and first letter in name order, off the stored defaults.
+
+        Two halves that never share a group: the stored default of every group
+        this user hasn't changed, read in name order off its index, and a
+        re-pick of the groups they hid a version of or chose a main version in.
+
+        Args:
+            query: the filtered gallery query, ungrouped.
+        """
+        query = query.order_by(None)
+        group_defaults = query.with_only_columns(Rom.id, Rom.name_sort_key).where(
+            Rom.is_group_default.is_(True)
+        )
+        halves: list[Select[int, str | None]] = [group_defaults]
+        if user_id is not None:
+            picked = (
+                select(Rom.group_key)
+                .join(RomUser, RomUser.rom_id == Rom.id)
+                .where(
+                    RomUser.user_id == user_id,
+                    Rom.group_key.is_not(None),
+                    or_(RomUser.hidden.is_(True), RomUser.is_main_sibling.is_(True)),
+                )
+                .cte("picked")
+            )
+            picked_keys = select(picked.c.group_key)
+            halves[0] = group_defaults.where(
+                or_(Rom.group_key.is_(None), Rom.group_key.not_in(picked_keys))
+            )
+            # `query` already drops this user's hidden versions, so rank 1 is the
+            # best one they can see. Index columns only, so the window stays on
+            # idx_roms_group_key_cover; the winners fetch their name below.
+            ranked = (
+                query.with_only_columns(
+                    Rom.id,
+                    func.row_number()
+                    .over(
+                        partition_by=Rom.group_key,
+                        order_by=[
+                            func.coalesce(
+                                cast(RomUser.is_main_sibling, Integer), 0
+                            ).desc(),
+                            *_version_order(
+                                Rom.prerelease_rank,
+                                _region_rank(),
+                                Rom.fs_name_no_ext,
+                                Rom.id,
+                            ),
+                        ],
+                    )
+                    .label("row_num"),
+                )
+                .where(Rom.group_key.in_(picked_keys))
+                .cte("ranked")
+            )
+            halves.append(
+                select(Rom.id, Rom.name_sort_key)
+                .join(ranked, ranked.c.id == Rom.id)
+                .where(ranked.c.row_num == 1)
+            )
+
+        gallery = (union_all(*halves) if len(halves) > 1 else halves[0]).cte("gallery")
+        descending = order_dir == "desc"
+        return select(
+            gallery.c.id, func.substring(gallery.c.name_sort_key, 1, 1)
+        ).order_by(
+            gallery.c.name_sort_key.desc() if descending else gallery.c.name_sort_key,
+            gallery.c.id.desc() if descending else gallery.c.id,
+        )
+
+    @begin_session
+    def get_gallery_index(
+        self,
+        rows: Select[int, str | None],
+        *,
+        cache_key: str | None = None,
+        session: Session = INJECTED_SESSION,
+    ) -> tuple[list[int], list[tuple[str, int]]]:
+        """Every tile's id in gallery order, and where each first letter starts.
+
+        One statement serves the virtual scroll's id list and the letter strip,
+        so the grouping runs once.
+
+        Args:
+            rows: each tile's id and first letter, in gallery order.
+        """
+        id_key: str | None = None
+        letter_key: str | None = None
+        version: str | None = None
+        if cache_key:
+            version = _filter_values_cache_version()
+            id_key = _rom_id_index_redis_key(cache_key, version)
+            letter_key = _char_index_redis_key(cache_key, version)
+            cached_ids = sync_cache.get(id_key)
+            cached_letters = sync_cache.get(letter_key)
+            if cached_ids is not None and cached_letters is not None:
+                rom_ids: list[int] = json.loads(cached_ids)
+                char_index: list[tuple[str, int]] = json.loads(cached_letters)
+                return rom_ids, char_index
+
+        ids: list[int] = []
+        starts: dict[str, int] = {}
+        for position, (rom_id, letter) in enumerate(session.execute(rows)):
+            ids.append(rom_id)
+            if letter is not None:
+                starts.setdefault(letter, position)
+        letters = sorted(starts.items())
+
+        if version is not None and id_key is not None and letter_key is not None:
+            _store_versioned_cache(id_key, version, ids)
+            _store_versioned_cache(letter_key, version, letters)
+        return ids, letters
 
     @begin_session
     def get_rom_count(
