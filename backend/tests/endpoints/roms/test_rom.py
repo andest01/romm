@@ -558,6 +558,160 @@ def test_get_roms_without_provider_metadata(
     assert default["igdb_metadata"] and default["merged_ra_metadata"]
 
 
+def test_get_roms_without_provider_metadata_reads_only_derived_field_columns(
+    client: TestClient,
+    access_token: str,
+    platform: Platform,
+    executed_statements: list[str],
+):
+    make_rom(
+        platform,
+        "bare",
+        ss_metadata={"video_path": "roms/1/v.mp4"},
+        ra_metadata={"achievements": [], "hash_match": True},
+    )
+    before = len(executed_statements)
+
+    (item,) = client.get(
+        "/api/roms",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={"platform_id": platform.id, "with_provider_metadata": False},
+    ).json()["items"]
+
+    assert item["path_video"] == "roms/1/v.mp4"
+    assert item["ss_metadata"] is None
+    rom_selects = [s for s in executed_statements[before:] if "FROM roms" in s]
+    assert rom_selects
+    assert not any("ra_metadata" in s for s in rom_selects)
+
+
+# The fields a gallery card reads, as the frontend asks for them.
+CARD_FIELDS = (
+    "ss_metadata",
+    "launchbox_metadata",
+    "gamelist_metadata",
+    "hltb_metadata",
+    "hasheous_metadata",
+    "merged_ra_metadata",
+)
+# A gallery window's request, with the sidecars a loaded gallery already holds.
+WINDOW_PARAMS = {
+    "with_char_index": False,
+    "with_filter_values": False,
+    "with_rom_id_index": False,
+    "with_total": False,
+}
+
+
+def _make_rom_with_every_card_provider(platform: Platform) -> Rom:
+    return make_rom(
+        platform,
+        "carded",
+        igdb_metadata={"youtube_video_id": "abc", "alternative_names": ["Alt"]},
+        moby_metadata={"moby_score": "8.0"},
+        ss_metadata={"video_path": "roms/1/video.mp4"},
+        launchbox_metadata={"community_rating": 4.0},
+        gamelist_metadata={"rating": 0.8},
+        hltb_metadata={"main_story": 3600},
+        hasheous_metadata={"tosec_match": True},
+        ra_metadata={"achievements": [], "hash_match": True},
+    )
+
+
+def test_get_roms_metadata_fields_match_the_default_on_every_listed_field(
+    client: TestClient, access_token: str, platform: Platform
+):
+    _make_rom_with_every_card_provider(platform)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    params = {"platform_id": platform.id, **WINDOW_PARAMS}
+
+    (default,) = client.get("/api/roms", headers=headers, params=params).json()["items"]
+    (card,) = client.get(
+        "/api/roms",
+        headers=headers,
+        params={**params, "metadata_fields": ",".join(CARD_FIELDS)},
+    ).json()["items"]
+
+    unread = set(PROVIDER_METADATA_FIELDS) - set(CARD_FIELDS)
+    assert all(card[field] is not None for field in CARD_FIELDS)
+    assert all(card[field] is None for field in unread)
+    # A user with no rom_user row gets a placeholder stamped per request.
+    skipped = unread | {"alternative_names", "youtube_video_id", "rom_user"}
+    assert {k: v for k, v in card.items() if k not in skipped} == {
+        k: v for k, v in default.items() if k not in skipped
+    }
+
+
+def test_get_roms_metadata_fields_read_only_the_listed_columns(
+    client: TestClient,
+    access_token: str,
+    platform: Platform,
+    executed_statements: list[str],
+):
+    _make_rom_with_every_card_provider(platform)
+    before = len(executed_statements)
+
+    client.get(
+        "/api/roms",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={
+            "platform_id": platform.id,
+            "metadata_fields": ",".join(CARD_FIELDS),
+            **WINDOW_PARAMS,
+        },
+    )
+
+    row_selects = [s for s in executed_statements[before:] if "ss_metadata" in s]
+    assert row_selects
+    assert not any("igdb_metadata" in s or "moby_metadata" in s for s in row_selects)
+
+
+def test_get_roms_empty_metadata_fields_return_no_provider_metadata(
+    client: TestClient, access_token: str, platform: Platform
+):
+    _make_rom_with_every_card_provider(platform)
+
+    (item,) = client.get(
+        "/api/roms",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={"platform_id": platform.id, "metadata_fields": ""},
+    ).json()["items"]
+
+    assert all(item[field] is None for field in PROVIDER_METADATA_FIELDS)
+
+
+def test_get_roms_refuses_an_unknown_metadata_field(
+    client: TestClient, access_token: str, platform: Platform
+):
+    response = client.get(
+        "/api/roms",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={"platform_id": platform.id, "metadata_fields": "ss_metadata,bogus"},
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    assert "bogus" in response.json()["detail"]
+
+
+def test_get_roms_deprecated_flag_wins_over_metadata_fields(
+    client: TestClient, access_token: str, platform: Platform
+):
+    _make_rom_with_every_card_provider(platform)
+
+    (item,) = client.get(
+        "/api/roms",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={
+            "platform_id": platform.id,
+            "metadata_fields": ",".join(CARD_FIELDS),
+            "with_provider_metadata": False,
+        },
+    ).json()["items"]
+
+    assert all(item[field] is None for field in PROVIDER_METADATA_FIELDS)
+    assert item["alternative_names"] == ["Alt"]
+
+
 def test_get_roms_sorted_by_user_field_keeps_all_roms(
     client: TestClient,
     access_token: str,

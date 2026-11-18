@@ -56,3 +56,16 @@ def test_loading_a_page_keeps_the_file_stats_the_serializer_reads():
     assert "rom_files" in _sql(
         db_rom_handler.get_page_rows_query(PAGE_IDS, include_file_stats=True)
     )
+
+
+def test_loading_a_page_selects_only_the_listed_provider_columns():
+    sql = _sql(
+        db_rom_handler.get_page_rows_query(PAGE_IDS, provider_columns=("ss_metadata",))
+    )
+
+    assert "roms.ss_metadata" in sql
+    assert "roms.igdb_metadata" not in sql
+
+
+def test_loading_a_page_selects_every_provider_column_by_default():
+    assert "roms.igdb_metadata" in _sql(db_rom_handler.get_page_rows_query(PAGE_IDS))
