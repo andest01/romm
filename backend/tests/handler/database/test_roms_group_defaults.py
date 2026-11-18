@@ -59,9 +59,8 @@ def _window_index(
     visibility: RomVisibilityFilter = UNRESTRICTED,
 ):
     query, sort_key = _filtered(user_id, order_dir, grouped=True, visibility=visibility)
-    ids = db_rom_handler.get_rom_id_index(query=query)
-    letters = db_rom_handler.with_char_index(
-        query, sort_key.column, order_dir=order_dir
+    ids, letters = db_rom_handler.get_gallery_index(
+        db_rom_handler.index_rows(query, letter_of=sort_key.column)
     )
     return ids, [tuple(entry) for entry in letters]
 

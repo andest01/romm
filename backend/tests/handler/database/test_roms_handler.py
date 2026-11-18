@@ -34,7 +34,6 @@ from handler.database import db_rom_handler
 from handler.database.base_handler import sync_engine, sync_session
 from handler.database.roms_handler import (
     _filter_values_cache_version,
-    user_sort_cache_version,
 )
 from models.assets import Save, State
 from models.platform import Platform
@@ -1355,7 +1354,6 @@ class TestRomUserStatusWrites:
         self, platform: Platform, admin_user: User
     ):
         new_rom = make_rom(platform, "Fresh Game", ra_id=12345)
-        before = int(user_sort_cache_version(admin_user.id))
         raced = False
 
         def commit_competing_row(
@@ -1383,7 +1381,6 @@ class TestRomUserStatusWrites:
         assert raced
         assert updated == 1
         assert _rom_user_status(new_rom.id, admin_user.id) == RomUserStatus.FINISHED
-        assert int(user_sort_cache_version(admin_user.id)) == before + 1
 
     def test_add_rom_user_returns_the_existing_row(self, rom: Rom, admin_user: User):
         existing = db_rom_handler.get_rom_user(rom.id, admin_user.id)

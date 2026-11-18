@@ -176,14 +176,16 @@ class TestRomUserSortResults:
         assert db_rom_handler.get_rom_count(query=query) == 4
 
     @pytest.mark.parametrize("order_by", ["last_played", "status"])
-    def test_char_index_skips_non_lexical_sorts(self, admin_user: User, order_by: str):
-        query, sort_key = db_rom_handler.get_roms_query(
+    def test_letter_strip_skips_non_lexical_sorts(
+        self, admin_user: User, order_by: str
+    ):
+        _, sort_key = db_rom_handler.get_roms_query(
             order_by=order_by, user_id=admin_user.id
         )
 
         # Offsets into a non-lexical order (a date, or an enum the database
         # orders by declaration) would hand the alpha strip wrong targets.
-        assert db_rom_handler.with_char_index(query, sort_key.column) == []
+        assert not db_rom_handler.sorts_by_letter(sort_key.column)
 
 
 def _grouped_names(user: User, platform: Platform, order_dir: str) -> list[str]:
@@ -286,9 +288,10 @@ class TestGroupedRomUserSortResults:
             for rom in db_rom_handler.get_roms_scalar(user_id=admin_user.id)
         }
 
-        assert [
-            by_id[rom_id] for rom_id in db_rom_handler.get_rom_id_index(query=grouped)
-        ] == [
+        ids, _ = db_rom_handler.get_gallery_index(
+            db_rom_handler.index_rows(grouped, letter_of=None)
+        )
+        assert [by_id[rom_id] for rom_id in ids] == [
             "Sonic (USA)",
             "Tails (USA)",
             "Knuckles (USA)",
@@ -308,7 +311,9 @@ class TestGroupedRomUserSortResults:
             user_id=admin_user.id,
         )
 
-        ids = db_rom_handler.get_rom_id_index(query=grouped)
+        ids, _ = db_rom_handler.get_gallery_index(
+            db_rom_handler.index_rows(grouped, letter_of=None)
+        )
         by_id = {
             rom.id: rom.fs_name_no_ext
             for rom in db_rom_handler.get_roms_scalar(user_id=admin_user.id)

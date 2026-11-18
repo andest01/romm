@@ -93,11 +93,6 @@ from handler.database import (
 )
 from handler.database.base_handler import sync_session
 from handler.database.rom_filters import RomFilterParams, RomFiltersDict
-from handler.database.roms_handler import (
-    sorts_by_rom_user_column,
-    user_sibling_cache_version,
-    user_sort_cache_version,
-)
 from handler.filesystem import fs_resource_handler, fs_rom_handler
 from handler.filesystem.assets_handler import validate_image_upload
 from handler.filesystem.resources_handler import LOCAL_FILE_SCHEMES

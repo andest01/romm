@@ -477,25 +477,6 @@ def _filter_values_cache_keys_key(version: str) -> str:
     return f"filter_values:keys:v{version}"
 
 
-def _user_sort_version_key(user_id: int) -> str:
-    return f"sidecar:user_ver:{user_id}"
-
-
-def _user_sibling_version_key(user_id: int) -> str:
-    return f"sidecar:user_sib_ver:{user_id}"
-
-
-def user_sort_cache_version(user_id: int) -> str:
-    """Version component for one user's RomUser-sorted sidecar cache keys."""
-    return _cache_version(_user_sort_version_key(user_id))
-
-
-def user_sibling_cache_version(user_id: int) -> str:
-    """Version component for one user's grouped sidecar cache keys, moved
-    only by main-sibling picks."""
-    return _cache_version(_user_sibling_version_key(user_id))
-
-
 def _sidecar_redis_key(prefix: str, cache_key: str, version: str) -> str:
     """Every gallery sidecar key shares this shape, so none can omit the schema version."""
     return f"{prefix}:{ROM_FILTERS_CACHE_SCHEMA_VERSION}:{cache_key}:v{version}"
@@ -503,14 +484,6 @@ def _sidecar_redis_key(prefix: str, cache_key: str, version: str) -> str:
 
 def _filter_values_redis_key(cache_key: str, version: str) -> str:
     return _sidecar_redis_key("filter_values", cache_key, version)
-
-
-def _char_index_redis_key(cache_key: str, version: str) -> str:
-    return _sidecar_redis_key("char_index", cache_key, version)
-
-
-def _rom_id_index_redis_key(cache_key: str, version: str) -> str:
-    return _sidecar_redis_key("rom_id_index", cache_key, version)
 
 
 def _store_versioned_cache(redis_key: str, version: str, result: Any) -> None:
@@ -731,11 +704,6 @@ def _resolve_gallery_sort_key(order_by: str, user_id: int | None) -> _GallerySor
     return _GallerySortKey(column, "rom")
 
 
-def sorts_by_rom_user_column(order_by: str, user_id: int) -> bool:
-    """True when this sort key resolves to a per-user RomUser column."""
-    return _resolve_gallery_sort_key(order_by, user_id).source == "rom_user"
-
-
 # Default for a `query` parameter that with_details and with_simple_details fill before the body runs.
 INJECTED_ROM_QUERY = typing_cast(RomSelect, None)
 
@@ -876,10 +844,6 @@ def _bump_user_caches_after_commit(session: Session) -> None:
         # The write is already durable, so a cache failure only logs; the
         # stale entry falls to the TTL.
         try:
-            if "sort" in uid_flags:
-                sync_cache.incr(_user_sort_version_key(uid))
-            if "sib" in uid_flags:
-                sync_cache.incr(_user_sibling_version_key(uid))
             if "feed" in uid_flags:
                 # Imported here because the recommendation package reads
                 # this module.
@@ -897,23 +861,12 @@ def _drop_user_cache_bumps(session: Session) -> None:
     session.info.pop(USER_CACHE_BUMPS_KEY, None)
 
 
-def _queue_user_cache_bumps(
-    session: Session,
-    user_id: int,
-    *,
-    sort_keys: bool = False,
-    siblings: bool = False,
-    feed: bool = False,
-) -> None:
-    """Queues per-user cache invalidations for after this transaction
+def _queue_user_cache_bumps(session: Session, user_id: int) -> None:
+    """Queues the recommendation feed's invalidation for after this transaction
     commits, so a rollback bumps nothing and a concurrent reader cannot
     cache pre-commit rows under the new version."""
     bumps: dict[int, set[str]] = session.info.setdefault(USER_CACHE_BUMPS_KEY, {})
-    bumps.setdefault(user_id, set()).update(
-        flag
-        for flag, queued in (("sort", sort_keys), ("sib", siblings), ("feed", feed))
-        if queued
-    )
+    bumps.setdefault(user_id, set()).add("feed")
 
 
 def _track_text_match(search: str) -> ColumnElement[bool]:
@@ -2120,96 +2073,6 @@ class DBRomsHandler(DBBaseHandler):
             )
         return hidden
 
-    @begin_session
-    def with_char_index(
-        self,
-        query: RomSelect,
-        order_by_attr: Any,
-        *,
-        cache_key: str | None = None,
-        order_dir: str = "asc",
-        session: Session = INJECTED_SESSION,
-    ) -> list[tuple[str, int]]:
-        # Letter offsets only index a lexically ordered result. `Enum` subclasses
-        # `String`, but the database orders native enums by declaration order.
-        column_type = order_by_attr.type
-        is_lexical = isinstance(column_type, (String, Text)) and not isinstance(
-            column_type, Enum
-        )
-        if not is_lexical:
-            return []
-
-        redis_key: str | None = None
-        version: str | None = None
-        if cache_key:
-            version = _filter_values_cache_version()
-            redis_key = _char_index_redis_key(cache_key, version)
-            cached = sync_cache.get(redis_key)
-            if cached is not None:
-                char_index: list[tuple[str, int]] = json.loads(cached)
-                return char_index
-
-        # Drop any ordering carried over from the main query (e.g. search relevance).
-        # This builds its own positional ordering below.
-        query = query.order_by(None)
-
-        # The alpha-strip only needs each first letter's starting offset, not a
-        # positional number for every row. Counting rows per letter and
-        # accumulating those counts avoids row_number() over the whole library,
-        # which forced a full materialization + filesort on large libraries.
-        descending = order_dir.lower() == "desc"
-        letter = func.substring(order_by_attr, 1, 1)
-        counts = (
-            query.with_only_columns(letter.label("letter"), func.count().label("count"))
-            .group_by(letter)
-            .order_by(letter.desc() if descending else letter.asc())
-        )
-
-        # Walk the letters in the same direction the client paginates over, so
-        # each letter's offset is the count of rows that sort before it.
-        result: list[tuple[str, int]] = []
-        offset = 0
-        for value, count in session.execute(counts).all():
-            if value is not None:
-                result.append((value, offset))
-            offset += count
-        result.sort(key=lambda entry: entry[0])
-        if redis_key is not None and version is not None:
-            _store_versioned_cache(redis_key, version, result)
-        return result
-
-    @begin_session
-    def get_rom_id_index(
-        self,
-        query: RomSelect,
-        *,
-        cache_key: str | None = None,
-        session: Session = INJECTED_SESSION,
-    ) -> list[int]:
-        """Return every matching rom id in query order.
-
-        The list backs the gallery's virtual scroll, so it spans the whole
-        result set (not a page) and is recomputed on every request. Building it
-        runs the sibling-dedup window over the full library, so the unscoped
-        case is memoised under the same versioned cache as the other gallery
-        sidecars.
-        """
-        redis_key: str | None = None
-        version: str | None = None
-        if cache_key:
-            version = _filter_values_cache_version()
-            redis_key = _rom_id_index_redis_key(cache_key, version)
-            cached = sync_cache.get(redis_key)
-            if cached is not None:
-                rom_ids: list[int] = json.loads(cached)
-                return rom_ids
-
-        ids = list(session.scalars(query.with_only_columns(Rom.id)).all())
-
-        if redis_key is not None and version is not None:
-            _store_versioned_cache(redis_key, version, ids)
-        return ids
-
     def group_defaults_apply(
         self,
         filters: RomFilterParams,
@@ -2822,7 +2685,6 @@ class DBRomsHandler(DBBaseHandler):
             return existing
         # A fresh row's zero defaults replace NULL sort keys, which moves
         # this user's RomUser-sorted order.
-        _queue_user_cache_bumps(session, user_id, sort_keys=True)
         return rom_user
 
     @begin_session
@@ -2894,7 +2756,7 @@ class DBRomsHandler(DBBaseHandler):
 
         # A freshly inserted row has no status, so the UPDATE counts it too.
         if updated:
-            _queue_user_cache_bumps(session, user_id, sort_keys=True, feed=True)
+            _queue_user_cache_bumps(session, user_id)
         return updated
 
     @begin_session
@@ -2915,15 +2777,8 @@ class DBRomsHandler(DBBaseHandler):
         if not rom_user:
             return None
 
-        # Other RomUser columns can back a sort (hidden bumps the global version,
-        # pinned_media sorts nothing); main-sibling picks move grouped sets.
-        _queue_user_cache_bumps(
-            session,
-            rom_user.user_id,
-            sort_keys=bool(data.keys() - {"hidden", "pinned_media"}),
-            siblings="is_main_sibling" in data,
-            feed=bool(RECOMMENDATION_SEED_FIELDS & data.keys()),
-        )
+        if RECOMMENDATION_SEED_FIELDS & data.keys():
+            _queue_user_cache_bumps(session, rom_user.user_id)
 
         if not data.get("is_main_sibling", False):
             return rom_user
