@@ -17,6 +17,7 @@ from config import (
 )
 from config.config_manager import config_manager as cm
 from handler.database import db_save_handler
+from handler.database.roms_handler import group_defaults_current
 from handler.metadata.base_handler import (
     MAME_XML_KEY,
     METADATA_FIXTURES_DIR,
@@ -53,6 +54,7 @@ tracer = trace.get_tracer(__name__)
 
 RECOMPUTE_SAVE_HASHES_JOB_ID = "recompute_save_content_hashes_bootstrap"
 RECOMPUTE_NAME_SORT_KEYS_JOB_ID = "recompute_name_sort_keys_bootstrap"
+REFRESH_GROUP_DEFAULTS_JOB_ID = "refresh_group_defaults_bootstrap"
 CONVERT_IMAGES_TO_WEBP_JOB_ID = "convert_images_to_webp_bootstrap"
 UPDATE_LAUNCHBOX_METADATA_JOB_ID = "update_launchbox_metadata_bootstrap"
 UPDATE_SWITCH_TITLEDB_JOB_ID = "update_switch_titledb_bootstrap"
@@ -215,6 +217,23 @@ def _warn_about_unknown_platform_bindings() -> None:
 
 
 @tracer.start_as_current_span("main")
+def _enqueue_refresh_group_defaults_if_needed() -> None:
+    """Re-pick group defaults when `scan.priority.region` changed since they were."""
+    try:
+        outdated = not group_defaults_current()
+    except Exception:
+        log.exception("Failed to compare the region priority; skipping the refresh")
+        return
+
+    if outdated:
+        job_id = REFRESH_GROUP_DEFAULTS_JOB_ID
+        try:
+            _free_finished_job_id(job_id)
+        except Exception:
+            log.exception(f"Failed to check {job_id}; enqueueing anyway")
+        _enqueue_backfill("refresh_group_defaults", job_id)
+
+
 async def main() -> None:
     """Run startup tasks."""
 
@@ -243,6 +262,7 @@ async def main() -> None:
 
         _enqueue_recompute_save_hashes_if_needed()
         _enqueue_recompute_name_sort_keys_if_needed()
+        _enqueue_refresh_group_defaults_if_needed()
 
         try:
             await _rebuild_outdated_metadata_stores()

@@ -13,6 +13,7 @@ from typing import cast as typing_cast
 from redis.exceptions import WatchError
 from sqlalchemy import (
     ColumnExpressionArgument,
+    Connection,
     DateTime,
     Enum,
     Integer,
@@ -129,7 +130,7 @@ from utils.sql_dialect import (
     optimizer_hint_on_mysql,
 )
 
-from .base_handler import DBBaseHandler, affected_rows, sync_engine
+from .base_handler import DBBaseHandler, affected_rows, sync_engine, sync_session
 from .snapshots_handler import link_channels_to_files
 
 type RomSelect = Select[Rom]
@@ -551,6 +552,122 @@ def _region_rank() -> ColumnElement[Any]:
     )
 
 
+def _version_order(
+    prerelease_rank: ColumnElement[Any] | QueryableAttribute[Any],
+    region_rank: ColumnElement[Any] | QueryableAttribute[Any],
+    fs_name_no_ext: ColumnElement[Any] | QueryableAttribute[Any],
+    rom_id: ColumnElement[Any] | QueryableAttribute[Any],
+) -> list[ColumnElement[Any]]:
+    """How a group ranks its versions before anything per user.
+
+    The id comes last: two dumps of one release (a .cue and an .iso) tie on
+    everything else, and the database would pick between them per query.
+    """
+    return [
+        prerelease_rank.asc(),
+        region_rank.asc(),
+        fs_name_no_ext.asc(),
+        rom_id.asc(),
+    ]
+
+
+# The columns a write can move a rom between groups or re-rank it by.
+GROUPING_INPUT_COLUMNS = frozenset(
+    {
+        "platform_id",
+        "igdb_id",
+        "ss_id",
+        "moby_id",
+        "ra_id",
+        "hasheous_id",
+        "launchbox_id",
+        "tgdb_id",
+        "flashpoint_id",
+        "steam_id",
+        "fs_name",
+        "regions",
+    }
+)
+# The region priority `is_group_default` was last refreshed with.
+APPLIED_REGION_PRIORITY_KEY = "romm:group_defaults_region_priority"
+
+
+def _region_priority() -> list[str]:
+    return list(cm.get_config().SCAN_REGION_PRIORITY)
+
+
+def group_defaults_current() -> bool:
+    """Whether `is_group_default` was refreshed with today's region priority."""
+    applied = sync_cache.get(APPLIED_REGION_PRIORITY_KEY)
+    return applied is not None and json.loads(applied) == _region_priority()
+
+
+def record_region_priority_applied() -> None:
+    sync_cache.set(APPLIED_REGION_PRIORITY_KEY, json.dumps(_region_priority()))
+
+
+def refresh_group_defaults(
+    executor: Session | Connection, keys: Iterable[str | None] | None = None
+) -> None:
+    """Mark the version that represents each group for a user with no picks
+    of their own. A rom without a group key is its own group.
+
+    Args:
+        keys: the groups to refresh, or None for every group.
+    """
+    in_scope = Rom.group_key.is_not(None)
+    if keys is not None:
+        groups = {key for key in keys if key is not None}
+        if not groups:
+            return
+        in_scope = Rom.group_key.in_(groups)
+    else:
+        executor.execute(
+            update(Rom)
+            .where(Rom.group_key.is_(None), Rom.is_group_default.is_(False))
+            .values(is_group_default=True)
+            .execution_options(synchronize_session=False)
+        )
+
+    ranked = (
+        select(
+            Rom.id,
+            Rom.is_group_default,
+            func.row_number()
+            .over(
+                partition_by=Rom.group_key,
+                order_by=_version_order(
+                    Rom.prerelease_rank, _region_rank(), Rom.fs_name_no_ext, Rom.id
+                ),
+            )
+            .label("row_num"),
+        )
+        .where(in_scope)
+        .subquery()
+    )
+    # Only rows whose flag is wrong are written: each update copies a wide row
+    # and its index entries. Read first: MariaDB can't update roms from a
+    # subquery over roms.
+    wins = ranked.c.row_num == 1
+    flips = executor.execute(
+        select(ranked.c.id, wins).where(
+            or_(
+                and_(wins, ranked.c.is_group_default.is_(False)),
+                and_(ranked.c.row_num > 1, ranked.c.is_group_default.is_(True)),
+            )
+        )
+    ).all()
+    for value in (True, False):
+        ids = [rom_id for rom_id, won in flips if bool(won) is value]
+        for chunk in batched(ids, 1000, strict=False):
+            executor.execute(
+                update(Rom)
+                .where(Rom.id.in_(chunk))
+                .values(is_group_default=value)
+                .execution_options(synchronize_session=False)
+            )
+
+
 # The RomUser column types whose MIN/MAX matches ORDER BY semantics on every
 # dialect; enum and boolean keys stay on the representative.
 _GROUP_SORT_AGGREGATE_TYPES = (DateTime, Integer)
@@ -815,10 +932,37 @@ class DBRomsHandler(DBBaseHandler):
         query: RomSelect = INJECTED_ROM_QUERY,
         session: Session = INJECTED_SESSION,
     ) -> Rom:
+        # `merge` updates a rom that already has an id, maybe out of its group.
+        old_key = (
+            session.scalar(select(Rom.group_key).where(Rom.id == rom.id))
+            if rom.id
+            else None
+        )
         rom = session.merge(rom)
         session.flush()
+        self._regroup(session, rom.id, old_key)
 
         return session.scalars(query.filter_by(id=rom.id).limit(1)).one()
+
+    @staticmethod
+    def _regroup(session: Session, rom_id: int, old_key: str | None) -> None:
+        """Re-pick the defaults of the groups a write to `rom_id` touched."""
+        # Read back: the database computes the key, the session can't know it.
+        new_key = session.scalar(select(Rom.group_key).where(Rom.id == rom_id))
+        if new_key is None:
+            session.execute(
+                update(Rom)
+                .where(Rom.id == rom_id)
+                .values(is_group_default=True)
+                .execution_options(synchronize_session=False)
+            )
+        refresh_group_defaults(session, {old_key, new_key})
+
+    def refresh_all_group_defaults(self) -> None:
+        """Re-pick every group's default, then record the region priority used."""
+        with sync_session.begin() as session:
+            refresh_group_defaults(session)
+        record_region_priority_applied()
 
     @begin_session
     @with_details
@@ -1661,6 +1805,34 @@ class DBRomsHandler(DBBaseHandler):
             aggregates_sort_key = sort_key.source == "rom_user" and isinstance(
                 sort_key.column.type, _GROUP_SORT_AGGREGATE_TYPES
             )
+            # The stored pick answers when nothing narrows a group's versions:
+            # no filter but a platform, no per-rom or age rule, the region
+            # priority it was made with. A group this user hid a version of or
+            # picked a main version in still goes through the window below.
+            use_group_defaults = (
+                not aggregates_sort_key
+                and not filters.has_filters()
+                and not filters.scopes_beyond_platforms()
+                and updated_after is None
+                and not released_days
+                and not visibility.hidden_rom_ids
+                and not visibility.has_age_rule
+                and group_defaults_current()
+            )
+            group_source = query
+            if use_group_defaults:
+                personal_pick_keys = (
+                    select(Rom.group_key)
+                    .join(RomUser, RomUser.rom_id == Rom.id)
+                    .where(
+                        RomUser.user_id == user_id,
+                        Rom.group_key.is_not(None),
+                        or_(
+                            RomUser.hidden.is_(True), RomUser.is_main_sibling.is_(True)
+                        ),
+                    )
+                )
+                group_source = query.where(Rom.group_key.in_(personal_pick_keys))
 
             # Create a subquery that identifies the primary ROM in each group.
             # Priority order: visible to this user, then is_main_sibling (desc),
@@ -1670,7 +1842,7 @@ class DBRomsHandler(DBBaseHandler):
             # Rom, whose JSON metadata blobs make the derived table huge), and
             # drop the carried-over ORDER BY the window doesn't use.
             base_subquery = (
-                query.order_by(None)
+                group_source.order_by(None)
                 .with_only_columns(
                     Rom.id,
                     Rom.fs_name_no_ext,
@@ -1690,12 +1862,12 @@ class DBRomsHandler(DBBaseHandler):
             # wider columns here spill the window's temp-table sort to disk.
             window_order = [
                 is_main_sibling_order,
-                base_subquery.c.prerelease_rank.asc(),
-                base_subquery.c.region_rank.asc(),
-                base_subquery.c.fs_name_no_ext.asc(),
-                # Two dumps of one release (a .cue and an .iso) tie on all the
-                # above, and the database would pick between them per query.
-                base_subquery.c.id.asc(),
+                *_version_order(
+                    base_subquery.c.prerelease_rank,
+                    base_subquery.c.region_rank,
+                    base_subquery.c.fs_name_no_ext,
+                    base_subquery.c.id,
+                ),
             ]
             if user_id:
                 # A sibling the visibility filter below drops can't represent
@@ -1761,12 +1933,25 @@ class DBRomsHandler(DBBaseHandler):
                     )
                 )
             else:
-                # Add a filter to the original query to only include the primary ROM from each group
-                query = query.filter(
-                    Rom.id.in_(
-                        select(group_subquery.c.id).where(group_subquery.c.row_num == 1)
-                    )
+                # Keep only the primary ROM of each group.
+                window_winners = Rom.id.in_(
+                    select(group_subquery.c.id).where(group_subquery.c.row_num == 1)
                 )
+                if use_group_defaults:
+                    query = query.filter(
+                        or_(
+                            and_(
+                                Rom.is_group_default.is_(True),
+                                or_(
+                                    Rom.group_key.is_(None),
+                                    Rom.group_key.not_in(personal_pick_keys),
+                                ),
+                            ),
+                            window_winners,
+                        )
+                    )
+                else:
+                    query = query.filter(window_winners)
 
         if user_id:
             query = query.filter(rom_user_visible)
@@ -2275,12 +2460,20 @@ class DBRomsHandler(DBBaseHandler):
                 ),
             }
 
+        regroups = bool(data.keys() & GROUPING_INPUT_COLUMNS)
+        old_key = (
+            session.scalar(select(Rom.group_key).where(Rom.id == id))
+            if regroups
+            else None
+        )
         session.execute(
             update(Rom)
             .where(Rom.id == id)
             .values(**data)
             .execution_options(synchronize_session="evaluate")
         )
+        if regroups:
+            self._regroup(session, id, old_key)
         return session.scalars(select(Rom).filter_by(id=id)).one()
 
     @begin_session
@@ -2307,6 +2500,7 @@ class DBRomsHandler(DBBaseHandler):
         session.execute(
             update(RomFile).where(RomFile.rom_id == id).values(file_path=file_path)
         )
+        self._regroup(session, id, stored.group_key)
 
     @begin_session
     def delete_rom(
@@ -2314,11 +2508,13 @@ class DBRomsHandler(DBBaseHandler):
         id: int,
         session: Session = INJECTED_SESSION,
     ) -> None:
+        old_key = session.scalar(select(Rom.group_key).where(Rom.id == id))
         session.execute(
             delete(Rom)
             .where(Rom.id == id)
             .execution_options(synchronize_session="evaluate")
         )
+        refresh_group_defaults(session, {old_key})
 
     @begin_session
     def get_missing_rom_ids(

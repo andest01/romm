@@ -256,6 +256,18 @@ SYNC_FOLDER_SCAN_SPEC: Final = TaskSpec(
     manual_run=True,
 )
 
+REFRESH_GROUP_DEFAULTS_SPEC: Final = TaskSpec(
+    implementation="tasks.manual.refresh_group_defaults.refresh_group_defaults_task",
+    title="Refresh grouped ROM defaults",
+    description=(
+        "Re-pick the version that represents each group of ROMs with the "
+        "current region priority."
+    ),
+    task_type=TaskType.UPDATE,
+    enabled=True,
+    manual_run=True,
+)
+
 RECOMPUTE_NAME_SORT_KEYS_SPEC: Final = TaskSpec(
     implementation="tasks.manual.recompute_name_sort_keys.recompute_name_sort_keys_task",
     title="Recompute ROM sort keys",
@@ -326,6 +338,7 @@ MANUAL_TASKS: Final[dict[str, TaskSpec]] = {
     "sync_folder_scan": SYNC_FOLDER_SCAN_SPEC,
     "recompute_save_content_hashes": RECOMPUTE_SAVE_CONTENT_HASHES_SPEC,
     "recompute_name_sort_keys": RECOMPUTE_NAME_SORT_KEYS_SPEC,
+    "refresh_group_defaults": REFRESH_GROUP_DEFAULTS_SPEC,
     "convert_library": CONVERT_LIBRARY_SPEC,
 }
 

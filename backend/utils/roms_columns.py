@@ -46,6 +46,16 @@ PRIMARY_REGION_LENGTH = 50
 
 GROUP_KEY_COLUMN = "group_key"
 PRERELEASE_RANK_COLUMN = "prerelease_rank"
+GROUP_DEFAULT_COLUMN = "is_group_default"
+GROUP_DEFAULT_NAME_SORT_INDEX = "idx_roms_group_default_name_sort_key"
+# `group_key` last lets the grouped gallery skip a user's personal-pick groups
+# without leaving the index.
+GROUP_DEFAULT_NAME_SORT_COLUMNS = [
+    GROUP_DEFAULT_COLUMN,
+    "name_sort_key",
+    "id",
+    GROUP_KEY_COLUMN,
+]
 GROUP_KEY_COVER_INDEX = "idx_roms_group_key_cover"
 # Everything the grouping window reads, so it never touches the wide row.
 GROUP_KEY_COVER_COLUMNS = [
@@ -588,6 +598,9 @@ PLAIN_COLUMNS: list[sa.Column[Any]] = [
         nullable=False,
         server_default=sa.false(),
     ),
+    sa.Column(
+        GROUP_DEFAULT_COLUMN, sa.Boolean(), nullable=False, server_default=sa.true()
+    ),
 ]
 
 
@@ -640,13 +653,11 @@ def _generated_column_indexes(conn: sa.Connection) -> list[tuple[str, list[str],
     """(name, columns read, CREATE statement) for every generated-column index."""
     pg = is_postgresql(conn)
     indexes = [_index(f"idx_{TABLE}_{c}", [c], c) for c in INDEXED_GENERATED_COLUMNS]
-    indexes.append(
-        _index(
-            GROUP_KEY_COVER_INDEX,
-            GROUP_KEY_COVER_COLUMNS,
-            ", ".join(GROUP_KEY_COVER_COLUMNS),
-        )
-    )
+    for name, columns in (
+        (GROUP_KEY_COVER_INDEX, GROUP_KEY_COVER_COLUMNS),
+        (GROUP_DEFAULT_NAME_SORT_INDEX, GROUP_DEFAULT_NAME_SORT_COLUMNS),
+    ):
+        indexes.append(_index(name, columns, ", ".join(columns)))
     for column in SORTABLE_NULLABLE_ROM_COLUMNS:
         flag = rom_unset_flag_column(column)
         # Each spans through to `id`, the gallery's tiebreak: without it

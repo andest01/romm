@@ -1544,3 +1544,31 @@ def test_the_group_key_revision_reverses_replays_and_fills(platform: Platform):
 
         assert _schema_of(connection, "roms") == before
     assert tuple(row) == (f"igdb-{platform.id}-5", 1)
+
+
+def test_the_group_default_revision_reverses_replays_and_picks(platform: Platform):
+    """0163 picks every group's default for rows that already exist."""
+    migration = _load_migration("0163_roms_group_default.py")
+    full = make_rom(platform, "Shared", fs_stem="Shared (USA)", igdb_id=9)
+    demo = make_rom(platform, "Shared", fs_stem="Shared (Demo)", igdb_id=9)
+
+    with sync_engine.begin() as connection:
+        before = _schema_of(connection, "roms")
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.downgrade()
+            assert not has_column(connection, "roms", "is_group_default")
+            migration.downgrade()
+
+            migration.upgrade()
+            migration.upgrade()
+            picks: dict[int, bool] = dict(
+                connection.execute(
+                    sa.text(
+                        "SELECT id, is_group_default FROM roms WHERE id IN (:a, :b)"
+                    ),
+                    {"a": full.id, "b": demo.id},
+                ).all()
+            )
+
+        assert _schema_of(connection, "roms") == before
+    assert picks == {full.id: True, demo.id: False}

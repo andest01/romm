@@ -32,6 +32,7 @@ from sqlalchemy import (
     inspect,
     or_,
     select,
+    true,
 )
 from sqlalchemy.orm import (
     Mapped,
@@ -882,6 +883,15 @@ class Rom(BaseModel):
             "fs_name_no_ext",
             "id",
         ),
+        # The grouped gallery's group defaults, read in name order; `group_key`
+        # lets it skip a user's personal-pick groups without leaving the index.
+        Index(
+            "idx_roms_group_default_name_sort_key",
+            "is_group_default",
+            "name_sort_key",
+            "id",
+            "group_key",
+        ),
         # The sibling_roms self-join, which matches on each provider id.
         Index(
             "idx_roms_sibling_cover",
@@ -1122,6 +1132,13 @@ class Rom(BaseModel):
         nullable=True,
         server_default=FetchedValue(),
         server_onupdate=FetchedValue(),
+    )
+    # Whether this version represents its group for a user with no picks of
+    # their own; kept by `refresh_group_defaults` on every write that can
+    # change it. True by default, so a missed refresh shows a duplicate rather
+    # than hiding a game.
+    is_group_default: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=True, server_default=true()
     )
     # The folded name and aliases, kept by `compute_search_titles` on every
     # write. The gallery search filters on it and ranks whole titles against it.
