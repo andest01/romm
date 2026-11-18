@@ -103,6 +103,18 @@ export const ID_LIST_ONLY: SidecarOptions = {
 // Sidecars plus the COUNT, for fetches that only need their items.
 const SKIP_AGGREGATES = { ...NO_SIDECARS, withTotal: false };
 
+// The provider metadata a gallery card reads: alt art and video, playtime,
+// verification badges. The server skips reading the rest.
+export const CARD_METADATA_FIELDS = [
+  "ss_metadata",
+  "launchbox_metadata",
+  "gamelist_metadata",
+  "hltb_metadata",
+  "hasheous_metadata",
+  "merged_ra_metadata",
+] satisfies (keyof SimpleRom)[];
+const CARD_METADATA = { metadataFields: CARD_METADATA_FIELDS };
+
 // In-flight `AbortController`s keyed by request: `window:${offset}`
 // for a windowed fetch, `bootstrap` for the lightweight metadata
 // bootstrap, `refresh` for a filter refetch. Lives outside store state so
@@ -457,6 +469,7 @@ export default defineStore("v2GalleryRoms", {
       try {
         const response = await romApi.getRoms({
           ...params,
+          ...CARD_METADATA,
           signal: controller.signal,
         });
         if (!isCurrent()) return false;
@@ -735,6 +748,7 @@ export default defineStore("v2GalleryRoms", {
         // The ids are the whole selection: no filter or sort goes with them.
         const response = await romApi.getRoms({
           romIds: windowIds,
+          ...CARD_METADATA,
           signal: controller.signal,
         });
         // A context switch may have handed this offset to a newer fetch.

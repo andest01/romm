@@ -55,6 +55,7 @@ from endpoints.responses import BulkOperationResponse
 from endpoints.responses.base import PAGE_QUERY, LimitOffsetPage, PageParams
 from endpoints.responses.recommendation import SimilarRomSchema
 from endpoints.responses.rom import (
+    PROVIDER_METADATA_FIELDS,
     DetailedRomSchema,
     ManualMetadata,
     RomUserSchema,
@@ -270,6 +271,23 @@ def build_unscoped_filter_values_cache_key(
     """Filter values ignore ordering and grouping (their query strips both),
     so one per-user entry serves every sort."""
     return f"all:u{user_id}" if is_unscoped else None
+
+
+def metadata_field_columns(metadata_fields: str) -> tuple[str, ...]:
+    """The provider columns behind a comma-separated list of metadata fields.
+
+    Raises:
+        HTTPException: 422 when a name isn't a provider metadata field.
+    """
+    names = dict.fromkeys(n.strip() for n in metadata_fields.split(",") if n.strip())
+    unknown = sorted(set(names) - set(PROVIDER_METADATA_FIELDS))
+    if unknown:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Unknown metadata fields: {', '.join(unknown)}",
+        )
+    # The schema serves the `ra_metadata` column as `merged_ra_metadata`.
+    return tuple("ra_metadata" if n == "merged_ra_metadata" else n for n in names)
 
 
 class RomUpdateForm(BaseModel):
@@ -700,14 +718,28 @@ def get_roms(
             )
         ),
     ] = True,
+    metadata_fields: Annotated[
+        str | None,
+        Query(
+            description=(
+                "Comma-separated provider metadata fields to include, such as"
+                " `ss_metadata,hltb_metadata`: any `*_metadata` field but"
+                " `manual_metadata`, plus `merged_ra_metadata`. The others come back"
+                " null, meaning not requested rather than no match, and fields built"
+                " from provider metadata, such as `alternative_names`, use only the"
+                " listed providers. Leave unset for every provider, or empty for none."
+            )
+        ),
+    ] = None,
     with_provider_metadata: Annotated[
         bool,
         Query(
+            deprecated=True,
             description=(
-                "Whether to include each rom's provider metadata. When false, every"
-                " `*_metadata` object but `manual_metadata` comes back null, meaning"
-                " not requested rather than no match; `metadatum` is unaffected."
-            )
+                "Use `metadata_fields`. False returns every `*_metadata` object but"
+                " `manual_metadata` as null, while fields built from them, such as"
+                " `alternative_names`, stay complete."
+            ),
         ),
     ] = True,
     order_by: Annotated[
@@ -776,6 +808,11 @@ def get_roms(
         # The caller already holds the ordered list, so nothing spans the set.
         with_char_index = with_filter_values = with_rom_id_index = with_total = False
     parsed_released_days = parse_released_days(released_days)
+    provider_columns: tuple[str, ...] = PROVIDER_METADATA_COLUMNS
+    if not with_provider_metadata:
+        provider_columns = DERIVED_FIELD_PROVIDER_METADATA_COLUMNS
+    elif metadata_fields is not None:
+        provider_columns = metadata_field_columns(metadata_fields)
 
     # Normalised once so the query layer and every cache key agree on case.
     order_by = order_by.lower()
@@ -960,12 +997,6 @@ def get_roms(
         if page_ids:
             # The ids already passed the filters and the sibling grouping, so the
             # rows load without re-running either.
-            # Without provider metadata, read only what the derived fields need.
-            provider_columns: tuple[str, ...] = (
-                PROVIDER_METADATA_COLUMNS
-                if with_provider_metadata
-                else DERIVED_FIELD_PROVIDER_METADATA_COLUMNS
-            )
             page_rows = session.scalars(
                 db_rom_handler.get_page_rows_query(
                     page_ids,

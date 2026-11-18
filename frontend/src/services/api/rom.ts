@@ -235,6 +235,8 @@ export interface GetRomsParams {
   withTotal?: boolean;
   /** Load exactly these ids, in order: a window sliced from `rom_id_index`. */
   romIds?: number[];
+  /** Provider metadata fields to include; unset includes every provider. */
+  metadataFields?: (keyof SimpleRomSchema)[];
   // Cancel an in-flight request
   signal?: AbortSignal;
 }
@@ -298,6 +300,7 @@ export function buildGetRomsQuery({
   withRomIdIndex = undefined,
   withTotal = undefined,
   romIds = undefined,
+  metadataFields = undefined,
 }: Omit<GetRomsParams, "signal">) {
   return {
     platform_ids:
@@ -440,6 +443,9 @@ export function buildGetRomsQuery({
       : {}),
     ...(withTotal !== undefined ? { with_total: withTotal } : {}),
     ...(romIds !== undefined ? { rom_ids: romIds } : {}),
+    ...(metadataFields !== undefined
+      ? { metadata_fields: metadataFields.join(",") }
+      : {}),
   };
 }
 
