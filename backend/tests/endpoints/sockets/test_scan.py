@@ -231,6 +231,7 @@ def patched(mocker):
         "get_platforms",
         return_value=[existing_platform],
     )
+    mocker.patch.object(db_rom_handler, "invalidate_filter_values_cache")
     config = MagicMock()
     config.GAMELIST_AUTO_EXPORT_ON_SCAN = False
     config.PEGASUS_AUTO_EXPORT_ON_SCAN = False
@@ -2209,6 +2210,7 @@ class TestScopedScanSkipsLibraryWork:
             scan_module, "_get_socket_manager", return_value=AsyncMock()
         )
         mocker.patch.object(meta_gamelist_handler, "clear_cache")
+        mocker.patch.object(db_rom_handler, "invalidate_filter_values_cache")
         config = MagicMock()
         config.GAMELIST_AUTO_EXPORT_ON_SCAN = False
         config.PEGASUS_AUTO_EXPORT_ON_SCAN = False

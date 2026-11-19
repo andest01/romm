@@ -7,6 +7,7 @@ from pytest_mock import MockerFixture
 from tests.factories import make_rom
 
 from handler.database import db_collection_handler, db_rom_handler
+from handler.database.roms_handler import DBRomsHandler
 from models.collection import SmartCollection
 from models.platform import Platform
 from models.rom import Rom
@@ -50,6 +51,16 @@ class TestCleanupMissingRomsTask:
         assert db_rom_handler.get_rom(gone.id) is None
         assert db_rom_handler.get_rom(present.id) is not None
 
+    async def test_drops_cached_filter_values(
+        self, task: CleanupMissingRomsTask, platform: Platform, mocker: MockerFixture
+    ):
+        _add_rom(platform, "gone", missing=True)
+        invalidate = mocker.spy(DBRomsHandler, "invalidate_filter_values_cache")
+
+        await task.run()
+
+        invalidate.assert_called_once_with()
+
     async def test_deleted_roms_leave_smart_collections(
         self,
         task: CleanupMissingRomsTask,
@@ -76,16 +87,18 @@ class TestCleanupMissingRomsTask:
         assert after.rom_ids == [present.id]
         assert after.rom_count == 1
 
-    async def test_nothing_deleted_leaves_smart_collections_alone(
+    async def test_nothing_deleted_leaves_the_caches_alone(
         self, task: CleanupMissingRomsTask, platform: Platform, mocker: MockerFixture
     ):
         _add_rom(platform, "present", missing=False)
+        invalidate = mocker.spy(DBRomsHandler, "invalidate_filter_values_cache")
         refresh = mocker.spy(
             db_collection_handler, "refresh_smart_collections_for_roms"
         )
 
         await task.run()
 
+        invalidate.assert_not_called()
         refresh.assert_not_called()
 
     async def test_a_failed_delete_is_counted_and_not_refreshed(
@@ -115,6 +128,7 @@ class TestCleanupMissingRomsTask:
     ):
         gone = _add_rom(platform, "gone", missing=True)
         resources.side_effect = PermissionError("read-only")
+        invalidate = mocker.spy(DBRomsHandler, "invalidate_filter_values_cache")
         refresh = mocker.spy(
             db_collection_handler, "refresh_smart_collections_for_roms"
         )
@@ -123,6 +137,7 @@ class TestCleanupMissingRomsTask:
             await task.run()
 
         assert db_rom_handler.get_rom(gone.id) is None
+        invalidate.assert_called_once_with()
         refresh.assert_called_once_with([gone.id])
 
     async def test_a_refresh_failure_does_not_fail_the_run(
@@ -139,3 +154,21 @@ class TestCleanupMissingRomsTask:
 
         assert stats["roms_deleted"] == 1
         assert stats["errors"] == 0
+
+    async def test_a_cache_failure_still_refreshes_smart_collections(
+        self, task: CleanupMissingRomsTask, platform: Platform, mocker: MockerFixture
+    ):
+        rom = _add_rom(platform, "gone", missing=True)
+        mocker.patch.object(
+            DBRomsHandler,
+            "invalidate_filter_values_cache",
+            side_effect=RuntimeError("redis down"),
+        )
+        refresh = mocker.patch.object(
+            db_collection_handler, "refresh_smart_collections_for_roms"
+        )
+
+        stats = await task.run()
+
+        refresh.assert_called_once_with([rom.id])
+        assert stats["roms_deleted"] == 1

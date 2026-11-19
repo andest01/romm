@@ -234,8 +234,8 @@ def test_get_random_rom_does_not_page_or_count(
             db_rom_handler, "get_rom_count", wraps=db_rom_handler.get_rom_count
         ) as get_rom_count,
         patch.object(
-            db_rom_handler, "get_gallery_index", wraps=db_rom_handler.get_gallery_index
-        ) as get_gallery_index,
+            db_rom_handler, "get_rom_id_index", wraps=db_rom_handler.get_rom_id_index
+        ) as get_rom_id_index,
     ):
         response = client.get(
             "/api/roms/random",
@@ -244,7 +244,7 @@ def test_get_random_rom_does_not_page_or_count(
         assert response.status_code == status.HTTP_200_OK
 
         get_rom_count.assert_not_called()
-        get_gallery_index.assert_not_called()
+        get_rom_id_index.assert_not_called()
 
     rom_queries = [sql for sql in executed_statements if " roms" in sql.lower()]
     assert rom_queries, "expected the pick to query the roms table"

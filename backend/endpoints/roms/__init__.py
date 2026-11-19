@@ -331,7 +331,6 @@ def build_unscoped_filter_values_cache_key(
     return f"all:u{user_id}" if is_unscoped else None
 
 
-
 class RomUpdateForm(BaseModel):
     igdb_id: str | None = Field(default=None, description="IGDB game ID.")
     sgdb_id: str | None = Field(default=None, description="SteamGridDB game ID.")
@@ -1031,7 +1030,7 @@ def get_roms(
         if rom_ids is not None:
             page_ids = list(rom_ids)
         elif with_rom_id_index:
-            page_ids = list(rom_id_index[params.offset : params.offset + params.limit])
+            page_ids = rom_id_index[params.offset : params.offset + params.limit]
         elif cached_page is not None:
             page_ids = cached_page[0]
         else:
@@ -1068,7 +1067,7 @@ def get_roms(
             limit=params.limit,
             offset=params.offset,
             char_index=char_index_dict,
-            rom_id_index=list(rom_id_index),
+            rom_id_index=rom_id_index,
         )
 
 
@@ -1476,7 +1475,13 @@ def get_gallery_filter_values(
         user_id=request.user.id,
         visibility=perms.rom_visibility,
     )
-    return db_rom_handler.with_filter_values(query=scoped_query)
+    # The key is gated on the scope alone: only the scope reaches this query.
+    return db_rom_handler.with_filter_values(
+        query=scoped_query,
+        cache_key=build_unscoped_filter_values_cache_key(
+            request.user.id, not filters.has_scope()
+        ),
+    )
 
 
 @protected_route(
@@ -2564,7 +2569,6 @@ async def update_rom(
         fire_and_forget(meta_playmatch_handler.submit_manual_match_suggestion(rom))
 
     db_rom_handler.invalidate_filter_values_cache()
-
     refresh_affected_smart_collections([id])
     return DetailedRomSchema.from_orm_with_request(rom, request)
 

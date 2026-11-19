@@ -365,11 +365,11 @@ async def update_scan_settings(request: Request, payload: ScanSettingsPayload) -
         ) from exc
     _record_config(request, "scan_settings", "update")
 
-    # Region priority picks the default rom of each group, so the stored picks
-    # are stale the moment it changes.
+    # Region priority picks the primary rom of each sibling group, so every
+    # cached gallery sidecar is stale the moment the order changes.
     if region_priority_changed:
         await run_in_threadpool(db_rom_handler.refresh_all_group_defaults)
-        await run_in_threadpool(db_rom_handler.invalidate_filter_values_cache)
+        db_rom_handler.invalidate_filter_values_cache()
 
 
 @protected_route(router.put, "/converto_settings", [Scope.PLATFORMS_WRITE])

@@ -60,8 +60,8 @@ async def emit_permissions_changed(*user_ids: int) -> None:
     only when the affected user is the current user. Call this from any path that
     mutates a user's role, group, overrides, hidden entities or age settings.
     """
-    # The gallery's cached id lists are computed per user with visibility
-    # applied, so they go stale with it.
+    # The gallery's cached id index, counts and filter values are computed per
+    # user with visibility applied, so they go stale with it.
     db_rom_handler.invalidate_filter_values_cache()
     if not user_ids:
         return

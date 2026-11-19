@@ -1,22 +1,30 @@
-"""The gallery's letter strip and sorted id list follow each write.
+"""Cache gating for the gallery sidecars (filter values, char index, id index).
 
-`GET /roms` returns the id list and the letter strip alongside the page. Only the
+`GET /roms` returns three whole-library aggregates alongside the page. Only the
 fully unscoped scan may be memoised under the shared "all" key, because that key
 encodes user/order/grouping but none of the filters.
 
-These tests pin that:
-  1. the char index and the id index stay live under any row-level filter,
+The filter-value list is the exception: it is built from `unfiltered_query` with
+only platform / collection / search applied, so the row-level filters (missing,
+favorite, duplicate, ...) never reach its query and its result is byte-identical
+to the unfiltered one. Locking it out of the cache made the Missing tab recompute
+the whole library on every visit, sort change and platform pick (issue #3992).
+
+These tests pin the split gate:
+  1. a row-level filter reads and writes the shared filter-values entry,
+  2. a scope filter (platform / collection / search) does neither,
+  3. the char index and the id index stay live under any row-level filter,
      since both narrow with it,
-  2. RomUser-column sorts key on a per-user sort version, so a rom_user
+  4. RomUser-column sorts key on a per-user sort version, so a rom_user
      write refreshes that user's sorted index without touching other
      users' entries or the name-sorted one, and `hidden` still bumps
      globally,
-  3. grouped sets key on a per-user sibling version moved only by
-     main-sibling picks,
-  4. grouped pages read their window of the id list the index request
+  5. grouped sets key on a per-user sibling version moved only by
+     main-sibling picks, and filter values use one order-free per-user
+     entry,
+  6. grouped pages read their window of the id list the index request
      cached, which a grouped single-platform set also caches, under a key
-     naming its platform,
-  5. the cache never changes what the uncached statement returns.
+     naming its platform.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -29,6 +37,7 @@ from tests.factories import make_rom
 
 from endpoints.roms import (
     build_grouped_page_cache_key,
+    build_unscoped_filter_values_cache_key,
     build_unscoped_sidecar_cache_key,
 )
 from handler.database import db_rom_handler
@@ -36,6 +45,7 @@ from handler.database.roms_handler import (
     _char_index_redis_key,
     _filter_values_cache_keys_key,
     _filter_values_cache_version,
+    _filter_values_redis_key,
     _rom_id_index_redis_key,
     _store_versioned_cache,
     _store_versioned_id_list,
@@ -44,6 +54,24 @@ from handler.redis_handler import as_text, sync_cache
 from models.platform import Platform
 from models.rom import Rom
 from models.user import User
+
+# A recognisable filter-value payload: if the endpoint answers with this, it
+# read the shared cache entry rather than recomputing over the library.
+SENTINEL_FILTER_VALUES: dict[str, Any] = {
+    "genres": ["Sentinel Genre"],
+    "franchises": [],
+    "collections": [],
+    "companies": [],
+    "publishers": [],
+    "developers": [],
+    "game_modes": [],
+    "age_ratings": [],
+    "player_counts": [],
+    "regions": [],
+    "languages": [],
+    "tags": [],
+    "platforms": [],
+}
 
 
 @pytest.fixture
@@ -67,6 +95,19 @@ def _platform_key(user_id: int, platform_id: int) -> str:
     return build_grouped_page_cache_key(user_id, "", "asc", platform_id)
 
 
+def _filter_values_key(user_id: int) -> str:
+    key = build_unscoped_filter_values_cache_key(user_id, True)
+    assert key is not None
+    return key
+
+
+def _seed_filter_values(user_id: int) -> str:
+    version = _filter_values_cache_version()
+    redis_key = _filter_values_redis_key(_filter_values_key(user_id), version)
+    _store_versioned_cache(redis_key, version, SENTINEL_FILTER_VALUES)
+    return redis_key
+
+
 def _seed_rom_id_index(cache_key: str, ids: list[int]) -> str:
     version = _filter_values_cache_version()
     redis_key = _rom_id_index_redis_key(cache_key, version)
@@ -82,6 +123,143 @@ def _get_roms(client: TestClient, access_token: str, **params: Any) -> dict[str,
     )
     assert response.status_code == status.HTTP_200_OK
     return cast(dict[str, Any], response.json())
+
+
+def _get_filter_values(
+    client: TestClient, access_token: str, **params: Any
+) -> dict[str, Any]:
+    response = client.get(
+        "/api/roms/filter-values",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=params,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    return cast(dict[str, Any], response.json())
+
+
+def test_row_filter_reads_unscoped_filter_values_cache(
+    client: TestClient, access_token: str, admin_user: User, missing_rom: Rom
+):
+    """`missing=true` reuses the whole-library entry the unfiltered scan wrote."""
+    _seed_filter_values(admin_user.id)
+
+    body = _get_filter_values(client, access_token, missing=True)
+
+    assert body["genres"] == ["Sentinel Genre"]
+
+
+def test_row_filter_writes_unscoped_filter_values_cache(
+    client: TestClient, access_token: str, admin_user: User, missing_rom: Rom
+):
+    """A row-filtered request also warms the shared entry for everyone else."""
+    version = _filter_values_cache_version()
+    redis_key = _filter_values_redis_key(_filter_values_key(admin_user.id), version)
+    assert sync_cache.get(redis_key) is None
+
+    _get_filter_values(client, access_token, missing=True)
+
+    assert sync_cache.get(redis_key) is not None
+
+
+def test_row_filtered_and_unfiltered_filter_values_match(
+    client: TestClient, access_token: str, missing_rom: Rom
+):
+    """The two are the same list, which is what makes sharing the key correct."""
+    filtered = _get_filter_values(client, access_token, missing=True)
+    unfiltered = _get_filter_values(client, access_token)
+
+    assert filtered == unfiltered
+
+
+def test_platform_scope_does_not_read_unscoped_filter_values_cache(
+    client: TestClient, access_token: str, admin_user: User, platform: Platform
+):
+    """A platform narrows the filter-value list, so it must be computed live."""
+    _seed_filter_values(admin_user.id)
+
+    body = _get_filter_values(client, access_token, platform_ids=platform.id)
+
+    assert body["genres"] == []
+
+
+def test_platform_scope_does_not_write_unscoped_filter_values_cache(
+    client: TestClient, access_token: str, admin_user: User, platform: Platform
+):
+    """A scoped list must never leak into the shared whole-library entry."""
+    redis_key = _seed_filter_values(admin_user.id)
+
+    _get_filter_values(client, access_token, platform_ids=platform.id)
+
+    cached = sync_cache.get(redis_key)
+    assert cached is not None
+    assert b"Sentinel Genre" in (
+        cached if isinstance(cached, bytes) else cached.encode()
+    )
+
+
+def test_search_scope_does_not_read_unscoped_filter_values_cache(
+    client: TestClient, access_token: str, admin_user: User, rom: Rom
+):
+    """A search term narrows the filter-value list the same way a platform does."""
+    _seed_filter_values(admin_user.id)
+
+    body = _get_filter_values(client, access_token, search_term="nothing-matches-this")
+
+    assert body["genres"] == []
+
+
+def test_row_filter_does_not_read_unscoped_char_index_cache(
+    client: TestClient, access_token: str, admin_user: User, rom: Rom
+):
+    """The char index counts filtered rows, so the shared entry does not apply."""
+    version = _filter_values_cache_version()
+    _store_versioned_cache(
+        _char_index_redis_key(_unscoped_key(admin_user.id), version),
+        version,
+        [["Z", 41]],
+    )
+
+    body = _get_roms(client, access_token, missing=True)
+
+    assert "Z" not in body["char_index"]
+
+
+def test_row_filter_does_not_read_unscoped_rom_id_index_cache(
+    client: TestClient, access_token: str, admin_user: User, rom: Rom
+):
+    """Same for the id index: it is the filtered result set, not the library."""
+    _seed_rom_id_index(_unscoped_key(admin_user.id), [424242])
+
+    body = _get_roms(client, access_token, missing=True)
+
+    assert body["rom_id_index"] == []
+
+
+def test_length_filter_does_not_read_unscoped_rom_id_index_cache(
+    client: TestClient, access_token: str, admin_user: User, rom: Rom
+):
+    """A HowLongToBeat range narrows the result set like any other row filter."""
+    _seed_rom_id_index(_unscoped_key(admin_user.id), [424242])
+
+    body = _get_roms(client, access_token, hltb_main_story_max=3600)
+
+    assert body["rom_id_index"] == []
+
+
+def test_unfiltered_request_still_reads_unscoped_char_index_cache(
+    client: TestClient, access_token: str, admin_user: User, rom: Rom
+):
+    """The unscoped scan keeps its memoisation (the case the key was built for)."""
+    version = _filter_values_cache_version()
+    _store_versioned_cache(
+        _char_index_redis_key(_unscoped_key(admin_user.id), version),
+        version,
+        [["Z", 41]],
+    )
+
+    body = _get_roms(client, access_token)
+
+    assert body["char_index"] == {"Z": 41}
 
 
 @pytest.mark.parametrize(
@@ -205,6 +383,20 @@ def test_non_sibling_write_keeps_the_grouped_entry(
 
     body = _get_roms(client, access_token, group_by_meta_id=True)
     assert body["rom_id_index"] == [424242]
+
+
+def test_rom_user_write_keeps_filter_values_entry(
+    client: TestClient, access_token: str, admin_user: User, rom: Rom
+):
+    """Filter values read no sortable RomUser column, so a play must not rotate them."""
+    _seed_filter_values(admin_user.id)
+
+    _put_props(client, access_token, rom.id, update_last_played=True)
+
+    body = _get_filter_values(
+        client, access_token, order_by="last_played", order_dir="desc"
+    )
+    assert body["genres"] == ["Sentinel Genre"]
 
 
 def test_rom_user_write_keeps_name_sorted_entry(
