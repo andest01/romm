@@ -7,17 +7,32 @@ import { serverError } from "@/test-utils/serverError";
 import { romFixture } from "@/utils/rom.fixtures";
 import MissingGamesSection from "./MissingGamesSection.vue";
 
-const { getRoms, runTask, getTaskById, confirm, snackbarError } = vi.hoisted(
-  () => ({
-    getRoms: vi.fn(),
+const {
+  getRoms,
+  getGalleryBootstrap,
+  runTask,
+  getTaskById,
+  confirm,
+  snackbarError,
+} = vi.hoisted(() => {
+  const getRoms = vi.fn();
+  return {
+    getRoms,
+    // The bootstrap's rows come from `getRoms`; its dropdowns are not asked for here.
+    getGalleryBootstrap: vi.fn(async (params: object, _options?: object) => ({
+      rows: (await getRoms(params)).data,
+      filterValues: undefined,
+    })),
     runTask: vi.fn(),
     getTaskById: vi.fn(),
     confirm: vi.fn(),
     snackbarError: vi.fn(),
-  }),
-);
+  };
+});
 
-vi.mock("@/services/api/rom", () => ({ default: { getRoms } }));
+vi.mock("@/services/api/rom", () => ({
+  default: { getRoms, getGalleryBootstrap },
+}));
 vi.mock("@/services/api/task", () => ({
   default: { runTask, getTaskById },
 }));
@@ -87,7 +102,9 @@ describe("MissingGamesSection", () => {
     const params = getRoms.mock.calls[0]![0];
     expect(params.filterMissing).toBe(true);
     expect(params.withCharIndex).toBe(false);
-    expect(params.withFilterValues).toBe(false);
+    expect(getGalleryBootstrap.mock.calls.at(-1)![1]).toEqual({
+      withFilterValues: false,
+    });
     expect(params.withRomIdIndex).toBeUndefined();
   });
 
@@ -104,7 +121,9 @@ describe("MissingGamesSection", () => {
     const params = getRoms.mock.calls[0]![0];
     expect(params.orderBy).toBe("fs_size_bytes");
     expect(params.withCharIndex).toBe(false);
-    expect(params.withFilterValues).toBe(false);
+    expect(getGalleryBootstrap.mock.calls.at(-1)![1]).toEqual({
+      withFilterValues: false,
+    });
     expect(params.withRomIdIndex).toBeUndefined();
   });
 

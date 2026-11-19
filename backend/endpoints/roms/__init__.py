@@ -260,14 +260,6 @@ def refresh_scoped_smart_collections(collection_id: int) -> None:
         log.error(f"Couldn't refresh smart collections scoped to {collection_id}: {e}")
 
 
-def build_unscoped_filter_values_cache_key(
-    user_id: int, is_unscoped: bool
-) -> str | None:
-    """Filter values ignore ordering and grouping (their query strips both),
-    so one per-user entry serves every sort."""
-    return f"all:u{user_id}" if is_unscoped else None
-
-
 def metadata_field_columns(metadata_fields: str) -> tuple[str, ...]:
     """The provider columns behind a comma-separated list of metadata fields.
 
@@ -638,7 +630,6 @@ class CustomLimitOffsetPage[T: BaseModel](LimitOffsetPage[T]):
     total: int | None = Field(ge=0)  # type: ignore[assignment]
     char_index: dict[str, int]
     rom_id_index: list[int]
-    filter_values: RomFiltersDict
 
 
 # The most roms one `rom_ids` window may name.
@@ -690,9 +681,6 @@ def get_roms(
     with_char_index: Annotated[
         bool,
         Query(description="Whether to get the char index."),
-    ] = True,
-    with_filter_values: Annotated[
-        bool, Query(description="Whether to return filter values.")
     ] = True,
     with_rom_id_index: Annotated[
         bool,
@@ -801,7 +789,7 @@ def get_roms(
     perms = get_permissions(request)
     if rom_ids is not None:
         # The caller already holds the ordered list, so nothing spans the set.
-        with_char_index = with_filter_values = with_rom_id_index = with_total = False
+        with_char_index = with_rom_id_index = with_total = False
     parsed_released_days = parse_released_days(released_days)
     provider_columns: tuple[str, ...] = PROVIDER_METADATA_COLUMNS
     if not with_provider_metadata:
@@ -851,13 +839,6 @@ def get_roms(
         include_related=False,
     )
 
-    # The filter-value list is cached for the unscoped library only: it is
-    # computed with only the scope applied, so a filter it never applies
-    # cannot stale it.
-    is_unscoped_scope = not filters.has_scope()
-    # Debug: no Valkey gallery cache, so every load runs the queries.
-    is_unscoped_scope = False
-
     # The id list backs virtual scroll and the letter strip jumps within it, so
     # one statement builds both. Relevance order has no letter runs. Callers
     # that only need a page (e.g. the home rails) skip it.
@@ -882,40 +863,6 @@ def get_roms(
             rom_id_index = ids
         if with_letters:
             char_index_dict = dict(char_index)
-
-    filter_values = RomFiltersDict(
-        genres=[],
-        franchises=[],
-        collections=[],
-        companies=[],
-        publishers=[],
-        developers=[],
-        game_modes=[],
-        age_ratings=[],
-        player_counts=[],
-        regions=[],
-        languages=[],
-        tags=[],
-        platforms=[],
-    )
-    if with_filter_values:
-        # We use the unfiltered query so applied filters don't affect the list
-        filter_query = db_rom_handler.filter_roms(
-            query=unfiltered_query,
-            # Scope only: the dropdowns list what the applied filters could
-            # still narrow to, so the applied filters themselves are left out.
-            filters=filters.scope_only(),
-            user_id=request.user.id,
-            visibility=perms.rom_visibility,
-        )
-        # `hidden`, the only RomUser column filter values read, already
-        # bumps the global version, so no per-user version is embedded.
-        filter_values = db_rom_handler.with_filter_values(
-            query=filter_query,
-            cache_key=build_unscoped_filter_values_cache_key(
-                request.user.id, is_unscoped_scope
-            ),
-        )
 
     # Hydrate the requested page and its additional data
     with sync_session.begin() as session:
@@ -1015,7 +962,6 @@ def get_roms(
             offset=params.offset,
             char_index=char_index_dict,
             rom_id_index=list(rom_id_index),
-            filter_values=filter_values,
         )
 
 
@@ -1400,6 +1346,30 @@ def get_rom_filters(request: Request) -> RomFiltersDict:
     from handler.database import db_rom_handler
 
     return db_rom_handler.get_rom_filters(get_rom_visibility_filter(request))
+
+
+@protected_route(router.get, "/filter-values", [Scope.ROMS_READ])
+def get_gallery_filter_values(
+    request: Request,
+    filters: Annotated[RomFilterParams, Depends(ROM_FILTER_QUERY)],
+) -> RomFiltersDict:
+    """Filter-dropdown values for the scope the gallery is showing.
+
+    Only the scope (platform, collection, search) narrows these lists; the
+    gallery's row filters are left out, as they are in the bootstrap.
+    """
+    perms = get_permissions(request)
+    unfiltered_query, _ = db_rom_handler.get_roms_query(
+        user_id=request.user.id,
+        search_term=filters.search_term,
+    )
+    scoped_query = db_rom_handler.filter_roms(
+        query=unfiltered_query,
+        filters=filters.scope_only(),
+        user_id=request.user.id,
+        visibility=perms.rom_visibility,
+    )
+    return db_rom_handler.with_filter_values(query=scoped_query)
 
 
 @protected_route(
@@ -1982,7 +1952,6 @@ async def create_physical_rom(
             pass
         raise
 
-    db_rom_handler.invalidate_filter_values_cache()
     refresh_affected_smart_collections([added_rom.id])
     record(
         AuditAction.ROM_CREATE,
@@ -2187,7 +2156,6 @@ async def update_rom(
             raise RomNotFoundInDatabaseException(id)
         rom = refreshed
 
-        db_rom_handler.invalidate_filter_values_cache()
         refresh_affected_smart_collections([id])
         record(
             AuditAction.ROM_UNMATCH,
@@ -2486,7 +2454,6 @@ async def update_rom(
     if meta_playmatch_handler.is_manual_match(form_data.model_fields_set):
         fire_and_forget(meta_playmatch_handler.submit_manual_match_suggestion(rom))
 
-    db_rom_handler.invalidate_filter_values_cache()
     refresh_affected_smart_collections([id])
     return DetailedRomSchema.from_orm_with_request(rom, request)
 
@@ -2630,7 +2597,6 @@ async def delete_roms(
 
     record_many(audit_drafts)
     if deleted_ids:
-        db_rom_handler.invalidate_filter_values_cache()
         # Deleted ROMs would otherwise linger in the cached smart collection
         # membership until the next scan.
         refresh_affected_smart_collections(deleted_ids)
@@ -2680,9 +2646,6 @@ async def update_rom_user(
         cleaned_data.update({"last_played": None})
 
     rom_user = db_rom_handler.update_rom_user(db_rom_user.id, cleaned_data)
-
-    if "hidden" in cleaned_data:
-        db_rom_handler.invalidate_filter_values_cache()
 
     # The statuses filter reads all four of these, and `hidden` also drops the
     # ROM from every user-scoped query, so any of them can move membership.

@@ -32,9 +32,6 @@ from exceptions.database_exceptions import RomFileOwnerChangedError
 from handler.auth.rom_visibility import RomVisibilityFilter
 from handler.database import db_rom_handler
 from handler.database.base_handler import sync_engine, sync_session
-from handler.database.roms_handler import (
-    _filter_values_cache_version,
-)
 from models.assets import Save, State
 from models.platform import Platform
 from models.rom import (
@@ -1049,68 +1046,6 @@ class TestRomFileSizeTotal:
 
         assert self._size(rom) == 1000
         assert self._size(second_rom) == 200
-
-
-class TestRomFileSizeSidecarInvalidation:
-    """The size-sorted rom-id and char indexes are cached under the filter
-    values version, so a size recompute has to move it once it commits."""
-
-    def test_add_moves_the_version(self, rom: Rom):
-        before = _filter_values_cache_version()
-
-        _add_rom_file(rom)
-
-        assert _filter_values_cache_version() != before
-
-    def test_delete_moves_the_version(self, rom: Rom):
-        game = _add_rom_file(rom)
-        before = _filter_values_cache_version()
-
-        db_rom_handler.delete_rom_file(game.id)
-
-        assert _filter_values_cache_version() != before
-
-    def test_resize_moves_the_version(self, rom: Rom):
-        game = _add_rom_file(rom)
-        before = _filter_values_cache_version()
-
-        db_rom_handler.update_rom_file(game.id, {"file_size_bytes": 5})
-
-        assert _filter_values_cache_version() != before
-
-    def test_rename_leaves_the_version(self, rom: Rom):
-        game = _add_rom_file(rom)
-        before = _filter_values_cache_version()
-
-        db_rom_handler.update_rom_file(game.id, {"file_name": "renamed.bin"})
-
-        assert _filter_values_cache_version() == before
-
-    def test_unknown_delete_leaves_the_version(self, rom: Rom):
-        before = _filter_values_cache_version()
-
-        db_rom_handler.delete_rom_file(999_999)
-
-        assert _filter_values_cache_version() == before
-
-    def test_rolled_back_write_leaves_the_version(self, rom: Rom):
-        before = _filter_values_cache_version()
-
-        with pytest.raises(RuntimeError), sync_session.begin() as session:
-            _add_rom_file(rom, session=session)
-            raise RuntimeError("abort")
-
-        assert _filter_values_cache_version() == before
-        assert db_rom_handler.rom_files_for_rom_id(rom.id) == []
-
-    def test_one_transaction_moves_the_version_once(self, rom: Rom):
-        before = int(_filter_values_cache_version())
-
-        with sync_session.begin() as session:
-            for name in ("a.bin", "b.bin"):
-                _add_rom_file(rom, name, size=10, session=session)
-
-        assert int(_filter_values_cache_version()) == before + 1
 
 
 class TestRomFileSizeLocking:

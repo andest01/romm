@@ -82,20 +82,6 @@ def test_a_key_is_not_replaced_once_its_name_changed(platform: Platform):
     assert stored_sort_key(rom.id) == "die hard trilogy"
 
 
-async def test_replacing_keys_drops_the_cached_gallery_order(
-    platform: Platform, mocker
-):
-    rom = make_rom(platform, "Die Hard Arcade")
-    db_rom_handler.update_rom(
-        rom.id, {"name_sort_key": "hard arcade", "name_sort_key_custom": False}
-    )
-    invalidate = mocker.patch.object(DBRomsHandler, "invalidate_filter_values_cache")
-
-    await recompute_name_sort_keys_task.run()
-
-    invalidate.assert_called_once()
-
-
 def test_an_accent_only_rename_still_blocks_the_replacement(platform: Platform):
     rom = make_rom(platform, "Die Hard Arcade")
     db_rom_handler.update_rom(rom.id, {"name": "Díe Hard Arcade"})

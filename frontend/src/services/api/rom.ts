@@ -230,7 +230,6 @@ export interface GetRomsParams {
   /** Exclusive upper bound on the years `releasedDays` matches. */
   releasedBeforeYear?: number | null;
   withCharIndex?: boolean;
-  withFilterValues?: boolean;
   withRomIdIndex?: boolean;
   withTotal?: boolean;
   /** Load exactly these ids, in order: a window sliced from `rom_id_index`. */
@@ -296,7 +295,6 @@ export function buildGetRomsQuery({
   releasedDays = null,
   releasedBeforeYear = null,
   withCharIndex = undefined,
-  withFilterValues = undefined,
   withRomIdIndex = undefined,
   withTotal = undefined,
   romIds = undefined,
@@ -435,9 +433,6 @@ export function buildGetRomsQuery({
     released_before_year:
       releasedDays && releasedDays.length > 0 ? releasedBeforeYear : undefined,
     ...(withCharIndex !== undefined ? { with_char_index: withCharIndex } : {}),
-    ...(withFilterValues !== undefined
-      ? { with_filter_values: withFilterValues }
-      : {}),
     ...(withRomIdIndex !== undefined
       ? { with_rom_id_index: withRomIdIndex }
       : {}),
@@ -466,7 +461,6 @@ async function getRecentRoms() {
       order_dir: "desc",
       limit: RECENT_ROMS_LIMIT,
       with_char_index: false,
-      with_filter_values: false,
       with_rom_id_index: false,
       with_total: false,
     },
@@ -480,7 +474,6 @@ async function getRecentPlayedRoms() {
       order_dir: "desc",
       limit: RECENT_PLAYED_ROMS_LIMIT,
       with_char_index: false,
-      with_filter_values: false,
       with_rom_id_index: false,
       with_total: false,
       last_played: true,
@@ -1098,6 +1091,25 @@ async function getRomFilters() {
   return api.get<RomFiltersDict>("/roms/filters");
 }
 
+/** Dropdown values for the gallery's scope (platform, collection, search). */
+async function getFilterValues(scope: GetRomsParams = {}) {
+  return api.get<RomFiltersDict>("/roms/filter-values", {
+    params: buildGetRomsQuery(scope),
+  });
+}
+
+/** The gallery's first request: its first window and its dropdown values,
+ * sent together. */
+async function getGalleryBootstrap(
+  params: GetRomsParams,
+  { withFilterValues = true }: { withFilterValues?: boolean } = {},
+) {
+  const rows = getRoms(params);
+  const filters = withFilterValues ? getFilterValues(params) : null;
+  const [rowsResponse, filtersResponse] = await Promise.all([rows, filters]);
+  return { rows: rowsResponse.data, filterValues: filtersResponse?.data };
+}
+
 export default {
   uploadRoms,
   getRoms,
@@ -1136,4 +1148,6 @@ export default {
   deleteRomNote,
   getRomNotes,
   getRomFilters,
+  getFilterValues,
+  getGalleryBootstrap,
 };

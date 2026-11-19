@@ -15,7 +15,7 @@
 //   - selection state (`stores/gallerySelection`).
 import axios from "axios";
 import { defineStore } from "pinia";
-import type { SimpleRomSchema } from "@/__generated__/";
+import type { RomFiltersDict, SimpleRomSchema } from "@/__generated__";
 import type { CustomLimitOffsetPage_SimpleRomSchema_ as GetRomsResponse } from "@/__generated__/models/CustomLimitOffsetPage_SimpleRomSchema_";
 import { userStorage } from "@/composables/useUserLocalStorage";
 import romApi, { type GetRomsParams } from "@/services/api/rom";
@@ -604,6 +604,7 @@ export default defineStore("v2GalleryRoms", {
       galleryFilter: GalleryFilterStore,
       platformsStore: ReturnType<typeof storePlatforms>,
       sidecars: SidecarOptions = {},
+      filterValues?: RomFiltersDict,
     ) {
       if (data.total !== null && data.total !== undefined) {
         this.total = data.total;
@@ -621,26 +622,26 @@ export default defineStore("v2GalleryRoms", {
       if (sidecars.withRomIdIndex !== false && data.rom_id_index) {
         this.romIdIndex = data.rom_id_index;
       }
-      if (sidecars.withFilterValues !== false && data.filter_values) {
+      if (sidecars.withFilterValues !== false && filterValues) {
         if (galleryFilter.filterPlatforms.length === 0) {
-          const platformIds = data.filter_values.platforms ?? [];
+          const platformIds = filterValues.platforms ?? [];
           galleryFilter.setFilterPlatforms(
             platformsStore.allPlatforms.filter((p) =>
               platformIds.includes(p.id),
             ),
           );
         }
-        galleryFilter.setFilterCollections(data.filter_values.collections);
-        galleryFilter.setFilterGenres(data.filter_values.genres);
-        galleryFilter.setFilterFranchises(data.filter_values.franchises);
-        galleryFilter.setFilterCompanies(data.filter_values.companies);
-        galleryFilter.setFilterPublishers(data.filter_values.publishers);
-        galleryFilter.setFilterDevelopers(data.filter_values.developers);
-        galleryFilter.setFilterAgeRatings(data.filter_values.age_ratings);
-        galleryFilter.setFilterRegions(data.filter_values.regions);
-        galleryFilter.setFilterLanguages(data.filter_values.languages);
-        galleryFilter.setFilterPlayerCounts(data.filter_values.player_counts);
-        galleryFilter.setFilterTags(data.filter_values.tags);
+        galleryFilter.setFilterCollections(filterValues.collections);
+        galleryFilter.setFilterGenres(filterValues.genres);
+        galleryFilter.setFilterFranchises(filterValues.franchises);
+        galleryFilter.setFilterCompanies(filterValues.companies);
+        galleryFilter.setFilterPublishers(filterValues.publishers);
+        galleryFilter.setFilterDevelopers(filterValues.developers);
+        galleryFilter.setFilterAgeRatings(filterValues.age_ratings);
+        galleryFilter.setFilterRegions(filterValues.regions);
+        galleryFilter.setFilterLanguages(filterValues.languages);
+        galleryFilter.setFilterPlayerCounts(filterValues.player_counts);
+        galleryFilter.setFilterTags(filterValues.tags);
       }
       this.metadataLoaded = true;
     },
@@ -668,21 +669,27 @@ export default defineStore("v2GalleryRoms", {
       inFlightControllers.set(ctrlKey, controller);
 
       try {
-        const response = await romApi.getRoms({
-          ...params,
-          ...sidecars,
-          ...CARD_METADATA,
-          limit: WINDOW_SIZE,
-          signal: controller.signal,
-        });
+        // The dropdowns are a separate request, so they are not a /roms flag.
+        const { withFilterValues, ...romSidecars } = sidecars;
+        const response = await romApi.getGalleryBootstrap(
+          {
+            ...params,
+            ...romSidecars,
+            ...CARD_METADATA,
+            limit: WINDOW_SIZE,
+            signal: controller.signal,
+          },
+          { withFilterValues: withFilterValues !== false },
+        );
         // A reset or a newer bootstrap may have replaced this one meanwhile.
         const isCurrent = () => inFlightControllers.get(ctrlKey) === controller;
         if (!isCurrent()) return;
         this._applyMetadata(
-          response.data,
+          response.rows,
           galleryFilter,
           platformsStore,
           sidecars,
+          response.filterValues,
         );
         staleListRefreshed = false;
         // The first window came with it; keep it when it's complete. Pending
@@ -690,12 +697,12 @@ export default defineStore("v2GalleryRoms", {
         const firstIds = this.romIdIndex.slice(0, WINDOW_SIZE);
         if (
           firstIds.length > 0 &&
-          response.data.items.length === firstIds.length
+          response.rows.items.length === firstIds.length
         ) {
           this.pendingWindows.add(0);
           await applyItemsBatched(
             this.byPosition,
-            windowPlacements(response.data.items, 0, firstIds),
+            windowPlacements(response.rows.items, 0, firstIds),
             isCurrent,
           );
           if (isCurrent()) {

@@ -1,0 +1,48 @@
+Platform 15, window at offset 1800, 10 runs
+
+run   path     http           time
+----- -------- ------ ------------
+1     offset   200         67.4 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+1     by_id    200        244.7 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+2     offset   200         65.9 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+2     by_id    200         95.9 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+3     offset   200         67.2 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+3     by_id    200        519.9 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+4     offset   200         62.8 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+4     by_id    200         78.8 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+5     offset   200         65.9 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+5     by_id    200         88.1 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+6     offset   200         72.8 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+6     by_id    200        115.5 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+7     offset   200         85.1 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+7     by_id    200        124.5 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+8     offset   200         83.3 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+8     by_id    200         92.8 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+9     offset   200         66.9 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+9     by_id    200         82.2 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+10    offset   200         74.1 ms
+      http://127.0.0.1:5000/api/roms?platform_ids=15&limit=72&offset=1800&order_by=name&order_dir=asc&group_by_meta_id=true&with_char_index=false&with_filter_values=false&with_total=false&with_rom_id_index=false
+10    by_id    200         80.6 ms
+      http://127.0.0.1:5000/api/roms?rom_ids=30545&rom_ids=38290
+
+Median per path
+  offset        67.3 ms  (10 requests)
+  by_id         94.3 ms  (10 requests)

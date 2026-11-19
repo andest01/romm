@@ -1,0 +1,2 @@
+# platform=15 offset=1800 index_length=1802 ids_in_window=2 runs=10
+# ABORT: the window needs 72 ids; the index gave 2 (index length 1802)

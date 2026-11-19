@@ -10,7 +10,6 @@ from types import SimpleNamespace
 from typing import Any, Literal, NamedTuple
 from typing import cast as typing_cast
 
-from redis.exceptions import WatchError
 from sqlalchemy import (
     ColumnExpressionArgument,
     Connection,
@@ -102,7 +101,6 @@ from models.rom import (
     compute_search_titles,
     fold_search_title,
 )
-from utils import get_version
 from utils.age_ratings import MIN_AGE_SOURCE_COLUMNS, compute_min_age
 from utils.arcade_platforms import PLAYABLE_ARCADE_SET_PLATFORMS
 from utils.database import (
@@ -357,12 +355,6 @@ _ROM_USER_WRITE_BATCH_SIZE = 1000
 _USER_OWNED_ROM_USER_STATUSES = (RomUserStatus.RETIRED, RomUserStatus.NEVER_PLAYING)
 
 
-# Cached ROM filter values (genres/franchises/etc.) so it doesn't get
-# recomputed on every call to /api/roms
-ROM_FILTERS_CACHE_VERSION_KEY = "filter_values:ver"
-ROM_FILTERS_CACHE_TTL = 60 * 60 * 24 * 7  # 7 days
-ROM_FILTERS_CACHE_SCHEMA_VERSION = get_version().replace(".", "_")
-
 # Columns copied from a scanned (transient) RomFile onto its database row.
 ROM_FILE_SCANNED_COLUMNS = (
     "file_name",
@@ -455,55 +447,6 @@ def _same_content(row: RomFile, scanned: RomFile) -> bool:
         mtime=scanned.last_modified,
         hashable=False,
     )
-
-
-def _cache_value_to_str(value: Any) -> str | None:
-    if value is None:
-        return None
-    if isinstance(value, bytes):
-        return value.decode()
-    return str(value)
-
-
-def _cache_version(key: str) -> str:
-    return _cache_value_to_str(sync_cache.get(key)) or "0"
-
-
-def _filter_values_cache_version() -> str:
-    return _cache_version(ROM_FILTERS_CACHE_VERSION_KEY)
-
-
-def _filter_values_cache_keys_key(version: str) -> str:
-    return f"filter_values:keys:v{version}"
-
-
-def _sidecar_redis_key(prefix: str, cache_key: str, version: str) -> str:
-    """Every gallery sidecar key shares this shape, so none can omit the schema version."""
-    return f"{prefix}:{ROM_FILTERS_CACHE_SCHEMA_VERSION}:{cache_key}:v{version}"
-
-
-def _filter_values_redis_key(cache_key: str, version: str) -> str:
-    return _sidecar_redis_key("filter_values", cache_key, version)
-
-
-def _store_versioned_cache(redis_key: str, version: str, result: Any) -> None:
-    version_keys_set = _filter_values_cache_keys_key(version)
-    with sync_cache.pipeline() as pipe:
-        try:
-            pipe.watch(ROM_FILTERS_CACHE_VERSION_KEY)
-            current_version = (
-                _cache_value_to_str(pipe.get(ROM_FILTERS_CACHE_VERSION_KEY)) or "0"
-            )
-            if current_version != version:
-                pipe.unwatch()
-            else:
-                pipe.multi()
-                pipe.set(redis_key, json.dumps(result), ex=ROM_FILTERS_CACHE_TTL)
-                pipe.sadd(version_keys_set, redis_key)
-                pipe.expire(version_keys_set, ROM_FILTERS_CACHE_TTL)
-                pipe.execute()
-        except WatchError:
-            pass
 
 
 def _region_rank() -> ColumnElement[Any]:
@@ -804,31 +747,6 @@ def with_simple_details[**P, R](func: Callable[P, R]) -> Callable[P, R]:
 RECOMMENDATION_SEED_FIELDS = frozenset(
     {"rating", "status", "last_played", "now_playing", "hidden"}
 )
-
-# A write that changes a gallery sort key sets this in `session.info`; the cached
-# filter values are then dropped once, after the transaction commits.
-FILTER_VALUES_BUMP_KEY = "filter_values_bump"
-
-
-@event.listens_for(Session, "after_commit")
-def _bump_filter_values_after_commit(session: Session) -> None:
-    if not session.info.pop(FILTER_VALUES_BUMP_KEY, False):
-        return
-    # The write is already durable; a stale entry falls to the TTL.
-    try:
-        DBRomsHandler.invalidate_filter_values_cache()
-    except Exception:
-        log.exception("Failed to invalidate cached filter values")
-
-
-@event.listens_for(Session, "after_rollback")
-def _drop_filter_values_bump(session: Session) -> None:
-    # A rolled-back savepoint fires this too, and the bumps queued before it
-    # must survive; the outer rollback still drops them.
-    if session.in_nested_transaction():
-        return
-    session.info.pop(FILTER_VALUES_BUMP_KEY, None)
-
 
 # Per-user cache invalidations queued by `_queue_user_cache_bumps`, keyed by
 # user id; they run once the transaction commits.
@@ -2211,7 +2129,7 @@ class DBRomsHandler(DBBaseHandler):
         """
         ids: list[int] = []
         starts: dict[str, int] = {}
-        for position, (rom_id, letter) in enumerate(session.execute(rows)):
+        for position, (rom_id, letter) in enumerate(session.execute(rows).all()):
             ids.append(rom_id)
             if letter is not None:
                 starts.setdefault(letter, position)
@@ -2600,8 +2518,6 @@ class DBRomsHandler(DBBaseHandler):
                     .execution_options(synchronize_session=False)
                 )
             )
-        if replaced:
-            session.info[FILTER_VALUES_BUMP_KEY] = True
         return replaced
 
     @begin_session
@@ -2851,7 +2767,6 @@ class DBRomsHandler(DBBaseHandler):
             .values(fs_size_bytes=total)
             .execution_options(synchronize_session="fetch")
         )
-        session.info[FILTER_VALUES_BUMP_KEY] = True
 
     @begin_session
     def add_rom_file(
@@ -4111,46 +4026,21 @@ class DBRomsHandler(DBBaseHandler):
         """
         session.execute(Analyze(RomIdentityKey.__tablename__))
 
-    @staticmethod
-    def invalidate_filter_values_cache() -> None:
-        old_version = str(int(sync_cache.incr(ROM_FILTERS_CACHE_VERSION_KEY)) - 1)
-        old_keys_set = _filter_values_cache_keys_key(old_version)
-        old_cache_keys = [
-            key
-            for raw_key in sync_cache.smembers(old_keys_set)
-            if (key := _cache_value_to_str(raw_key)) is not None
-        ]
-        sync_cache.delete(*old_cache_keys, old_keys_set)
-
     @begin_session
     def with_filter_values(
         self,
         query: RomSelect,
         *,
-        cache_key: str | None = None,
         session: Session = INJECTED_SESSION,
     ) -> RomFiltersDict:
         """
         Returns the list of filters given the current subset of ROMs in the query
         """
-        redis_key: str | None = None
-        version: str | None = None
-        if cache_key:
-            version = _filter_values_cache_version()
-            redis_key = _filter_values_redis_key(cache_key, version)
-            cached = sync_cache.get(redis_key)
-            if cached is not None:
-                filters: RomFiltersDict = json.loads(cached)
-                return filters
-
         ids_subq = query.order_by(None).with_only_columns(Rom.id).scalar_subquery()
 
         statement = _FILTER_VALUES_SELECT.where(RomFacets.rom_id.in_(ids_subq))
 
-        result = self._collect_filter_values(session, statement)
-        if redis_key is not None and version is not None:
-            _store_versioned_cache(redis_key, version, result)
-        return result
+        return self._collect_filter_values(session, statement)
 
     @begin_session
     def get_rom_filters(

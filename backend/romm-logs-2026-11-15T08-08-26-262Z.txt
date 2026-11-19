@@ -1,0 +1,835 @@
+[2026-11-11T17:06:18.223Z] INFO [logs] Log stream forwarder started
+[2026-11-11T17:19:13.357Z] INFO [logs] Log stream forwarder started
+[2026-11-11T17:30:27.471Z] INFO [logs] Log stream forwarder started
+[2026-11-11T17:59:03.626Z] INFO [logs] Log stream forwarder started
+[2026-11-11T18:14:57.539Z] INFO [logs] Log stream forwarder started
+[2026-11-11T18:43:44.743Z] WARNING [config_manager] Config file not found, creating an empty config at /tmp/romm-survey/config/config.yml
+[2026-11-11T21:09:59.232Z] INFO [logs] Log stream forwarder started
+[2026-11-11T21:15:03.004Z] INFO [logs] Log stream forwarder started
+[2026-11-11T21:30:46.892Z] INFO [logs] Log stream forwarder started
+[2026-11-11T21:52:54.141Z] INFO [auth] Auto-created web device 81b88c57-255a-4dd0-a2da-98b2dd4ec805 for user admin_1
+[2026-11-11T21:56:37.702Z] INFO [roms] User admin_1 is downloading Savage Hunters: Origins DX (Brazil).rom
+[2026-11-13T17:59:44.881Z] INFO [logs] Log stream forwarder started
+[2026-11-14T18:44:51.770Z] INFO [logs] Log stream forwarder started
+[2026-11-14T19:19:41.324Z] INFO [logs] Log stream forwarder started
+[2026-11-15T05:31:27.715Z] INFO [logs] Log stream forwarder started
+[2026-11-15T05:34:00.713Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T05:34:00.866Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 9129}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T05:59:06.818Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 4698}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T05:59:06.952Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:06:31.963Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 4423}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:06:32.082Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:25:58.271Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:25:58.531Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 9303}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:32:18.126Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:32:23.488Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 2913}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:56:25.816Z] ERROR [logs] Log forwarder failed, retrying
+[2026-11-15T06:56:41.886Z] INFO [logs] Log stream forwarder started
+[2026-11-15T06:58:36.955Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:58:37.132Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 896}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T06:58:47.031Z] INFO [logs] Log stream forwarder started
+[2026-11-15T07:42:57.865Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:42:57.958Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 1965}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:44:02.493Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 9685}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:44:02.572Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:44:51.021Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 3735}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:44:51.031Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 3735}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:54:51.511Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER, %(primary_keys_2)s::INTEGER, %(primary_keys_3)s::INTEGER, %(primary_keys_4)s::INTEGER, %(primary_keys_5)s::INTEGER, %(primary_keys_6)s::INTEGER, %(primary_keys_7)s::INTEGER, %(primary_keys_8)s::INTEGER, %(primary_keys_9)s::INTEGER, %(primary_keys_10)s::INTEGER, %(primary_keys_11)s::INTEGER, %(primary_keys_12)s::INTEGER, %(primary_keys_13)s::INTEGER, %(primary_keys_14)s::INTEGER, %(primary_keys_15)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 161, 'primary_keys_2': 1635, 'primary_keys_3': 2204, 'primary_keys_4': 2245, 'primary_keys_5': 2671, 'primary_keys_6': 3191, 'primary_keys_7': 5926, 'primary_keys_8': 6347, 'primary_keys_9': 8497, 'primary_keys_10': 8682, 'primary_keys_11': 8785, 'primary_keys_12': 9266, 'primary_keys_13': 9584, 'primary_keys_14': 9709, 'primary_keys_15': 9908}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:54:51.533Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 7431}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:56:09.133Z] INFO [scan] 🔎 Scanning
+[2026-11-15T07:56:09.208Z] INFO [scan] Found 1 platforms in the file system
+[2026-11-15T07:56:09.224Z] INFO [scan] Folder gba[gba] identified as Game Boy Advance 🎮
+[2026-11-15T07:56:09.243Z] WARNING [scan] ⚠️ No firmware found for Game Boy Advance[gba]
+[2026-11-15T07:56:09.248Z] INFO [scan] 3 roms found in the file system
+[2026-11-15T07:56:09.550Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T07:56:09.658Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10001}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:56:09.770Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T07:56:09.815Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10002}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:56:09.931Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T07:56:09.978Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10003}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:56:09.981Z] ERROR [scan] Error scanning ROM Final Fantasy IV (U).gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10001}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:56:09.983Z] ERROR [scan] Error scanning ROM Golden Sun (U).gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10002}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:56:09.985Z] ERROR [scan] Error scanning ROM International Superstar Soccer.gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10003}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:56:22.664Z] WARNING [scan] Missing platforms from filesystem:
+[2026-11-15T07:56:22.665Z] WARNING [scan]  - acorn-archimedes (acorn-archimedes)
+[2026-11-15T07:56:22.666Z] WARNING [scan]  - apple-iigs (apple-iigs)
+[2026-11-15T07:56:22.667Z] WARNING [scan]  - atari7800 (atari7800)
+[2026-11-15T07:56:22.667Z] WARNING [scan]  - jaguar (jaguar)
+[2026-11-15T07:56:22.668Z] WARNING [scan]  - ay-3-8603 (ay-3-8603)
+[2026-11-15T07:56:22.669Z] WARNING [scan]  - c16 (c16)
+[2026-11-15T07:56:22.670Z] WARNING [scan]  - gt40 (gt40)
+[2026-11-15T07:56:22.670Z] WARNING [scan]  - digiblast (digiblast)
+[2026-11-15T07:56:22.671Z] WARNING [scan]  - gizmondo (gizmondo)
+[2026-11-15T07:56:22.672Z] WARNING [scan]  - stadia (stadia)
+[2026-11-15T07:56:22.672Z] WARNING [scan]  - imlac-pds1 (imlac-pds1)
+[2026-11-15T07:56:22.673Z] WARNING [scan]  - laseractive (laseractive)
+[2026-11-15T07:56:22.674Z] WARNING [scan]  - leapster-explorer-slash-leadpad-explorer (leapster-explorer-slash-leadpad-explorer)
+[2026-11-15T07:56:22.676Z] WARNING [scan]  - leaptv (leaptv)
+[2026-11-15T07:56:22.677Z] WARNING [scan]  - mobile (mobile)
+[2026-11-15T07:56:22.678Z] WARNING [scan]  - mega-duck-slash-cougar-boy (mega-duck-slash-cougar-boy)
+[2026-11-15T07:56:22.679Z] WARNING [scan]  - meta-quest-3 (meta-quest-3)
+[2026-11-15T07:56:22.680Z] WARNING [scan]  - microvision--1 (microvision--1)
+[2026-11-15T07:56:22.681Z] WARNING [scan]  - nec-pc-6000-series (nec-pc-6000-series)
+[2026-11-15T07:56:22.682Z] WARNING [scan]  - ouya (ouya)
+[2026-11-15T07:56:22.682Z] WARNING [scan]  - pc-fx (pc-fx)
+[2026-11-15T07:56:22.683Z] WARNING [scan]  - ps3 (ps3)
+[2026-11-15T07:56:22.684Z] WARNING [scan]  - psvr2 (psvr2)
+[2026-11-15T07:56:22.684Z] WARNING [scan]  - plug-and-play (plug-and-play)
+[2026-11-15T07:56:22.685Z] WARNING [scan]  - polymega (polymega)
+[2026-11-15T07:56:22.686Z] WARNING [scan]  - scummvm (scummvm)
+[2026-11-15T07:56:22.687Z] WARNING [scan]  - sharp-mz-2200 (sharp-mz-2200)
+[2026-11-15T07:56:22.688Z] WARNING [scan]  - sfam (sfam)
+[2026-11-15T07:56:22.688Z] WARNING [scan]  - super-nes-cd-rom-system (super-nes-cd-rom-system)
+[2026-11-15T07:56:22.689Z] WARNING [scan]  - zod (zod)
+[2026-11-15T07:56:22.690Z] WARNING [scan]  - terebikko-slash-see-n-say-video-phone (terebikko-slash-see-n-say-video-phone)
+[2026-11-15T07:56:22.691Z] WARNING [scan]  - thomson-mo5 (thomson-mo5)
+[2026-11-15T07:56:22.692Z] WARNING [scan]  - tomy-tutor-slash-pyuta-slash-grandstand-tutor (tomy-tutor-slash-pyuta-slash-grandstand-tutor)
+[2026-11-15T07:56:22.693Z] WARNING [scan]  - turbografx16--1 (turbografx16--1)
+[2026-11-15T07:56:22.694Z] WARNING [scan]  - vectrex (vectrex)
+[2026-11-15T07:56:22.695Z] WARNING [scan]  - visual-memory-unit-slash-visual-memory-system (visual-memory-unit-slash-visual-memory-system)
+[2026-11-15T07:56:22.696Z] WARNING [scan]  - watara-slash-quickshot-supervision (watara-slash-quickshot-supervision)
+[2026-11-15T07:56:22.696Z] WARNING [scan]  - windows-mobile (windows-mobile)
+[2026-11-15T07:56:22.697Z] WARNING [scan]  - wonderswan (wonderswan)
+[2026-11-15T07:56:22.698Z] WARNING [scan]  - series-x-s (series-x-s)
+[2026-11-15T07:56:22.699Z] INFO [scan] ✔️ Scan completed
+[2026-11-15T07:56:29.695Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 4509}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T07:56:43.755Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 7892}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:00:26.675Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 448}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:00:54.991Z] INFO [scan] 🔎 Scanning
+[2026-11-15T08:00:55.031Z] INFO [scan] Found 1 platforms in the file system
+[2026-11-15T08:00:55.039Z] INFO [scan] Folder gba[gba] identified as Game Boy Advance 🎮
+[2026-11-15T08:00:55.052Z] WARNING [scan] ⚠️ No firmware found for Game Boy Advance[gba]
+[2026-11-15T08:00:55.055Z] INFO [scan] 3 roms found in the file system
+[2026-11-15T08:01:07.131Z] WARNING [scan] Missing platforms from filesystem:
+[2026-11-15T08:01:07.132Z] WARNING [scan]  - acorn-archimedes (acorn-archimedes)
+[2026-11-15T08:01:07.134Z] WARNING [scan]  - apple-iigs (apple-iigs)
+[2026-11-15T08:01:07.134Z] WARNING [scan]  - atari7800 (atari7800)
+[2026-11-15T08:01:07.135Z] WARNING [scan]  - jaguar (jaguar)
+[2026-11-15T08:01:07.136Z] WARNING [scan]  - ay-3-8603 (ay-3-8603)
+[2026-11-15T08:01:07.137Z] WARNING [scan]  - c16 (c16)
+[2026-11-15T08:01:07.137Z] WARNING [scan]  - gt40 (gt40)
+[2026-11-15T08:01:07.138Z] WARNING [scan]  - digiblast (digiblast)
+[2026-11-15T08:01:07.139Z] WARNING [scan]  - gizmondo (gizmondo)
+[2026-11-15T08:01:07.140Z] WARNING [scan]  - stadia (stadia)
+[2026-11-15T08:01:07.140Z] WARNING [scan]  - imlac-pds1 (imlac-pds1)
+[2026-11-15T08:01:07.141Z] WARNING [scan]  - laseractive (laseractive)
+[2026-11-15T08:01:07.142Z] WARNING [scan]  - leapster-explorer-slash-leadpad-explorer (leapster-explorer-slash-leadpad-explorer)
+[2026-11-15T08:01:07.143Z] WARNING [scan]  - leaptv (leaptv)
+[2026-11-15T08:01:07.144Z] WARNING [scan]  - mobile (mobile)
+[2026-11-15T08:01:07.145Z] WARNING [scan]  - mega-duck-slash-cougar-boy (mega-duck-slash-cougar-boy)
+[2026-11-15T08:01:07.146Z] WARNING [scan]  - meta-quest-3 (meta-quest-3)
+[2026-11-15T08:01:07.147Z] WARNING [scan]  - microvision--1 (microvision--1)
+[2026-11-15T08:01:07.149Z] WARNING [scan]  - nec-pc-6000-series (nec-pc-6000-series)
+[2026-11-15T08:01:07.150Z] WARNING [scan]  - ouya (ouya)
+[2026-11-15T08:01:07.150Z] WARNING [scan]  - pc-fx (pc-fx)
+[2026-11-15T08:01:07.151Z] WARNING [scan]  - ps3 (ps3)
+[2026-11-15T08:01:07.152Z] WARNING [scan]  - psvr2 (psvr2)
+[2026-11-15T08:01:07.153Z] WARNING [scan]  - plug-and-play (plug-and-play)
+[2026-11-15T08:01:07.154Z] WARNING [scan]  - polymega (polymega)
+[2026-11-15T08:01:07.155Z] WARNING [scan]  - scummvm (scummvm)
+[2026-11-15T08:01:07.156Z] WARNING [scan]  - sharp-mz-2200 (sharp-mz-2200)
+[2026-11-15T08:01:07.157Z] WARNING [scan]  - sfam (sfam)
+[2026-11-15T08:01:07.158Z] WARNING [scan]  - super-nes-cd-rom-system (super-nes-cd-rom-system)
+[2026-11-15T08:01:07.159Z] WARNING [scan]  - zod (zod)
+[2026-11-15T08:01:07.160Z] WARNING [scan]  - terebikko-slash-see-n-say-video-phone (terebikko-slash-see-n-say-video-phone)
+[2026-11-15T08:01:07.161Z] WARNING [scan]  - thomson-mo5 (thomson-mo5)
+[2026-11-15T08:01:07.162Z] WARNING [scan]  - tomy-tutor-slash-pyuta-slash-grandstand-tutor (tomy-tutor-slash-pyuta-slash-grandstand-tutor)
+[2026-11-15T08:01:07.163Z] WARNING [scan]  - turbografx16--1 (turbografx16--1)
+[2026-11-15T08:01:07.165Z] WARNING [scan]  - vectrex (vectrex)
+[2026-11-15T08:01:07.167Z] WARNING [scan]  - visual-memory-unit-slash-visual-memory-system (visual-memory-unit-slash-visual-memory-system)
+[2026-11-15T08:01:07.168Z] WARNING [scan]  - watara-slash-quickshot-supervision (watara-slash-quickshot-supervision)
+[2026-11-15T08:01:07.169Z] WARNING [scan]  - windows-mobile (windows-mobile)
+[2026-11-15T08:01:07.170Z] WARNING [scan]  - wonderswan (wonderswan)
+[2026-11-15T08:01:07.171Z] WARNING [scan]  - series-x-s (series-x-s)
+[2026-11-15T08:01:07.172Z] INFO [scan] ✔️ Scan completed
+[2026-11-15T08:01:56.396Z] INFO [scan] 🔎 Scanning
+[2026-11-15T08:01:56.433Z] INFO [scan] Found 1 platforms in the file system
+[2026-11-15T08:01:56.443Z] INFO [scan] Folder gba[gba] identified as Game Boy Advance 🎮
+[2026-11-15T08:01:56.453Z] WARNING [scan] ⚠️ No firmware found for Game Boy Advance[gba]
+[2026-11-15T08:01:56.457Z] INFO [scan] 3 roms found in the file system
+[2026-11-15T08:01:56.647Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T08:01:56.687Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10004}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:01:56.792Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T08:01:56.828Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10005}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:01:56.932Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T08:01:56.966Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10006}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:01:56.969Z] ERROR [scan] Error scanning ROM Final Fantasy IV (U).gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10004}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:01:56.971Z] ERROR [scan] Error scanning ROM Golden Sun (U).gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10005}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:01:56.972Z] ERROR [scan] Error scanning ROM International Superstar Soccer.gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10006}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:02:08.087Z] WARNING [scan] Missing platforms from filesystem:
+[2026-11-15T08:02:08.088Z] WARNING [scan]  - acorn-archimedes (acorn-archimedes)
+[2026-11-15T08:02:08.089Z] WARNING [scan]  - apple-iigs (apple-iigs)
+[2026-11-15T08:02:08.090Z] WARNING [scan]  - atari7800 (atari7800)
+[2026-11-15T08:02:08.090Z] WARNING [scan]  - jaguar (jaguar)
+[2026-11-15T08:02:08.092Z] WARNING [scan]  - ay-3-8603 (ay-3-8603)
+[2026-11-15T08:02:08.092Z] WARNING [scan]  - c16 (c16)
+[2026-11-15T08:02:08.093Z] WARNING [scan]  - gt40 (gt40)
+[2026-11-15T08:02:08.094Z] WARNING [scan]  - digiblast (digiblast)
+[2026-11-15T08:02:08.095Z] WARNING [scan]  - gizmondo (gizmondo)
+[2026-11-15T08:02:08.096Z] WARNING [scan]  - stadia (stadia)
+[2026-11-15T08:02:08.097Z] WARNING [scan]  - imlac-pds1 (imlac-pds1)
+[2026-11-15T08:02:08.098Z] WARNING [scan]  - laseractive (laseractive)
+[2026-11-15T08:02:08.099Z] WARNING [scan]  - leapster-explorer-slash-leadpad-explorer (leapster-explorer-slash-leadpad-explorer)
+[2026-11-15T08:02:08.099Z] WARNING [scan]  - leaptv (leaptv)
+[2026-11-15T08:02:08.100Z] WARNING [scan]  - mobile (mobile)
+[2026-11-15T08:02:08.101Z] WARNING [scan]  - mega-duck-slash-cougar-boy (mega-duck-slash-cougar-boy)
+[2026-11-15T08:02:08.101Z] WARNING [scan]  - meta-quest-3 (meta-quest-3)
+[2026-11-15T08:02:08.102Z] WARNING [scan]  - microvision--1 (microvision--1)
+[2026-11-15T08:02:08.103Z] WARNING [scan]  - nec-pc-6000-series (nec-pc-6000-series)
+[2026-11-15T08:02:08.103Z] WARNING [scan]  - ouya (ouya)
+[2026-11-15T08:02:08.104Z] WARNING [scan]  - pc-fx (pc-fx)
+[2026-11-15T08:02:08.105Z] WARNING [scan]  - ps3 (ps3)
+[2026-11-15T08:02:08.105Z] WARNING [scan]  - psvr2 (psvr2)
+[2026-11-15T08:02:08.106Z] WARNING [scan]  - plug-and-play (plug-and-play)
+[2026-11-15T08:02:08.107Z] WARNING [scan]  - polymega (polymega)
+[2026-11-15T08:02:08.108Z] WARNING [scan]  - scummvm (scummvm)
+[2026-11-15T08:02:08.109Z] WARNING [scan]  - sharp-mz-2200 (sharp-mz-2200)
+[2026-11-15T08:02:08.110Z] WARNING [scan]  - sfam (sfam)
+[2026-11-15T08:02:08.111Z] WARNING [scan]  - super-nes-cd-rom-system (super-nes-cd-rom-system)
+[2026-11-15T08:02:08.112Z] WARNING [scan]  - zod (zod)
+[2026-11-15T08:02:08.112Z] WARNING [scan]  - terebikko-slash-see-n-say-video-phone (terebikko-slash-see-n-say-video-phone)
+[2026-11-15T08:02:08.113Z] WARNING [scan]  - thomson-mo5 (thomson-mo5)
+[2026-11-15T08:02:08.114Z] WARNING [scan]  - tomy-tutor-slash-pyuta-slash-grandstand-tutor (tomy-tutor-slash-pyuta-slash-grandstand-tutor)
+[2026-11-15T08:02:08.114Z] WARNING [scan]  - turbografx16--1 (turbografx16--1)
+[2026-11-15T08:02:08.115Z] WARNING [scan]  - vectrex (vectrex)
+[2026-11-15T08:02:08.116Z] WARNING [scan]  - visual-memory-unit-slash-visual-memory-system (visual-memory-unit-slash-visual-memory-system)
+[2026-11-15T08:02:08.116Z] WARNING [scan]  - watara-slash-quickshot-supervision (watara-slash-quickshot-supervision)
+[2026-11-15T08:02:08.117Z] WARNING [scan]  - windows-mobile (windows-mobile)
+[2026-11-15T08:02:08.118Z] WARNING [scan]  - wonderswan (wonderswan)
+[2026-11-15T08:02:08.119Z] WARNING [scan]  - series-x-s (series-x-s)
+[2026-11-15T08:02:08.119Z] INFO [scan] ✔️ Scan completed
+[2026-11-15T08:02:08.402Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 1077}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:04:07.315Z] INFO [scan] Folder gamegear[gamegear] identified as Sega Game Gear 🎮
+[2026-11-15T08:04:07.377Z] INFO [upload] Started chunked upload session c045da26-81a0-4727-9c14-72c369dfcd8e for Chakan (U) [!].gg (1 chunks, 262144 bytes)
+[2026-11-15T08:04:07.379Z] INFO [upload] Started chunked upload session bf20ac26-60d3-48af-a50e-2738e8f02643 for Cutthroat Island (U) [!].gg (1 chunks, 524288 bytes)
+[2026-11-15T08:04:07.466Z] INFO [upload] Assembling 1 chunks into /home/user/romm/romm_mock/library/roms/gamegear/.Chakan (U) [!].gg.e8ed9d7f9e8048959eb1da031830a092.assembling
+[2026-11-15T08:04:07.477Z] INFO [upload] Assembling 1 chunks into /home/user/romm/romm_mock/library/roms/gamegear/.Cutthroat Island (U) [!].gg.14820d3ec69f4880aec2945e58c9841a.assembling
+[2026-11-15T08:04:07.503Z] INFO [rom_upload] Upload complete: /home/user/romm/romm_mock/library/roms/gamegear/Chakan (U) [!].gg
+[2026-11-15T08:04:07.537Z] INFO [rom_upload] Upload complete: /home/user/romm/romm_mock/library/roms/gamegear/Cutthroat Island (U) [!].gg
+[2026-11-15T08:04:09.444Z] INFO [scan] 🔎 Scanning
+[2026-11-15T08:04:09.477Z] INFO [scan] Found 1 platforms in the file system
+[2026-11-15T08:04:09.485Z] INFO [scan] Folder gamegear[gamegear] identified as Sega Game Gear 🎮
+[2026-11-15T08:04:09.493Z] WARNING [scan] ⚠️ No firmware found for Sega Game Gear[gamegear]
+[2026-11-15T08:04:09.496Z] INFO [scan] 2 roms found in the file system
+[2026-11-15T08:04:09.618Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T08:04:09.649Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10007}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:04:09.754Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T08:04:09.791Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10008}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:04:09.794Z] ERROR [scan] Error scanning ROM Chakan (U) [!].gg: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10007}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:04:09.795Z] ERROR [scan] Error scanning ROM Cutthroat Island (U) [!].gg: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10008}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:04:20.163Z] WARNING [scan] Missing platforms from filesystem:
+[2026-11-15T08:04:20.164Z] WARNING [scan]  - acorn-archimedes (acorn-archimedes)
+[2026-11-15T08:04:20.164Z] WARNING [scan]  - apple-iigs (apple-iigs)
+[2026-11-15T08:04:20.165Z] WARNING [scan]  - atari7800 (atari7800)
+[2026-11-15T08:04:20.166Z] WARNING [scan]  - jaguar (jaguar)
+[2026-11-15T08:04:20.166Z] WARNING [scan]  - ay-3-8603 (ay-3-8603)
+[2026-11-15T08:04:20.167Z] WARNING [scan]  - c16 (c16)
+[2026-11-15T08:04:20.168Z] WARNING [scan]  - gt40 (gt40)
+[2026-11-15T08:04:20.168Z] WARNING [scan]  - digiblast (digiblast)
+[2026-11-15T08:04:20.169Z] WARNING [scan]  - gizmondo (gizmondo)
+[2026-11-15T08:04:20.170Z] WARNING [scan]  - stadia (stadia)
+[2026-11-15T08:04:20.170Z] WARNING [scan]  - imlac-pds1 (imlac-pds1)
+[2026-11-15T08:04:20.171Z] WARNING [scan]  - laseractive (laseractive)
+[2026-11-15T08:04:20.172Z] WARNING [scan]  - leapster-explorer-slash-leadpad-explorer (leapster-explorer-slash-leadpad-explorer)
+[2026-11-15T08:04:20.173Z] WARNING [scan]  - leaptv (leaptv)
+[2026-11-15T08:04:20.173Z] WARNING [scan]  - mobile (mobile)
+[2026-11-15T08:04:20.174Z] WARNING [scan]  - mega-duck-slash-cougar-boy (mega-duck-slash-cougar-boy)
+[2026-11-15T08:04:20.175Z] WARNING [scan]  - meta-quest-3 (meta-quest-3)
+[2026-11-15T08:04:20.176Z] WARNING [scan]  - microvision--1 (microvision--1)
+[2026-11-15T08:04:20.177Z] WARNING [scan]  - nec-pc-6000-series (nec-pc-6000-series)
+[2026-11-15T08:04:20.178Z] WARNING [scan]  - ouya (ouya)
+[2026-11-15T08:04:20.179Z] WARNING [scan]  - pc-fx (pc-fx)
+[2026-11-15T08:04:20.180Z] WARNING [scan]  - ps3 (ps3)
+[2026-11-15T08:04:20.180Z] WARNING [scan]  - psvr2 (psvr2)
+[2026-11-15T08:04:20.181Z] WARNING [scan]  - plug-and-play (plug-and-play)
+[2026-11-15T08:04:20.182Z] WARNING [scan]  - polymega (polymega)
+[2026-11-15T08:04:20.183Z] WARNING [scan]  - scummvm (scummvm)
+[2026-11-15T08:04:20.183Z] WARNING [scan]  - sharp-mz-2200 (sharp-mz-2200)
+[2026-11-15T08:04:20.184Z] WARNING [scan]  - sfam (sfam)
+[2026-11-15T08:04:20.185Z] WARNING [scan]  - super-nes-cd-rom-system (super-nes-cd-rom-system)
+[2026-11-15T08:04:20.185Z] WARNING [scan]  - zod (zod)
+[2026-11-15T08:04:20.186Z] WARNING [scan]  - terebikko-slash-see-n-say-video-phone (terebikko-slash-see-n-say-video-phone)
+[2026-11-15T08:04:20.187Z] WARNING [scan]  - thomson-mo5 (thomson-mo5)
+[2026-11-15T08:04:20.187Z] WARNING [scan]  - tomy-tutor-slash-pyuta-slash-grandstand-tutor (tomy-tutor-slash-pyuta-slash-grandstand-tutor)
+[2026-11-15T08:04:20.188Z] WARNING [scan]  - turbografx16--1 (turbografx16--1)
+[2026-11-15T08:04:20.189Z] WARNING [scan]  - vectrex (vectrex)
+[2026-11-15T08:04:20.189Z] WARNING [scan]  - visual-memory-unit-slash-visual-memory-system (visual-memory-unit-slash-visual-memory-system)
+[2026-11-15T08:04:20.190Z] WARNING [scan]  - watara-slash-quickshot-supervision (watara-slash-quickshot-supervision)
+[2026-11-15T08:04:20.191Z] WARNING [scan]  - windows-mobile (windows-mobile)
+[2026-11-15T08:04:20.192Z] WARNING [scan]  - wonderswan (wonderswan)
+[2026-11-15T08:04:20.193Z] WARNING [scan]  - series-x-s (series-x-s)
+[2026-11-15T08:04:20.194Z] INFO [scan] ✔️ Scan completed
+[2026-11-15T08:05:38.059Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 450}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:06:55.418Z] INFO [scan] 🔎 Scanning
+[2026-11-15T08:06:55.459Z] INFO [scan] Found 1 platforms in the file system
+[2026-11-15T08:06:55.466Z] INFO [scan] Folder gba[gba] identified as Game Boy Advance 🎮
+[2026-11-15T08:06:55.475Z] WARNING [scan] ⚠️ No firmware found for Game Boy Advance[gba]
+[2026-11-15T08:06:55.478Z] INFO [scan] 3 roms found in the file system
+[2026-11-15T08:06:55.640Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T08:06:55.678Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10009}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:06:55.793Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T08:06:55.828Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10010}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:06:55.943Z] ERROR [rahasher] RAHasher executable not found in PATH
+[2026-11-15T08:06:55.974Z] CRITICAL [database] (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10011}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:06:55.976Z] ERROR [scan] Error scanning ROM Final Fantasy IV (U).gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10009}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:06:55.978Z] ERROR [scan] Error scanning ROM Golden Sun (U).gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10010}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:06:55.979Z] ERROR [scan] Error scanning ROM International Superstar Soccer.gba: 500: (psycopg.errors.UndefinedColumn) column rom_files.raw_serial does not exist
+LINE 1: ..._files.title_version, rom_files.converto_read_at, rom_files....
+                                                             ^
+[SQL: SELECT rom_files.rom_id, rom_files.id, rom_files.file_name, rom_files.file_path, rom_files.file_size_bytes, rom_files.last_modified, rom_files.crc_hash, rom_files.md5_hash, rom_files.sha1_hash, rom_files.ra_hash, rom_files.chd_sha1_hash, rom_files.title_id, rom_files.title_version, rom_files.converto_read_at, rom_files.raw_serial, rom_files.sigil_features, rom_files.n64_header, rom_files.n64_md5, rom_files.n64_md5_n64, rom_files.playlist_title_ids, rom_files.archive_members, rom_files.category, rom_files.missing_from_fs, rom_files.created_at, rom_files.updated_at, (SELECT count(roms.id) AS count_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_1, (SELECT coalesce(sum(roms.fs_size_bytes), %(coalesce_2)s::INTEGER) AS coalesce_1 
+FROM roms 
+WHERE roms.platform_id = platforms_1.id) AS anon_2, platforms_1.id, platforms_1.igdb_id, platforms_1.sgdb_id, platforms_1.moby_id, platforms_1.ss_id, platforms_1.ra_id, platforms_1.launchbox_id, platforms_1.hasheous_id, platforms_1.tgdb_id, platforms_1.flashpoint_id, platforms_1.igdb_slug, platforms_1.moby_slug, platforms_1.hltb_slug, platforms_1.libretro_slug, platforms_1.slug, platforms_1.fs_slug, platforms_1.name, platforms_1.custom_name, platforms_1.description, platforms_1.category, platforms_1.generation, platforms_1.first_release_year, platforms_1.family_name, platforms_1.family_slug, platforms_1.url, platforms_1.url_logo, platforms_1.aspect_ratio, platforms_1.temp_old_slug, platforms_1.missing_from_fs, platforms_1.created_at, platforms_1.updated_at, roms_metadata_1.rom_id, roms_metadata_1.genres, roms_metadata_1.franchises, roms_metadata_1.collections, roms_metadata_1.companies, roms_metadata_1.publishers, roms_metadata_1.developers, roms_metadata_1.game_modes, roms_metadata_1.age_ratings, roms_metadata_1.keywords, roms_metadata_1.themes, roms_metadata_1.player_perspectives, roms_metadata_1.player_count, roms_metadata_1.first_release_date, roms_metadata_1.average_rating, roms_metadata_1.rating_count, roms_metadata_1.created_at, roms_metadata_1.updated_at, roms_1.id, roms_1.fs_name, roms_1.fs_path 
+FROM rom_files LEFT OUTER JOIN roms AS roms_1 ON roms_1.id = rom_files.rom_id LEFT OUTER JOIN platforms AS platforms_1 ON platforms_1.id = roms_1.platform_id LEFT OUTER JOIN roms_metadata AS roms_metadata_1 ON roms_1.id = roms_metadata_1.rom_id 
+WHERE rom_files.rom_id IN (%(primary_keys_1)s::INTEGER)]
+[parameters: {'coalesce_2': 0, 'primary_keys_1': 10011}]
+(Background on this error at: https://sqlalche.me/e/21/f405)
+[2026-11-15T08:07:06.393Z] WARNING [scan] Missing platforms from filesystem:
+[2026-11-15T08:07:06.394Z] WARNING [scan]  - acorn-archimedes (acorn-archimedes)
+[2026-11-15T08:07:06.394Z] WARNING [scan]  - apple-iigs (apple-iigs)
+[2026-11-15T08:07:06.395Z] WARNING [scan]  - atari7800 (atari7800)
+[2026-11-15T08:07:06.395Z] WARNING [scan]  - jaguar (jaguar)
+[2026-11-15T08:07:06.396Z] WARNING [scan]  - ay-3-8603 (ay-3-8603)
+[2026-11-15T08:07:06.397Z] WARNING [scan]  - c16 (c16)
+[2026-11-15T08:07:06.397Z] WARNING [scan]  - gt40 (gt40)
+[2026-11-15T08:07:06.398Z] WARNING [scan]  - digiblast (digiblast)
+[2026-11-15T08:07:06.398Z] WARNING [scan]  - gizmondo (gizmondo)
+[2026-11-15T08:07:06.399Z] WARNING [scan]  - stadia (stadia)
+[2026-11-15T08:07:06.400Z] WARNING [scan]  - imlac-pds1 (imlac-pds1)
+[2026-11-15T08:07:06.400Z] WARNING [scan]  - laseractive (laseractive)
+[2026-11-15T08:07:06.401Z] WARNING [scan]  - leapster-explorer-slash-leadpad-explorer (leapster-explorer-slash-leadpad-explorer)
+[2026-11-15T08:07:06.402Z] WARNING [scan]  - leaptv (leaptv)
+[2026-11-15T08:07:06.404Z] WARNING [scan]  - mobile (mobile)
+[2026-11-15T08:07:06.405Z] WARNING [scan]  - mega-duck-slash-cougar-boy (mega-duck-slash-cougar-boy)
+[2026-11-15T08:07:06.405Z] WARNING [scan]  - meta-quest-3 (meta-quest-3)
+[2026-11-15T08:07:06.406Z] WARNING [scan]  - microvision--1 (microvision--1)
+[2026-11-15T08:07:06.407Z] WARNING [scan]  - nec-pc-6000-series (nec-pc-6000-series)
+[2026-11-15T08:07:06.407Z] WARNING [scan]  - ouya (ouya)
+[2026-11-15T08:07:06.408Z] WARNING [scan]  - pc-fx (pc-fx)
+[2026-11-15T08:07:06.409Z] WARNING [scan]  - ps3 (ps3)
+[2026-11-15T08:07:06.409Z] WARNING [scan]  - psvr2 (psvr2)
+[2026-11-15T08:07:06.410Z] WARNING [scan]  - plug-and-play (plug-and-play)
+[2026-11-15T08:07:06.410Z] WARNING [scan]  - polymega (polymega)
+[2026-11-15T08:07:06.411Z] WARNING [scan]  - scummvm (scummvm)
+[2026-11-15T08:07:06.412Z] WARNING [scan]  - sharp-mz-2200 (sharp-mz-2200)
+[2026-11-15T08:07:06.412Z] WARNING [scan]  - sfam (sfam)
+[2026-11-15T08:07:06.413Z] WARNING [scan]  - super-nes-cd-rom-system (super-nes-cd-rom-system)
+[2026-11-15T08:07:06.414Z] WARNING [scan]  - zod (zod)
+[2026-11-15T08:07:06.414Z] WARNING [scan]  - terebikko-slash-see-n-say-video-phone (terebikko-slash-see-n-say-video-phone)
+[2026-11-15T08:07:06.415Z] WARNING [scan]  - thomson-mo5 (thomson-mo5)
+[2026-11-15T08:07:06.415Z] WARNING [scan]  - tomy-tutor-slash-pyuta-slash-grandstand-tutor (tomy-tutor-slash-pyuta-slash-grandstand-tutor)
+[2026-11-15T08:07:06.416Z] WARNING [scan]  - turbografx16--1 (turbografx16--1)
+[2026-11-15T08:07:06.417Z] WARNING [scan]  - vectrex (vectrex)
+[2026-11-15T08:07:06.417Z] WARNING [scan]  - visual-memory-unit-slash-visual-memory-system (visual-memory-unit-slash-visual-memory-system)
+[2026-11-15T08:07:06.418Z] WARNING [scan]  - watara-slash-quickshot-supervision (watara-slash-quickshot-supervision)
+[2026-11-15T08:07:06.419Z] WARNING [scan]  - windows-mobile (windows-mobile)
+[2026-11-15T08:07:06.420Z] WARNING [scan]  - wonderswan (wonderswan)
+[2026-11-15T08:07:06.421Z] WARNING [scan]  - series-x-s (series-x-s)
+[2026-11-15T08:07:06.421Z] INFO [scan] ✔️ Scan completed

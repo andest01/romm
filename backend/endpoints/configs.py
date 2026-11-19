@@ -365,10 +365,9 @@ async def update_scan_settings(request: Request, payload: ScanSettingsPayload) -
         ) from exc
     _record_config(request, "scan_settings", "update")
 
-    # Region priority picks the primary rom of each sibling group, so every
-    # cached gallery sidecar and stored pick is stale the moment it changes.
+    # Region priority picks the default rom of each group, so the stored picks
+    # are stale the moment it changes.
     if region_priority_changed:
-        db_rom_handler.invalidate_filter_values_cache()
         await run_in_threadpool(db_rom_handler.refresh_all_group_defaults)
 
 

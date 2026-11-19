@@ -13,10 +13,25 @@ import storePlatforms from "@/stores/platforms";
 import { platformFixture } from "@/utils/platform.fixtures";
 import { romFixture } from "@/utils/rom.fixtures";
 
-const { getRoms } = vi.hoisted(() => ({ getRoms: vi.fn() }));
+const { getRoms, getFilterValues, getGalleryBootstrap } = vi.hoisted(() => {
+  const getRoms = vi.fn();
+  const getFilterValues = vi.fn();
+  // Mirrors the real combined call: rows and dropdown values, sent together.
+  const getGalleryBootstrap = vi.fn(
+    async (params: object, options: { withFilterValues?: boolean } = {}) => {
+      const rows = await getRoms(params);
+      const filterValues =
+        options.withFilterValues === false
+          ? undefined
+          : (await getFilterValues(params))?.data;
+      return { rows: rows.data, filterValues };
+    },
+  );
+  return { getRoms, getFilterValues, getGalleryBootstrap };
+});
 
 vi.mock("@/services/api/rom", () => ({
-  default: { getRoms },
+  default: { getRoms, getFilterValues, getGalleryBootstrap },
 }));
 
 interface Deferred {
@@ -183,7 +198,9 @@ describe("galleryRoms windowed fetch", () => {
 
     const params = getRoms.mock.calls[0]![0];
     expect(params.withCharIndex).toBe(false);
-    expect(params.withFilterValues).toBe(false);
+    expect(getGalleryBootstrap.mock.calls.at(-1)![1]).toEqual({
+      withFilterValues: false,
+    });
     expect(params.withRomIdIndex).toBe(false);
     // The total still lands: the backend falls back to a plain COUNT when
     // the id index is skipped, and that is all the caller needs to size its
@@ -202,9 +219,12 @@ describe("galleryRoms windowed fetch", () => {
 
     const params = getRoms.mock.calls[0]![0];
     expect(params.withCharIndex).toBeUndefined();
-    expect(params.withFilterValues).toBeUndefined();
+    expect(getGalleryBootstrap.mock.calls.at(-1)![1]).toEqual({
+      withFilterValues: true,
+    });
     expect(params.withRomIdIndex).toBeUndefined();
     expect(params.withTotal).toBeUndefined();
+    expect(getFilterValues).toHaveBeenCalledTimes(1);
   });
 
   it("does not clobber the filter drawer when filter values are skipped", async () => {
@@ -218,7 +238,6 @@ describe("galleryRoms windowed fetch", () => {
         items: [],
         char_index: {},
         rom_id_index: [],
-        filter_values: { genres: [], platforms: [] },
       },
     });
     const store = storeGalleryRoms();
@@ -236,18 +255,20 @@ describe("galleryRoms windowed fetch", () => {
         items: [],
         char_index: {},
         rom_id_index: [],
-        filter_values: {
-          genres: null,
-          franchises: null,
-          collections: null,
-          companies: null,
-          age_ratings: null,
-          regions: null,
-          languages: null,
-          player_counts: null,
-          tags: null,
-          platforms: null,
-        },
+      },
+    });
+    getFilterValues.mockResolvedValue({
+      data: {
+        genres: null,
+        franchises: null,
+        collections: null,
+        companies: null,
+        age_ratings: null,
+        regions: null,
+        languages: null,
+        player_counts: null,
+        tags: null,
+        platforms: null,
       },
     });
     storePlatforms().set([
