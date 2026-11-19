@@ -19,7 +19,7 @@ from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.engine.interfaces import ReflectedColumn
 from sqlalchemy.schema import CreateColumn
 
-from models.rom import FULL_PATH_HASH_LENGTH, TITLE_ID_MAX_LENGTH
+from models.rom import FULL_PATH_HASH_LENGTH, GROUP_KEY_LENGTH, TITLE_ID_MAX_LENGTH
 from utils.database import (
     HLTB_MAIN_STORY_COLUMN,
     MIN_AGE_COLUMN,
@@ -43,6 +43,44 @@ VIEW = "roms_metadata"
 
 PRIMARY_REGION_COLUMN = "generated_primary_region"
 PRIMARY_REGION_LENGTH = 50
+
+GROUP_KEY_COLUMN = "group_key"
+PRERELEASE_RANK_COLUMN = "prerelease_rank"
+GROUP_DEFAULT_COLUMN = "is_group_default"
+GROUP_DEFAULT_NAME_SORT_INDEX = "idx_roms_group_default_name_sort_key"
+# `group_key` last lets the grouped gallery skip a user's personal-pick groups
+# without leaving the index.
+GROUP_DEFAULT_NAME_SORT_COLUMNS = [
+    GROUP_DEFAULT_COLUMN,
+    "name_sort_key",
+    "id",
+    GROUP_KEY_COLUMN,
+]
+GROUP_KEY_COVER_INDEX = "idx_roms_group_key_cover"
+# Everything the grouping window reads, so it never touches the wide row.
+GROUP_KEY_COVER_COLUMNS = [
+    "platform_id",
+    GROUP_KEY_COLUMN,
+    PRERELEASE_RANK_COLUMN,
+    PRIMARY_REGION_COLUMN,
+    "fs_name_no_ext",
+    "id",
+]
+# The providers a group key takes its id from, in precedence order.
+_GROUP_KEY_PROVIDERS = (
+    "igdb",
+    "ss",
+    "moby",
+    "ra",
+    "hasheous",
+    "launchbox",
+    "tgdb",
+    "flashpoint",
+    "steam",
+)
+# A snapshot of `models.base.PRERELEASE_FILENAME_TAGS`, frozen so a fresh
+# install builds the rank this revision did.
+_PRERELEASE_TAGS = ("demo", "beta", "proto", "sample", "kiosk", "preview")
 FULL_PATH_HASH_COLUMN = "full_path_hash"
 RATING_COUNT_COLUMN = "generated_rating_count"
 
@@ -409,6 +447,32 @@ def _postgres_hltb_main_story() -> str:
 _POSTGRES_PRIMARY_REGION = f"left(regions ->> 0, {PRIMARY_REGION_LENGTH})"
 
 
+def _group_key(pg: bool) -> str:
+    """The first provider id set, as "<provider>-<platform>-<id>"; NULL when none is.
+
+    `id` can't stand in for a game with none: MariaDB forbids a generated
+    column reading an AUTO_INCREMENT one, so the window partitions those by id.
+    """
+    if pg:
+        parts = [
+            f"'{p}-' || platform_id::text || '-' || {p}_id::text"
+            for p in _GROUP_KEY_PROVIDERS
+        ]
+    else:
+        parts = [
+            f"CONCAT('{p}-', platform_id, '-', {p}_id)" for p in _GROUP_KEY_PROVIDERS
+        ]
+    return f"COALESCE({', '.join(parts)})"
+
+
+def _prerelease_rank(pg: bool) -> str:
+    """1 when a tag follows "(" in the file name, case-blind and accent-sensitive."""
+    tags = "|".join(_PRERELEASE_TAGS)
+    if pg:
+        return f"CASE WHEN fs_name_no_ext ~* '\\(({tags})' THEN 1 ELSE 0 END"
+    return f"CASE WHEN LOWER(fs_name_no_ext) REGEXP '\\\\(({tags})' THEN 1 ELSE 0 END"
+
+
 # ---------------------------------------------------------------------------
 # Catalog
 # ---------------------------------------------------------------------------
@@ -486,6 +550,10 @@ def generated_columns(pg: bool) -> list[GeneratedColumn]:
         ),
         hltb_main_story,
         hltb_main_story.unset_flag,
+        GeneratedColumn(
+            GROUP_KEY_COLUMN, f"VARCHAR({GROUP_KEY_LENGTH})", _group_key(pg)
+        ),
+        GeneratedColumn(PRERELEASE_RANK_COLUMN, "SMALLINT", _prerelease_rank(pg)),
     ]
 
 
@@ -529,6 +597,9 @@ PLAIN_COLUMNS: list[sa.Column[Any]] = [
         sa.Boolean(),
         nullable=False,
         server_default=sa.false(),
+    ),
+    sa.Column(
+        GROUP_DEFAULT_COLUMN, sa.Boolean(), nullable=False, server_default=sa.true()
     ),
 ]
 
@@ -582,6 +653,11 @@ def _generated_column_indexes(conn: sa.Connection) -> list[tuple[str, list[str],
     """(name, columns read, CREATE statement) for every generated-column index."""
     pg = is_postgresql(conn)
     indexes = [_index(f"idx_{TABLE}_{c}", [c], c) for c in INDEXED_GENERATED_COLUMNS]
+    for name, columns in (
+        (GROUP_KEY_COVER_INDEX, GROUP_KEY_COVER_COLUMNS),
+        (GROUP_DEFAULT_NAME_SORT_INDEX, GROUP_DEFAULT_NAME_SORT_COLUMNS),
+    ):
+        indexes.append(_index(name, columns, ", ".join(columns)))
     for column in SORTABLE_NULLABLE_ROM_COLUMNS:
         flag = rom_unset_flag_column(column)
         # Each spans through to `id`, the gallery's tiebreak: without it

@@ -32,6 +32,7 @@ from sqlalchemy import (
     inspect,
     or_,
     select,
+    true,
 )
 from sqlalchemy.orm import (
     Mapped,
@@ -60,6 +61,8 @@ from utils.database import CustomJSON, is_non_blank
 NAME_SORT_KEY_MAX_LENGTH = 500
 # Length of the sha256 hex digest stored in `Rom.full_path_hash`.
 FULL_PATH_HASH_LENGTH = 64
+# Fits "flashpoint-", a platform id, "-" and a 100-character flashpoint id.
+GROUP_KEY_LENGTH = 128
 # Max length for free-text audio tag columns (title/artist/album).
 AUDIO_TAG_MAX_LENGTH = 512
 # Max length for the binary identity columns (title id and save target).
@@ -81,6 +84,17 @@ PROVIDER_METADATA_COLUMNS: Final = (
     "csdb_metadata",
     "steam_metadata",
     "gamelist_metadata",
+)
+
+# What the schema's derived fields read: alternative names, video, YouTube id.
+DERIVED_FIELD_PROVIDER_METADATA_COLUMNS: Final = (
+    "igdb_metadata",
+    "moby_metadata",
+    "ss_metadata",
+    "gamelist_metadata",
+    "launchbox_metadata",
+    "demozoo_metadata",
+    "pouet_metadata",
 )
 
 # (metadata column, key) of each provider's alternative titles.
@@ -869,9 +883,27 @@ class Rom(BaseModel):
         Index("idx_roms_fs_name_no_ext", "fs_name_no_ext"),
         # Covers the group_by_meta_id dedup window, which reads only these
         # columns, so the index has to carry every one of them: a single
-        # missing column (flashpoint_id or fs_name_no_ext, the window's
-        # partition tail and sort tiebreaker) drops the plan to a full scan of
-        # the wide roms row, JSON metadata blobs included.
+        # missing column drops the plan to a full scan of the wide roms row,
+        # JSON metadata blobs included.
+        Index(
+            "idx_roms_group_key_cover",
+            "platform_id",
+            "group_key",
+            "prerelease_rank",
+            "generated_primary_region",
+            "fs_name_no_ext",
+            "id",
+        ),
+        # The grouped gallery's group defaults, read in name order; `group_key`
+        # lets it skip a user's personal-pick groups without leaving the index.
+        Index(
+            "idx_roms_group_default_name_sort_key",
+            "is_group_default",
+            "name_sort_key",
+            "id",
+            "group_key",
+        ),
+        # The sibling_roms self-join, which matches on each provider id.
         Index(
             "idx_roms_sibling_cover",
             "platform_id",
@@ -1096,6 +1128,28 @@ class Rom(BaseModel):
         nullable=True,
         server_default=FetchedValue(),
         server_onupdate=FetchedValue(),
+    )
+    # STORED generated columns the grouping window reads instead of building
+    # them per query: the first provider id set, and whether the file is a
+    # pre-release. Their expressions live in `utils.roms_columns`.
+    group_key: Mapped[str | None] = mapped_column(
+        String(length=GROUP_KEY_LENGTH),
+        nullable=True,
+        server_default=FetchedValue(),
+        server_onupdate=FetchedValue(),
+    )
+    prerelease_rank: Mapped[int | None] = mapped_column(
+        SmallInteger(),
+        nullable=True,
+        server_default=FetchedValue(),
+        server_onupdate=FetchedValue(),
+    )
+    # Whether this version represents its group for a user with no picks of
+    # their own; kept by `refresh_group_defaults` on every write that can
+    # change it. True by default, so a missed refresh shows a duplicate rather
+    # than hiding a game.
+    is_group_default: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=True, server_default=true()
     )
     # The folded name and aliases, kept by `compute_search_titles` on every
     # write. The gallery search filters on it and ranks whole titles against it.

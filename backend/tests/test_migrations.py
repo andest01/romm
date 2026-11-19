@@ -1519,3 +1519,56 @@ def test_the_sort_key_backfill_keeps_its_original_rule(mocker):
     assert (
         migration._sort_key("The Legend of Zelda 2") == "legend of zelda 000000000002"
     )
+
+
+def test_the_group_key_revision_reverses_replays_and_fills(platform: Platform):
+    """0162 computes both columns for rows that already exist."""
+    migration = _load_migration("0162_roms_group_key.py")
+    rom = make_rom(platform, "Keyed", fs_stem="Keyed (Demo)", igdb_id=5)
+
+    with sync_engine.begin() as connection:
+        before = _schema_of(connection, "roms")
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.downgrade()
+            assert not has_column(connection, "roms", "group_key")
+            assert not has_column(connection, "roms", "prerelease_rank")
+            assert "idx_roms_group_key_cover" not in _schema_of(connection, "roms")[1]
+            migration.downgrade()
+
+            migration.upgrade()
+            migration.upgrade()
+            row = connection.execute(
+                sa.text("SELECT group_key, prerelease_rank FROM roms WHERE id = :id"),
+                {"id": rom.id},
+            ).one()
+
+        assert _schema_of(connection, "roms") == before
+    assert tuple(row) == (f"igdb-{platform.id}-5", 1)
+
+
+def test_the_group_default_revision_reverses_replays_and_picks(platform: Platform):
+    """0163 picks every group's default for rows that already exist."""
+    migration = _load_migration("0163_roms_group_default.py")
+    full = make_rom(platform, "Shared", fs_stem="Shared (USA)", igdb_id=9)
+    demo = make_rom(platform, "Shared", fs_stem="Shared (Demo)", igdb_id=9)
+
+    with sync_engine.begin() as connection:
+        before = _schema_of(connection, "roms")
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.downgrade()
+            assert not has_column(connection, "roms", "is_group_default")
+            migration.downgrade()
+
+            migration.upgrade()
+            migration.upgrade()
+            picks: dict[int, bool] = dict(
+                connection.execute(
+                    sa.text(
+                        "SELECT id, is_group_default FROM roms WHERE id IN (:a, :b)"
+                    ),
+                    {"a": full.id, "b": demo.id},
+                ).all()
+            )
+
+        assert _schema_of(connection, "roms") == before
+    assert picks == {full.id: True, demo.id: False}

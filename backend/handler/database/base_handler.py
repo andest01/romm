@@ -1,8 +1,10 @@
 import functools
+import json
 import logging
 import time
 from typing import Any, cast
 
+import orjson
 from sqlalchemy import Connection, CursorResult, Result, create_engine, event
 from sqlalchemy.orm import sessionmaker
 
@@ -11,6 +13,15 @@ from config.config_manager import ConfigManager
 from logger.logger import log
 from models import load_all_models
 
+
+def load_json(raw: str | bytes) -> Any:
+    """orjson, or json for what orjson refuses (NaN, numbers past float range)."""
+    try:
+        return orjson.loads(raw)
+    except orjson.JSONDecodeError:
+        return json.loads(raw)
+
+
 # A ping on a socket the server already closed blocks the worker until TCP gives
 # up, so `pool_pre_ping` alone is not enough.
 sync_engine = create_engine(
@@ -18,6 +29,8 @@ sync_engine = create_engine(
     pool_pre_ping=True,
     pool_recycle=DB_POOL_RECYCLE_SECONDS,
     echo=False,
+    # JSON columns are read on every gallery window; orjson decodes ~3x faster.
+    json_deserializer=load_json,
 )
 sync_session = sessionmaker(bind=sync_engine, expire_on_commit=False)
 

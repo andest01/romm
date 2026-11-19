@@ -67,7 +67,15 @@ vi.mock("@/services/api/collection", () => ({
 vi.mock("@/services/api/rom", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/api/rom")>();
   return {
-    default: { ...actual.default, updateUserRomProps },
+    default: {
+      ...actual.default,
+      updateUserRomProps,
+      // The gallery's bootstrap is not under test here; keep it off the network.
+      getGalleryBootstrap: async () => ({
+        rows: { total: 0, items: [], char_index: {}, rom_id_index: [] },
+        filterValues: undefined,
+      }),
+    },
   };
 });
 

@@ -9,7 +9,6 @@ from redis.exceptions import RedisError
 from sqlalchemy import event
 from tools import generate_test_data
 
-from handler.database import db_rom_handler
 from handler.database.base_handler import sync_engine
 from models.rom import Rom
 
@@ -26,7 +25,6 @@ def _rom_rows(
     monkeypatch: pytest.MonkeyPatch,
     resources: Path,
     *flags: str,
-    rotate_cache: Callable[[], None] = lambda: None,
     rotate_feeds: Callable[[], None] = lambda: None,
 ) -> list[dict[str, Any]]:
     """Run the seeder, recording rom rows instead of inserting anything."""
@@ -39,7 +37,6 @@ def _rom_rows(
     monkeypatch.setattr(generate_test_data, "bulk_insert", record)
     monkeypatch.setattr(generate_test_data, "_advance_sequences", lambda *_: None)
     monkeypatch.setattr(generate_test_data, "datetime", _FrozenDatetime)
-    monkeypatch.setattr(db_rom_handler, "invalidate_filter_values_cache", rotate_cache)
     monkeypatch.setattr(generate_test_data, "invalidate_all_cached_feeds", rotate_feeds)
     monkeypatch.setattr(
         sys,
@@ -85,7 +82,7 @@ def test_a_dry_run_writes_no_image_files(
     assert not tmp_path.exists() or not any(tmp_path.rglob("*"))
 
 
-def test_a_seed_rotates_the_gallery_and_feed_caches(
+def test_a_seed_rotates_the_feed_cache(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     rotated: list[str] = []
@@ -93,11 +90,10 @@ def test_a_seed_rotates_the_gallery_and_feed_caches(
     _rom_rows(
         monkeypatch,
         tmp_path,
-        rotate_cache=lambda: rotated.append("gallery"),
         rotate_feeds=lambda: rotated.append("feeds"),
     )
 
-    assert rotated == ["gallery", "feeds"]
+    assert rotated == ["feeds"]
 
 
 def test_the_utc_listener_is_removed_after_a_run(
@@ -124,9 +120,8 @@ def test_a_cache_failure_still_reports_the_saved_seed(
     def unavailable() -> None:
         raise RedisError("connection refused")
 
-    rows = _rom_rows(monkeypatch, tmp_path, rotate_cache=unavailable)
+    rows = _rom_rows(monkeypatch, tmp_path, rotate_feeds=unavailable)
 
     captured = capsys.readouterr()
-    assert "could not rotate the gallery cache" in captured.err
     assert "Done in" in captured.out
     assert len(rows) == 24

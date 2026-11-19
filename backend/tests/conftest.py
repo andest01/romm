@@ -447,8 +447,6 @@ def _clear_tables() -> None:
 @pytest.fixture(autouse=True)
 def clear_database():
     _clear_tables()
-    # Drop any cached gallery filter values to keep tests isolated.
-    db_rom_handler.invalidate_filter_values_cache()
 
 
 @contextmanager

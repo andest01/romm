@@ -15,7 +15,7 @@
 //   - selection state (`stores/gallerySelection`).
 import axios from "axios";
 import { defineStore } from "pinia";
-import type { SimpleRomSchema } from "@/__generated__/";
+import type { RomFiltersDict, SimpleRomSchema } from "@/__generated__";
 import type { CustomLimitOffsetPage_SimpleRomSchema_ as GetRomsResponse } from "@/__generated__/models/CustomLimitOffsetPage_SimpleRomSchema_";
 import { userStorage } from "@/composables/useUserLocalStorage";
 import romApi, { type GetRomsParams } from "@/services/api/rom";
@@ -94,8 +94,26 @@ export const NO_SIDECARS: SidecarOptions = {
   withRomIdIndex: false,
 };
 
+// No letter strip or filter drawer, but windows still need the id list.
+export const ID_LIST_ONLY: SidecarOptions = {
+  withCharIndex: false,
+  withFilterValues: false,
+};
+
 // Sidecars plus the COUNT, for fetches that only need their items.
 const SKIP_AGGREGATES = { ...NO_SIDECARS, withTotal: false };
+
+// The provider metadata a gallery card reads: alt art and video, playtime,
+// verification badges. The server skips reading the rest.
+export const CARD_METADATA_FIELDS = [
+  "ss_metadata",
+  "launchbox_metadata",
+  "gamelist_metadata",
+  "hltb_metadata",
+  "hasheous_metadata",
+  "merged_ra_metadata",
+] satisfies (keyof SimpleRom)[];
+const CARD_METADATA = { metadataFields: CARD_METADATA_FIELDS };
 
 // In-flight `AbortController`s keyed by request: `window:${offset}`
 // for a windowed fetch, `bootstrap` for the lightweight metadata
@@ -135,6 +153,12 @@ function clearRetry(offset: number) {
 // `abortAllInFlight` on any gallery-context switch.
 const MAX_CONCURRENT_WINDOWS = 4;
 const queuedWindows: number[] = [];
+
+// One stale-list refresh per gallery context, so a lasting mismatch can't loop.
+let staleListRefreshed = false;
+
+// The bootstrap in flight, so a second caller waits for it instead of racing.
+let bootstrapInFlight: Promise<void> | null = null;
 
 function clearQueue() {
   queuedWindows.length = 0;
@@ -182,19 +206,30 @@ function nextFrame(): Promise<void> {
   });
 }
 
+/** Each item at its id's slot, so a left-out id leaves a gap, not a shift. */
+function windowPlacements(
+  items: SimpleRom[],
+  offset: number,
+  windowIds: number[],
+): [number, SimpleRom][] {
+  const positionOf = new Map(windowIds.map((id, j) => [id, offset + j]));
+  return items.flatMap((item): [number, SimpleRom][] => {
+    const position = positionOf.get(item.id);
+    return position === undefined ? [] : [[position, item]];
+  });
+}
+
 async function applyItemsBatched(
   byPosition: Map<number, SimpleRom>,
-  items: SimpleRom[],
-  baseOffset: number,
+  placements: [number, SimpleRom][],
   isStillRelevant: () => boolean,
 ): Promise<void> {
-  for (let i = 0; i < items.length; i += APPLY_BATCH_SIZE) {
+  for (let i = 0; i < placements.length; i += APPLY_BATCH_SIZE) {
     if (!isStillRelevant()) return;
-    const end = Math.min(i + APPLY_BATCH_SIZE, items.length);
-    for (let j = i; j < end; j++) {
-      byPosition.set(baseOffset + j, items[j]!);
+    for (const [position, item] of placements.slice(i, i + APPLY_BATCH_SIZE)) {
+      byPosition.set(position, item);
     }
-    if (end < items.length) await nextFrame();
+    if (i + APPLY_BATCH_SIZE < placements.length) await nextFrame();
   }
 }
 
@@ -316,6 +351,15 @@ export default defineStore("v2GalleryRoms", {
     setCurrentPlatform(platform: Platform | null) {
       this.currentPlatform = platform;
     },
+    /** Scope the gallery to `platform`, keeping it when already there, and
+     * start (or join) its bootstrap. */
+    openPlatform(platform: Platform): Promise<void> {
+      if (this.currentPlatform?.id !== platform.id) {
+        this.resetGallery();
+        this.setCurrentPlatform(platform);
+      }
+      return this.fetchInitialMetadata();
+    },
     setCurrentCollection(collection: Collection | null) {
       this.currentCollection = collection;
     },
@@ -425,6 +469,7 @@ export default defineStore("v2GalleryRoms", {
       try {
         const response = await romApi.getRoms({
           ...params,
+          ...CARD_METADATA,
           signal: controller.signal,
         });
         if (!isCurrent()) return false;
@@ -559,6 +604,7 @@ export default defineStore("v2GalleryRoms", {
       galleryFilter: GalleryFilterStore,
       platformsStore: ReturnType<typeof storePlatforms>,
       sidecars: SidecarOptions = {},
+      filterValues?: RomFiltersDict,
     ) {
       if (data.total !== null && data.total !== undefined) {
         this.total = data.total;
@@ -576,49 +622,43 @@ export default defineStore("v2GalleryRoms", {
       if (sidecars.withRomIdIndex !== false && data.rom_id_index) {
         this.romIdIndex = data.rom_id_index;
       }
-      if (sidecars.withFilterValues !== false && data.filter_values) {
+      if (sidecars.withFilterValues !== false && filterValues) {
         if (galleryFilter.filterPlatforms.length === 0) {
-          const platformIds = data.filter_values.platforms ?? [];
+          const platformIds = filterValues.platforms ?? [];
           galleryFilter.setFilterPlatforms(
             platformsStore.allPlatforms.filter((p) =>
               platformIds.includes(p.id),
             ),
           );
         }
-        galleryFilter.setFilterCollections(data.filter_values.collections);
-        galleryFilter.setFilterGenres(data.filter_values.genres);
-        galleryFilter.setFilterFranchises(data.filter_values.franchises);
-        galleryFilter.setFilterCompanies(data.filter_values.companies);
-        galleryFilter.setFilterPublishers(data.filter_values.publishers);
-        galleryFilter.setFilterDevelopers(data.filter_values.developers);
-        galleryFilter.setFilterAgeRatings(data.filter_values.age_ratings);
-        galleryFilter.setFilterRegions(data.filter_values.regions);
-        galleryFilter.setFilterLanguages(data.filter_values.languages);
-        galleryFilter.setFilterPlayerCounts(data.filter_values.player_counts);
-        galleryFilter.setFilterTags(data.filter_values.tags);
+        galleryFilter.setFilterCollections(filterValues.collections);
+        galleryFilter.setFilterGenres(filterValues.genres);
+        galleryFilter.setFilterFranchises(filterValues.franchises);
+        galleryFilter.setFilterCompanies(filterValues.companies);
+        galleryFilter.setFilterPublishers(filterValues.publishers);
+        galleryFilter.setFilterDevelopers(filterValues.developers);
+        galleryFilter.setFilterAgeRatings(filterValues.age_ratings);
+        galleryFilter.setFilterRegions(filterValues.regions);
+        galleryFilter.setFilterLanguages(filterValues.languages);
+        galleryFilter.setFilterPlayerCounts(filterValues.player_counts);
+        galleryFilter.setFilterTags(filterValues.tags);
       }
       this.metadataLoaded = true;
     },
 
-    /** Lightweight bootstrap: fetch only the gallery's metadata (total,
-     * char_index, rom_id_index, filter_values) without loading any
-     * items. Sizes the virtualiser (via `total`) before any window
-     * lands, so both layouts can render skeleton rows immediately and
-     * then hydrate them through the viewport-driven `fetchWindowAt`
-     * sync.
+    /** Bootstrap: the gallery's metadata (total, char_index, rom_id_index,
+     * filter_values) plus its first window, in one request. A caller that
+     * arrives while it's in flight waits for the same request.
      *
-     * The backend's `limit` minimum is 1, so we still pay for one
-     * `SimpleRomSchema` build server-side, but the item is discarded
-     * client-side.
-     *
-     * `sidecars` opts out of the aggregates the caller doesn't render; the
-     * backend then serves `total` from a plain COUNT instead of a full
-     * ordered id scan. */
-    async fetchInitialMetadata(sidecars: SidecarOptions = {}): Promise<void> {
-      if (this.metadataLoaded) return;
-      if (this.initialFetching) return;
-      if (this.refreshing) return;
+     * `sidecars` opts out of the aggregates the caller doesn't render. */
+    fetchInitialMetadata(sidecars: SidecarOptions = {}): Promise<void> {
+      if (this.metadataLoaded || this.refreshing) return Promise.resolve();
+      if (this.initialFetching && bootstrapInFlight) return bootstrapInFlight;
+      bootstrapInFlight = this._bootstrap(sidecars);
+      return bootstrapInFlight;
+    },
 
+    async _bootstrap(sidecars: SidecarOptions): Promise<void> {
       this.initialFetching = true;
 
       const galleryFilter = storeGalleryFilter();
@@ -629,23 +669,47 @@ export default defineStore("v2GalleryRoms", {
       inFlightControllers.set(ctrlKey, controller);
 
       try {
-        const response = await romApi.getRoms({
-          ...params,
-          ...sidecars,
-          limit: 1,
-          signal: controller.signal,
-        });
-        // Re-check that this bootstrap is still the relevant one:
-        // invalidateWindows / resetGallery may have aborted us and a
-        // newer bootstrap may have replaced our entry under the same key.
-        // Identity comparison avoids applying stale metadata in that race.
-        if (inFlightControllers.get(ctrlKey) !== controller) return;
+        // The dropdowns are a separate request, so they are not a /roms flag.
+        const { withFilterValues, ...romSidecars } = sidecars;
+        const response = await romApi.getGalleryBootstrap(
+          {
+            ...params,
+            ...romSidecars,
+            ...CARD_METADATA,
+            limit: WINDOW_SIZE,
+            signal: controller.signal,
+          },
+          { withFilterValues: withFilterValues !== false },
+        );
+        // A reset or a newer bootstrap may have replaced this one meanwhile.
+        const isCurrent = () => inFlightControllers.get(ctrlKey) === controller;
+        if (!isCurrent()) return;
         this._applyMetadata(
-          response.data,
+          response.rows,
           galleryFilter,
           platformsStore,
           sidecars,
+          response.filterValues,
         );
+        staleListRefreshed = false;
+        // The first window came with it; keep it when it's complete. Pending
+        // while it's placed, so a viewport sync between frames won't refetch it.
+        const firstIds = this.romIdIndex.slice(0, WINDOW_SIZE);
+        if (
+          firstIds.length > 0 &&
+          response.rows.items.length === firstIds.length
+        ) {
+          this.pendingWindows.add(0);
+          await applyItemsBatched(
+            this.byPosition,
+            windowPlacements(response.rows.items, 0, firstIds),
+            isCurrent,
+          );
+          if (isCurrent()) {
+            this.pendingWindows.delete(0);
+            this.loadedWindows.add(0);
+          }
+        }
       } catch (err) {
         if (axios.isCancel(err)) return;
         console.error("[v2GalleryRoms] bootstrap fetch failed", err);
@@ -653,128 +717,78 @@ export default defineStore("v2GalleryRoms", {
         if (inFlightControllers.get(ctrlKey) === controller) {
           inFlightControllers.delete(ctrlKey);
           this.initialFetching = false;
+          this._drainWindowQueue();
         }
       }
     },
 
-    /** Fetch the window that contains `position` (rounding down to the
-     * window grid). Dedupes against pending / loaded windows. The very
-     * first window also seeds `total` and `charIndex`. */
+    /** Fetch the window holding `position` by the bootstrap's ids. */
     async fetchWindowAt(position: number): Promise<void> {
       if (position < 0) return;
       const offset = alignToWindow(position);
-      // Total is unknown for offset 0; for any non-initial offset, refuse
-      // to fetch past total.
-      if (this.total > 0 && offset >= this.total) return;
       if (this.loadedWindows.has(offset)) return;
       if (this.pendingWindows.has(offset)) return;
 
-      // Concurrency cap: if every slot is busy, park this window and let a
-      // settling fetch drain it (see `MAX_CONCURRENT_WINDOWS`). Offset 0 is
-      // the initial window and is never queued (nothing is in flight yet).
-      if (offset !== 0 && this.pendingWindows.size >= MAX_CONCURRENT_WINDOWS) {
+      // A window slices the bootstrap's id list; wait in the queue for it.
+      if (!this.metadataLoaded) {
+        if (!queuedWindows.includes(offset)) queuedWindows.push(offset);
+        void this.fetchInitialMetadata();
+        return;
+      }
+      const windowIds = this.romIdIndex.slice(offset, offset + WINDOW_SIZE);
+      if (windowIds.length === 0) return;
+
+      if (this.pendingWindows.size >= MAX_CONCURRENT_WINDOWS) {
         if (!queuedWindows.includes(offset)) queuedWindows.push(offset);
         return;
       }
-      // Starting now: drop any queue entry so the drain loop won't re-run it.
       const queuedAt = queuedWindows.indexOf(offset);
       if (queuedAt !== -1) queuedWindows.splice(queuedAt, 1);
 
       this.pendingWindows.add(offset);
       this.failedWindows.delete(offset);
-      if (offset === 0 && !this.metadataLoaded) this.initialFetching = true;
 
-      const galleryFilter = storeGalleryFilter();
-      const platformsStore = storePlatforms();
-      const params = this._resultRequest(offset);
       const ctrlKey = `window:${offset}`;
       const controller = new AbortController();
       inFlightControllers.set(ctrlKey, controller);
 
-      // Skip the char-index / filter-value / id-index aggregations when the
-      // bootstrap already loaded them. Capture the decision now: it also gates
-      // whether this response is allowed to re-apply that metadata below. The
-      // backend returns an EMPTY (but truthy) `char_index: {}` / `filter_values`
-      // object when these are skipped, so re-applying it would wipe the
-      // populated values and blank the AlphaStrip / filter drawer. The id
-      // index is a full-library scan we already paid for in the bootstrap, so
-      // window fetches opt out of recomputing it. Dropping it makes the backend
-      // count the result set separately instead, which is the same scan under
-      // another name for a total the bootstrap already gave us, so opt out of
-      // that too and keep the window fetch to just its page of covers.
-      const withAggregations = !this.metadataLoaded;
-
       try {
+        // The ids are the whole selection: no filter or sort goes with them.
         const response = await romApi.getRoms({
-          ...params,
-          ...(withAggregations ? {} : SKIP_AGGREGATES),
+          romIds: windowIds,
+          ...CARD_METADATA,
           signal: controller.signal,
         });
-        // Re-check identity: invalidateWindows / resetGallery / a context
-        // switch may have run while we were waiting, and a fresh fetch may
-        // already own this offset. Compare the controller rather than
-        // `pendingWindows` membership (which a replacement fetch re-adds)
-        // so we never apply stale data over the new context.
+        // A context switch may have handed this offset to a newer fetch.
         if (inFlightControllers.get(ctrlKey) !== controller) return;
 
-        const data = response.data;
-        // Only apply the full metadata when this window actually fetched the
-        // aggregations (a window reached before the bootstrap resolved).
-        // Otherwise char_index / filter_values come back empty and would
-        // clobber what the bootstrap populated; `total` comes back null and
-        // the guard below leaves the established size alone.
-        if (offset === 0 && withAggregations) {
-          this._applyMetadata(data, galleryFilter, platformsStore);
-        } else if (data.total !== null && data.total !== undefined) {
-          this.total = data.total;
-        }
-
-        // Place items at their absolute positions (offset .. offset + N).
-        // We rely on Vue 3's reactive Map: `set(k, v)` triggers per-key
-        // dependents. Earlier passes reassigned `this.byPosition` to a
-        // new Map after each window, which DEFEATED that: every
-        // `getRomAt(p)` reader was invalidated, and the gallery
-        // virtualItems computed (which iterates positions) had to
-        // rebuild end-to-end on every window response. That blocked the
-        // event loop hard enough to freeze the scroller. Mutating in
-        // place keeps the dependents narrow: only positions that just
-        // resolved trigger a re-render.
-        //
-        // Batched + frame-yielded: 72 sets in one microtask block the
-        // main thread long enough that AlphaStrip clicks queued during
-        // the flush miss their frame. `applyItemsBatched` pauses every
-        // row (8 items) so input dispatches between paints.
+        // Set positions in place, a row at a time, so only changed cards
+        // re-render and input still gets frames.
         await applyItemsBatched(
           this.byPosition,
-          data.items,
-          offset,
+          windowPlacements(response.data.items, offset, windowIds),
           () => inFlightControllers.get(ctrlKey) === controller,
         );
-
-        // A context switch during the frame-yielded apply may have
-        // superseded us partway through. Marking the window loaded now would
-        // leave it partially applied yet skipped by later syncs, leaving permanent
-        // skeletons for the fresh context. Bail unless we're still current.
+        // Superseded mid-apply: don't mark a partial window loaded.
         if (inFlightControllers.get(ctrlKey) !== controller) return;
 
         this.loadedWindows.add(offset);
-        // Recovered: drop any retry bookkeeping for this window.
         clearRetry(offset);
+        // A missing id means the list is stale (hidden or deleted since):
+        // swap in a fresh one without blanking the page.
+        if (
+          response.data.items.length < windowIds.length &&
+          !staleListRefreshed
+        ) {
+          staleListRefreshed = true;
+          void this.refreshResults();
+        }
       } catch (err) {
-        // An explicit abort isn't a failure, so keep `failedWindows`
-        // clean so the window is eligible to refetch under the new
-        // gallery context without the UI flagging it as broken.
         if (axios.isCancel(err)) return;
-        // A late error for a window a newer fetch already owns isn't ours to
-        // record or retry against the current context.
         if (inFlightControllers.get(ctrlKey) !== controller) return;
         this.failedWindows.add(offset);
-        // Surface in console; UI keeps the skeletons in place until the
-        // retry below (or a viewport / gallery-state change) refetches.
         console.error("[v2GalleryRoms] window fetch failed", offset, err);
-        // Self-heal a stranded viewport: schedule a bounded, backing-off
-        // refetch so a transient blip doesn't leave the window's cards as
-        // skeletons until the user happens to scroll.
+        // Bounded, backing-off retry so a blip doesn't strand skeletons.
         const attempts = retryCounts.get(offset) ?? 0;
         if (attempts < MAX_WINDOW_RETRIES && !retryTimers.has(offset)) {
           retryCounts.set(offset, attempts + 1);
@@ -791,7 +805,6 @@ export default defineStore("v2GalleryRoms", {
         if (inFlightControllers.get(ctrlKey) === controller) {
           inFlightControllers.delete(ctrlKey);
           this.pendingWindows.delete(offset);
-          if (offset === 0) this.initialFetching = false;
           // A slot freed up, so start the next queued window, if any.
           this._drainWindowQueue();
         }
@@ -849,6 +862,8 @@ export default defineStore("v2GalleryRoms", {
      * window fetch's `finally`; the cap in `fetchWindowAt` guards the
      * ceiling, so this just feeds it the next parked offset. */
     _drainWindowQueue() {
+      // Without the id list a parked window would re-park forever.
+      if (!this.metadataLoaded) return;
       while (
         queuedWindows.length > 0 &&
         this.pendingWindows.size < MAX_CONCURRENT_WINDOWS

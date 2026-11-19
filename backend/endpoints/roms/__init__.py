@@ -55,6 +55,7 @@ from endpoints.responses import BulkOperationResponse
 from endpoints.responses.base import PAGE_QUERY, LimitOffsetPage, PageParams
 from endpoints.responses.recommendation import SimilarRomSchema
 from endpoints.responses.rom import (
+    PROVIDER_METADATA_FIELDS,
     DetailedRomSchema,
     ManualMetadata,
     RomUserSchema,
@@ -148,6 +149,7 @@ from models.audit_event import AuditAction, AuditTargetType
 from models.collection import Collection, SmartCollection, VirtualCollection
 from models.permission import PermAction, PermEntity
 from models.rom import (
+    DERIVED_FIELD_PROVIDER_METADATA_COLUMNS,
     HAS_FILE_ON_DISK_FILTERS,
     METADATA_SOURCE_COLUMNS,
     PINNED_MEDIA_KEY_MAX_LENGTH,
@@ -261,6 +263,23 @@ def refresh_scoped_smart_collections(collection_id: int) -> None:
         db_collection_handler.refresh_smart_collections_scoped_to(collection_id)
     except Exception as e:
         log.error(f"Couldn't refresh smart collections scoped to {collection_id}: {e}")
+
+
+def metadata_field_columns(metadata_fields: str) -> tuple[str, ...]:
+    """The provider columns behind a comma-separated list of metadata fields.
+
+    Raises:
+        HTTPException: 422 when a name isn't a provider metadata field.
+    """
+    names = dict.fromkeys(n.strip() for n in metadata_fields.split(",") if n.strip())
+    unknown = sorted(set(names) - set(PROVIDER_METADATA_FIELDS))
+    if unknown:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Unknown metadata fields: {', '.join(unknown)}",
+        )
+    # The schema serves the `ra_metadata` column as `merged_ra_metadata`.
+    return tuple("ra_metadata" if n == "merged_ra_metadata" else n for n in names)
 
 
 def build_unscoped_sidecar_cache_key(
@@ -665,8 +684,10 @@ class CustomLimitOffsetPage[T: BaseModel](LimitOffsetPage[T]):
     total: int | None = Field(ge=0)  # type: ignore[assignment]
     char_index: dict[str, int]
     rom_id_index: list[int]
-    filter_values: RomFiltersDict
 
+
+# The most roms one `rom_ids` window may name.
+ROM_IDS_WINDOW_MAX: Final = 256
 
 # Month 1-12 and day 1-31, so a match is already a calendar day.
 RELEASED_DAY_REGEX = re.compile(r"^(0?[1-9]|1[0-2])-(0?[1-9]|[12]\d|3[01])$")
@@ -715,9 +736,6 @@ def get_roms(
         bool,
         Query(description="Whether to get the char index."),
     ] = True,
-    with_filter_values: Annotated[
-        bool, Query(description="Whether to return filter values.")
-    ] = True,
     with_rom_id_index: Annotated[
         bool,
         Query(
@@ -737,14 +755,28 @@ def get_roms(
             )
         ),
     ] = True,
+    metadata_fields: Annotated[
+        str | None,
+        Query(
+            description=(
+                "Comma-separated provider metadata fields to include, such as"
+                " `ss_metadata,hltb_metadata`: any `*_metadata` field but"
+                " `manual_metadata`, plus `merged_ra_metadata`. The others come back"
+                " null, meaning not requested rather than no match, and fields built"
+                " from provider metadata, such as `alternative_names`, use only the"
+                " listed providers. Leave unset for every provider, or empty for none."
+            )
+        ),
+    ] = None,
     with_provider_metadata: Annotated[
         bool,
         Query(
+            deprecated=True,
             description=(
-                "Whether to include each rom's provider metadata. When false, every"
-                " `*_metadata` object but `manual_metadata` comes back null, meaning"
-                " not requested rather than no match; `metadatum` is unaffected."
-            )
+                "Use `metadata_fields`. False returns every `*_metadata` object but"
+                " `manual_metadata` as null, while fields built from them, such as"
+                " `alternative_names`, stay complete."
+            ),
         ),
     ] = True,
     order_by: Annotated[
@@ -792,10 +824,32 @@ def get_roms(
         bool,
         Query(description="Whether to include each rom's file entries."),
     ] = False,
+    rom_ids: Annotated[
+        list[Annotated[int, Field(ge=1)]] | None,
+        Query(
+            description=(
+                "Load exactly these roms, in this order, instead of ranking a page:"
+                " a window the caller sliced from `rom_id_index`. Repeat the"
+                f" parameter, 1 to {ROM_IDS_WINDOW_MAX} positive ids. Ids the caller"
+                " can't see, or that no longer exist, are left out. The sidecars and"
+                " the total are skipped, and `offset` and `limit` are ignored."
+            ),
+            min_length=1,
+            max_length=ROM_IDS_WINDOW_MAX,
+        ),
+    ] = None,
 ) -> CustomLimitOffsetPage[SimpleRomSchema]:
     """Retrieve roms."""
     perms = get_permissions(request)
+    if rom_ids is not None:
+        # The caller already holds the ordered list, so nothing spans the set.
+        with_char_index = with_rom_id_index = with_total = False
     parsed_released_days = parse_released_days(released_days)
+    provider_columns: tuple[str, ...] = PROVIDER_METADATA_COLUMNS
+    if not with_provider_metadata:
+        provider_columns = DERIVED_FIELD_PROVIDER_METADATA_COLUMNS
+    elif metadata_fields is not None:
+        provider_columns = metadata_field_columns(metadata_fields)
 
     # Normalised once so the query layer and every cache key agree on case.
     order_by = order_by.lower()
@@ -808,10 +862,24 @@ def get_roms(
         search_term=filters.search_term,
     )
 
+    # The stored group defaults build the id list and the letter strip in one
+    # statement, so the grouping window stays out of the query below.
+    group_defaults = with_rom_id_index and db_rom_handler.group_defaults_apply(
+        filters,
+        sort_key=sort_key,
+        visibility=perms.rom_visibility,
+        updated_after=updated_after,
+        released_days=parsed_released_days,
+    )
+
     # Filter down the query
     query = db_rom_handler.filter_roms(
         query=unfiltered_query,
-        filters=filters,
+        filters=(
+            filters.model_copy(update={"group_by_meta_id": False})
+            if group_defaults
+            else filters
+        ),
         sort_key=sort_key,
         order_by=order_by,
         order_dir=order_dir,
@@ -823,6 +891,15 @@ def get_roms(
         # Only ids, letters and counts are selected from it; the page's rows load
         # through get_page_rows_query below.
         include_related=False,
+    )
+
+    # The id list backs virtual scroll and the letter strip jumps within it, so
+    # one statement builds both. Relevance order has no letter runs. Callers
+    # that only need a page (e.g. the home rails) skip it.
+    with_letters = (
+        with_char_index
+        and db_rom_handler.sorts_by_letter(sort_key.column)
+        and not db_rom_handler.search_relevance_leads(order_by, filters.search_term)
     )
 
     # Cache only the unscoped library scan (and a grouped single-platform set,
@@ -858,61 +935,27 @@ def get_roms(
             request.user.id, order_by, order_dir, filters.platform_ids[0]
         )
 
-    # Get the char index for the roms. Relevance order has no letter runs.
-    char_index_dict = {}
-    if with_char_index and not db_rom_handler.search_relevance_leads(
-        order_by, filters.search_term
-    ):
-        char_index = db_rom_handler.with_char_index(
-            query=query,
-            order_by_attr=sort_key.column,
-            order_dir=order_dir,
-            cache_key=sidecar_cache_key,
-        )
-        char_index_dict = {char: index for (char, index) in char_index}
-
-    filter_values = RomFiltersDict(
-        genres=[],
-        franchises=[],
-        collections=[],
-        companies=[],
-        publishers=[],
-        developers=[],
-        game_modes=[],
-        age_ratings=[],
-        player_counts=[],
-        regions=[],
-        languages=[],
-        tags=[],
-        platforms=[],
-    )
-    if with_filter_values:
-        # We use the unfiltered query so applied filters don't affect the list
-        filter_query = db_rom_handler.filter_roms(
-            query=unfiltered_query,
-            # Scope only: the dropdowns list what the applied filters could
-            # still narrow to, so the applied filters themselves are left out.
-            filters=filters.scope_only(),
-            user_id=request.user.id,
-            visibility=perms.rom_visibility,
-        )
-        # `hidden`, the only RomUser column filter values read, already
-        # bumps the global version, so no per-user version is embedded.
-        filter_values = db_rom_handler.with_filter_values(
-            query=filter_query,
-            cache_key=build_unscoped_filter_values_cache_key(
-                request.user.id, is_unscoped_scope
-            ),
-        )
-
-    # The full ordered id list backs virtual scroll, so it's computed over the
-    # whole result set. Callers that only need a page (e.g. the home rails) opt
-    # out with with_rom_id_index=false and avoid the full-library scan.
     rom_id_index: list[int] = []
-    if with_rom_id_index:
-        rom_id_index = db_rom_handler.get_rom_id_index(
-            query=query, cache_key=sidecar_cache_key
+    char_index_dict: dict[str, int] = {}
+    if with_rom_id_index or with_letters:
+        ids, char_index = db_rom_handler.get_cached_gallery_index(
+            (
+                db_rom_handler.group_defaults_index_rows(
+                    query, user_id=request.user.id, order_dir=order_dir
+                )
+                if group_defaults
+                else db_rom_handler.index_rows(
+                    query, letter_of=sort_key.column if with_letters else None
+                )
+            ),
+            cache_key=sidecar_cache_key,
+            with_ids=with_rom_id_index,
+            with_letters=with_letters,
         )
+        if with_rom_id_index:
+            rom_id_index = ids
+        if with_letters:
+            char_index_dict = dict(char_index)
 
     # A grouped page reads its window of the list the index request cached,
     # since the live page runs the grouping window over the whole set.
@@ -984,7 +1027,9 @@ def get_roms(
                 return cached_page[1]
             return db_rom_handler.get_rom_count(query=query, session=session)
 
-        if with_rom_id_index:
+        if rom_ids is not None:
+            page_ids = list(rom_ids)
+        elif with_rom_id_index:
             page_ids = rom_id_index[params.offset : params.offset + params.limit]
         elif cached_page is not None:
             page_ids = cached_page[0]
@@ -1007,8 +1052,10 @@ def get_roms(
                     page_ids,
                     visibility=perms.rom_visibility,
                     include_file_stats=not with_files,
+                    provider_columns=provider_columns,
                 )
             ).all()
+            db_rom_handler.blank_unread_provider_columns(page_rows, provider_columns)
             rows_by_id = {rom.id: rom for rom in page_rows}
             page_items = [rows_by_id[i] for i in page_ids if i in rows_by_id]
         else:
@@ -1021,7 +1068,6 @@ def get_roms(
             offset=params.offset,
             char_index=char_index_dict,
             rom_id_index=rom_id_index,
-            filter_values=filter_values,
         )
 
 
@@ -1406,6 +1452,36 @@ def get_rom_filters(request: Request) -> RomFiltersDict:
     from handler.database import db_rom_handler
 
     return db_rom_handler.get_rom_filters(get_rom_visibility_filter(request))
+
+
+@protected_route(router.get, "/filter-values", [Scope.ROMS_READ])
+def get_gallery_filter_values(
+    request: Request,
+    filters: Annotated[RomFilterParams, Depends(ROM_FILTER_QUERY)],
+) -> RomFiltersDict:
+    """Filter-dropdown values for the scope the gallery is showing.
+
+    Only the scope (platform, collection, search) narrows these lists; the
+    gallery's row filters are left out, as they are in the bootstrap.
+    """
+    perms = get_permissions(request)
+    unfiltered_query, _ = db_rom_handler.get_roms_query(
+        user_id=request.user.id,
+        search_term=filters.search_term,
+    )
+    scoped_query = db_rom_handler.filter_roms(
+        query=unfiltered_query,
+        filters=filters.scope_only(),
+        user_id=request.user.id,
+        visibility=perms.rom_visibility,
+    )
+    # The key is gated on the scope alone: only the scope reaches this query.
+    return db_rom_handler.with_filter_values(
+        query=scoped_query,
+        cache_key=build_unscoped_filter_values_cache_key(
+            request.user.id, not filters.has_scope()
+        ),
+    )
 
 
 @protected_route(

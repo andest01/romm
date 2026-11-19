@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import HTTPException, Request, status
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from adapters.services.rom_converto import (
@@ -367,6 +368,7 @@ async def update_scan_settings(request: Request, payload: ScanSettingsPayload) -
     # Region priority picks the primary rom of each sibling group, so every
     # cached gallery sidecar is stale the moment the order changes.
     if region_priority_changed:
+        await run_in_threadpool(db_rom_handler.refresh_all_group_defaults)
         db_rom_handler.invalidate_filter_values_cache()
 
 

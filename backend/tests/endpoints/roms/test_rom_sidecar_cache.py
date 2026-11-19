@@ -125,15 +125,27 @@ def _get_roms(client: TestClient, access_token: str, **params: Any) -> dict[str,
     return cast(dict[str, Any], response.json())
 
 
+def _get_filter_values(
+    client: TestClient, access_token: str, **params: Any
+) -> dict[str, Any]:
+    response = client.get(
+        "/api/roms/filter-values",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=params,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    return cast(dict[str, Any], response.json())
+
+
 def test_row_filter_reads_unscoped_filter_values_cache(
     client: TestClient, access_token: str, admin_user: User, missing_rom: Rom
 ):
     """`missing=true` reuses the whole-library entry the unfiltered scan wrote."""
     _seed_filter_values(admin_user.id)
 
-    body = _get_roms(client, access_token, missing=True)
+    body = _get_filter_values(client, access_token, missing=True)
 
-    assert body["filter_values"]["genres"] == ["Sentinel Genre"]
+    assert body["genres"] == ["Sentinel Genre"]
 
 
 def test_row_filter_writes_unscoped_filter_values_cache(
@@ -144,7 +156,7 @@ def test_row_filter_writes_unscoped_filter_values_cache(
     redis_key = _filter_values_redis_key(_filter_values_key(admin_user.id), version)
     assert sync_cache.get(redis_key) is None
 
-    _get_roms(client, access_token, missing=True)
+    _get_filter_values(client, access_token, missing=True)
 
     assert sync_cache.get(redis_key) is not None
 
@@ -153,10 +165,10 @@ def test_row_filtered_and_unfiltered_filter_values_match(
     client: TestClient, access_token: str, missing_rom: Rom
 ):
     """The two are the same list, which is what makes sharing the key correct."""
-    filtered = _get_roms(client, access_token, missing=True)
-    unfiltered = _get_roms(client, access_token)
+    filtered = _get_filter_values(client, access_token, missing=True)
+    unfiltered = _get_filter_values(client, access_token)
 
-    assert filtered["filter_values"] == unfiltered["filter_values"]
+    assert filtered == unfiltered
 
 
 def test_platform_scope_does_not_read_unscoped_filter_values_cache(
@@ -165,9 +177,9 @@ def test_platform_scope_does_not_read_unscoped_filter_values_cache(
     """A platform narrows the filter-value list, so it must be computed live."""
     _seed_filter_values(admin_user.id)
 
-    body = _get_roms(client, access_token, platform_ids=platform.id)
+    body = _get_filter_values(client, access_token, platform_ids=platform.id)
 
-    assert body["filter_values"]["genres"] == []
+    assert body["genres"] == []
 
 
 def test_platform_scope_does_not_write_unscoped_filter_values_cache(
@@ -176,7 +188,7 @@ def test_platform_scope_does_not_write_unscoped_filter_values_cache(
     """A scoped list must never leak into the shared whole-library entry."""
     redis_key = _seed_filter_values(admin_user.id)
 
-    _get_roms(client, access_token, platform_ids=platform.id)
+    _get_filter_values(client, access_token, platform_ids=platform.id)
 
     cached = sync_cache.get(redis_key)
     assert cached is not None
@@ -191,9 +203,9 @@ def test_search_scope_does_not_read_unscoped_filter_values_cache(
     """A search term narrows the filter-value list the same way a platform does."""
     _seed_filter_values(admin_user.id)
 
-    body = _get_roms(client, access_token, search_term="nothing-matches-this")
+    body = _get_filter_values(client, access_token, search_term="nothing-matches-this")
 
-    assert body["filter_values"]["genres"] == []
+    assert body["genres"] == []
 
 
 def test_row_filter_does_not_read_unscoped_char_index_cache(
@@ -381,8 +393,10 @@ def test_rom_user_write_keeps_filter_values_entry(
 
     _put_props(client, access_token, rom.id, update_last_played=True)
 
-    body = _get_roms(client, access_token, order_by="last_played", order_dir="desc")
-    assert body["filter_values"]["genres"] == ["Sentinel Genre"]
+    body = _get_filter_values(
+        client, access_token, order_by="last_played", order_dir="desc"
+    )
+    assert body["genres"] == ["Sentinel Genre"]
 
 
 def test_rom_user_write_keeps_name_sorted_entry(
@@ -587,3 +601,33 @@ def test_ungrouped_page_does_not_read_the_cached_index(
     body = _get_roms(client, access_token, with_rom_id_index=False)
 
     assert _page_ids(body) == [rom.id]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [{}, {"order_dir": "desc"}, {"platform_ids": "platform"}],
+    ids=["unscoped", "descending", "one_platform"],
+)
+def test_cached_grouped_index_matches_the_uncached_one(
+    client: TestClient,
+    access_token: str,
+    platform: Platform,
+    rom: Rom,
+    second_rom: Rom,
+    params: dict[str, Any],
+):
+    """The first request fills the cache and the second reads it back."""
+    # Arrange
+    params = {
+        key: platform.id if value == "platform" else value
+        for key, value in params.items()
+    }
+    uncached = _get_roms(client, access_token, group_by_meta_id=True, **params)
+
+    # Act
+    cached = _get_roms(client, access_token, group_by_meta_id=True, **params)
+
+    # Assert
+    assert cached["rom_id_index"] == uncached["rom_id_index"]
+    assert cached["char_index"] == uncached["char_index"]
+    assert cached["total"] == uncached["total"]

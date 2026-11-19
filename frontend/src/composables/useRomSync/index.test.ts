@@ -17,7 +17,15 @@ const { getRoms, getRom } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/services/api/rom", () => ({
-  default: { getRoms, getRom },
+  default: {
+    getRoms,
+    getRom,
+    // The bootstrap's rows come from `getRoms`; its dropdowns are not asked for here.
+    getGalleryBootstrap: async (params: object) => ({
+      rows: (await getRoms(params)).data,
+      filterValues: undefined,
+    }),
+  },
 }));
 
 function namedRom(overrides: Partial<SimpleRom> = {}): SimpleRom {

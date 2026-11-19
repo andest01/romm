@@ -7,17 +7,32 @@ import { serverError } from "@/test-utils/serverError";
 import { romFixture } from "@/utils/rom.fixtures";
 import MissingGamesSection from "./MissingGamesSection.vue";
 
-const { getRoms, runTask, getTaskById, confirm, snackbarError } = vi.hoisted(
-  () => ({
-    getRoms: vi.fn(),
+const {
+  getRoms,
+  getGalleryBootstrap,
+  runTask,
+  getTaskById,
+  confirm,
+  snackbarError,
+} = vi.hoisted(() => {
+  const getRoms = vi.fn();
+  return {
+    getRoms,
+    // The bootstrap's rows come from `getRoms`; its dropdowns are not asked for here.
+    getGalleryBootstrap: vi.fn(async (params: object, _options?: object) => ({
+      rows: (await getRoms(params)).data,
+      filterValues: undefined,
+    })),
     runTask: vi.fn(),
     getTaskById: vi.fn(),
     confirm: vi.fn(),
     snackbarError: vi.fn(),
-  }),
-);
+  };
+});
 
-vi.mock("@/services/api/rom", () => ({ default: { getRoms } }));
+vi.mock("@/services/api/rom", () => ({
+  default: { getRoms, getGalleryBootstrap },
+}));
 vi.mock("@/services/api/task", () => ({
   default: { runTask, getTaskById },
 }));
@@ -79,7 +94,7 @@ describe("MissingGamesSection", () => {
   // The tab renders no filter drawer, no A-Z strip and drives its scroller
   // off `total` alone, so asking for those sidecars costs three whole-library
   // scans and displays two of them nowhere (issue #3992).
-  it("bootstraps without the sidecars it does not render", async () => {
+  it("bootstraps with only the id list its windows load from", async () => {
     mountSection();
     await flushPromises();
 
@@ -87,8 +102,10 @@ describe("MissingGamesSection", () => {
     const params = getRoms.mock.calls[0]![0];
     expect(params.filterMissing).toBe(true);
     expect(params.withCharIndex).toBe(false);
-    expect(params.withFilterValues).toBe(false);
-    expect(params.withRomIdIndex).toBe(false);
+    expect(getGalleryBootstrap.mock.calls.at(-1)![1]).toEqual({
+      withFilterValues: false,
+    });
+    expect(params.withRomIdIndex).toBeUndefined();
   });
 
   it("keeps the sidecars off when the sort order changes", async () => {
@@ -104,8 +121,10 @@ describe("MissingGamesSection", () => {
     const params = getRoms.mock.calls[0]![0];
     expect(params.orderBy).toBe("fs_size_bytes");
     expect(params.withCharIndex).toBe(false);
-    expect(params.withFilterValues).toBe(false);
-    expect(params.withRomIdIndex).toBe(false);
+    expect(getGalleryBootstrap.mock.calls.at(-1)![1]).toEqual({
+      withFilterValues: false,
+    });
+    expect(params.withRomIdIndex).toBeUndefined();
   });
 
   it("tells why the server refused the cleanup", async () => {

@@ -16,22 +16,27 @@ was paid four times over. 0107 widened the index to close the gap.
 0108 added `generated_primary_region` for the same reason: region priority ranks
 each sibling, and `roms.regions` is JSON that no covering index can carry.
 
-The failure mode is silent, and adding a metadata provider is the way back into
-it: a new id column joins the window's COALESCE chain, the index does not follow
-it, and the gallery quietly returns to full scans.
+0162 stored the group key and the pre-release rank as generated columns, so
+the window reads `idx_roms_group_key_cover` instead of building them per row.
+
+The failure mode is silent: a column the window starts reading without the
+index following it sends the gallery quietly back to full scans.
 """
 
 import re
 from typing import Any, cast
 
-from sqlalchemy import Table, inspect
+from sqlalchemy import Table, inspect, select
 from sqlalchemy.dialects import mysql
 from sqlalchemy.sql import Subquery
 from sqlalchemy.sql.expression import Select
 from tests.conftest import engine
+from tests.factories import make_rom
 
 from handler.database import db_rom_handler
+from handler.database.base_handler import sync_session
 from handler.database.rom_filters import RomFilterParams
+from models.platform import Platform
 from models.rom import Rom
 
 # Taken off the model rather than repeated, so these checks read as "the
@@ -41,7 +46,7 @@ INDEX_COLUMNS = [
     for column in next(
         index
         for index in cast(Table, Rom.__table__).indexes
-        if index.name == "idx_roms_sibling_cover"
+        if index.name == "idx_roms_group_key_cover"
     ).columns
 ]
 
@@ -154,3 +159,58 @@ class TestGroupByMetaIdCoverage:
         referenced = _dedup_window_referenced_columns(order_by="last_played", user_id=1)
 
         assert referenced <= set(INDEX_COLUMNS)
+
+
+class TestSiblingTieBreak:
+    def test_the_window_breaks_every_tie_by_id(self):
+        # Two dumps of one release (a .cue and an .iso) tie on every other key,
+        # and a parallel plan then picks between them per query. A small table
+        # can't reproduce that, so the rule itself is checked.
+        sql = str(
+            _dedup_window_select().compile(
+                dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}
+            )
+        )
+
+        window_order = re.search(
+            r"OVER \(PARTITION BY .* ORDER BY (.*)\) AS row_num", sql
+        )
+        assert window_order is not None
+        assert window_order.group(1).rstrip().endswith(".id ASC")
+
+
+def _group_key(rom: Rom) -> str | None:
+    with sync_session.begin() as session:
+        return session.scalar(select(Rom.group_key).where(Rom.id == rom.id))
+
+
+def _grouped_ids() -> set[int]:
+    with sync_session.begin() as session:
+        return set(session.scalars(_grouped_query().with_only_columns(Rom.id)).all())
+
+
+class TestStoredSiblingKey:
+    def test_the_key_takes_the_first_provider_id_set(self, platform: Platform):
+        both = make_rom(platform, "Both", igdb_id=11, ss_id=22)
+        ss_only = make_rom(platform, "Screenscraped", ss_id=22)
+
+        assert _group_key(both) == f"igdb-{platform.id}-11"
+        assert _group_key(ss_only) == f"ss-{platform.id}-22"
+
+    def test_a_game_with_no_provider_id_groups_alone(self, platform: Platform):
+        first = make_rom(platform, "Unmatched One")
+        second = make_rom(platform, "Unmatched Two")
+
+        grouped = _grouped_ids()
+
+        assert _group_key(first) is None
+        assert {first.id, second.id} <= grouped
+
+    def test_a_full_release_represents_its_demo(self, platform: Platform):
+        demo = make_rom(platform, "Shared", fs_stem="Shared (Demo)", igdb_id=33)
+        full = make_rom(platform, "Shared", fs_stem="Shared (USA)", igdb_id=33)
+
+        grouped = _grouped_ids()
+
+        assert full.id in grouped
+        assert demo.id not in grouped
