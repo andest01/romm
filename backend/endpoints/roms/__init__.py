@@ -93,6 +93,11 @@ from handler.database import (
 )
 from handler.database.base_handler import sync_session
 from handler.database.rom_filters import RomFilterParams, RomFiltersDict
+from handler.database.roms_handler import (
+    sorts_by_rom_user_column,
+    user_sibling_cache_version,
+    user_sort_cache_version,
+)
 from handler.filesystem import fs_resource_handler, fs_rom_handler
 from handler.filesystem.assets_handler import validate_image_upload
 from handler.filesystem.resources_handler import LOCAL_FILE_SCHEMES
@@ -275,6 +280,56 @@ def metadata_field_columns(metadata_fields: str) -> tuple[str, ...]:
         )
     # The schema serves the `ra_metadata` column as `merged_ra_metadata`.
     return tuple("ra_metadata" if n == "merged_ra_metadata" else n for n in names)
+
+
+def build_unscoped_sidecar_cache_key(
+    user_id: int,
+    order_by: str,
+    order_dir: str,
+    group_by_meta_id: bool,
+    is_unscoped: bool,
+) -> str | None:
+    """Cache key for the unscoped char-index / rom-id-index sidecars; None for
+    scoped/searched sets, which are computed live. Embeds the per-user sort
+    version on RomUser-column sorts and the sibling version on grouped sets,
+    so exactly the writes that move a set rotate its key.
+    """
+    if not is_unscoped:
+        return None
+
+    return _sidecar_cache_key(user_id, order_by, order_dir, group_by_meta_id)
+
+
+def _sidecar_cache_key(
+    user_id: int, order_by: str, order_dir: str, group_by_meta_id: bool
+) -> str:
+    user_part = f"u{user_id}"
+    if sorts_by_rom_user_column(order_by, user_id):
+        user_part = f"{user_part}.{user_sort_cache_version(user_id)}"
+    if group_by_meta_id:
+        user_part = f"{user_part}.s{user_sibling_cache_version(user_id)}"
+
+    return f"all:{user_part}:o{order_by}:d{order_dir}:g{int(group_by_meta_id)}"
+
+
+def build_grouped_page_cache_key(
+    user_id: int,
+    order_by: str,
+    order_dir: str,
+    platform_id: int,
+) -> str:
+    """Cache key for the sidecars of a grouped, single-platform gallery."""
+    base_key = _sidecar_cache_key(user_id, order_by, order_dir, True)
+    return f"{base_key}:p{platform_id}"
+
+
+def build_unscoped_filter_values_cache_key(
+    user_id: int, is_unscoped: bool
+) -> str | None:
+    """Filter values ignore ordering and grouping (their query strips both),
+    so one per-user entry serves every sort."""
+    return f"all:u{user_id}" if is_unscoped else None
+
 
 
 class RomUpdateForm(BaseModel):
@@ -847,22 +902,73 @@ def get_roms(
         and db_rom_handler.sorts_by_letter(sort_key.column)
         and not db_rom_handler.search_relevance_leads(order_by, filters.search_term)
     )
+
+    # Cache only the unscoped library scan (and a grouped single-platform set,
+    # keyed by its platform): the sidecar cache key encodes user/order/grouping
+    # but not the filters, so anything that narrows `query` has to gate caching
+    # or a narrowed list leaks under the shared "all" key.
+    #
+    # The filter-value list is gated on the scope alone: it is computed with
+    # only the scope applied, so a filter it never applies cannot stale it.
+    is_unscoped_scope = not filters.has_scope()
+    is_unfiltered = (
+        not filters.has_filters() and not updated_after and not parsed_released_days
+    )
+    is_unscoped = is_unscoped_scope and is_unfiltered
+
+    # One key for both ordered sidecars: the same request must not read the
+    # char index and the id index under different per-user versions.
+    sidecar_cache_key: str | None = None
+    if is_unscoped:
+        sidecar_cache_key = build_unscoped_sidecar_cache_key(
+            request.user.id, order_by, order_dir, filters.group_by_meta_id, True
+        )
+    # The grouping window spans the whole set even for one page, so a grouped
+    # single-platform gallery is cached too, one key per platform.
+    elif (
+        filters.group_by_meta_id
+        and is_unfiltered
+        and filters.has_only_platform_scope()
+        and filters.platform_ids
+        and len(filters.platform_ids) == 1
+    ):
+        sidecar_cache_key = build_grouped_page_cache_key(
+            request.user.id, order_by, order_dir, filters.platform_ids[0]
+        )
+
     rom_id_index: list[int] = []
     char_index_dict: dict[str, int] = {}
     if with_rom_id_index or with_letters:
-        ids, char_index = db_rom_handler.get_gallery_index(
-            db_rom_handler.group_defaults_index_rows(
-                query, user_id=request.user.id, order_dir=order_dir
-            )
-            if group_defaults
-            else db_rom_handler.index_rows(
-                query, letter_of=sort_key.column if with_letters else None
-            )
+        ids, char_index = db_rom_handler.get_cached_gallery_index(
+            (
+                db_rom_handler.group_defaults_index_rows(
+                    query, user_id=request.user.id, order_dir=order_dir
+                )
+                if group_defaults
+                else db_rom_handler.index_rows(
+                    query, letter_of=sort_key.column if with_letters else None
+                )
+            ),
+            cache_key=sidecar_cache_key,
+            with_ids=with_rom_id_index,
+            with_letters=with_letters,
         )
         if with_rom_id_index:
             rom_id_index = ids
         if with_letters:
             char_index_dict = dict(char_index)
+
+    # A grouped page reads its window of the list the index request cached,
+    # since the live page runs the grouping window over the whole set.
+    cached_page: tuple[list[int], int] | None = None
+    if (
+        not with_rom_id_index
+        and filters.group_by_meta_id
+        and sidecar_cache_key is not None
+    ):
+        cached_page = db_rom_handler.get_cached_rom_id_page(
+            sidecar_cache_key, params.offset, params.limit
+        )
 
     # Hydrate the requested page and its additional data
     with sync_session.begin() as session:
@@ -915,18 +1021,19 @@ def get_roms(
             if with_rom_id_index:
                 # The index already spans the result set, so the count is free.
                 return len(rom_id_index)
-            # Without the index the count is its own scan of the filtered set,
-            # so a caller scrolling a gallery it already sized opts out.
-            return (
-                db_rom_handler.get_rom_count(query=query, session=session)
-                if with_total
-                else None
-            )
+            # A caller scrolling a gallery it already sized opts out of the count.
+            if not with_total:
+                return None
+            if cached_page is not None:
+                return cached_page[1]
+            return db_rom_handler.get_rom_count(query=query, session=session)
 
         if rom_ids is not None:
             page_ids = list(rom_ids)
         elif with_rom_id_index:
             page_ids = list(rom_id_index[params.offset : params.offset + params.limit])
+        elif cached_page is not None:
+            page_ids = cached_page[0]
         else:
             # Ordering the entity itself carries every JSON metadata blob
             # through the sort, for a page that keeps `limit` of them.
@@ -1952,6 +2059,7 @@ async def create_physical_rom(
             pass
         raise
 
+    db_rom_handler.invalidate_filter_values_cache()
     refresh_affected_smart_collections([added_rom.id])
     record(
         AuditAction.ROM_CREATE,
@@ -2156,6 +2264,7 @@ async def update_rom(
             raise RomNotFoundInDatabaseException(id)
         rom = refreshed
 
+        db_rom_handler.invalidate_filter_values_cache()
         refresh_affected_smart_collections([id])
         record(
             AuditAction.ROM_UNMATCH,
@@ -2454,6 +2563,8 @@ async def update_rom(
     if meta_playmatch_handler.is_manual_match(form_data.model_fields_set):
         fire_and_forget(meta_playmatch_handler.submit_manual_match_suggestion(rom))
 
+    db_rom_handler.invalidate_filter_values_cache()
+
     refresh_affected_smart_collections([id])
     return DetailedRomSchema.from_orm_with_request(rom, request)
 
@@ -2646,6 +2757,9 @@ async def update_rom_user(
         cleaned_data.update({"last_played": None})
 
     rom_user = db_rom_handler.update_rom_user(db_rom_user.id, cleaned_data)
+
+    if "hidden" in cleaned_data:
+        db_rom_handler.invalidate_filter_values_cache()
 
     # The statuses filter reads all four of these, and `hidden` also drops the
     # ROM from every user-scoped query, so any of them can move membership.

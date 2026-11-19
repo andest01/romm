@@ -26,9 +26,10 @@ class CleanupMissingRomsStats(JobMetaStats):
 
 
 def _refresh_after_delete(rom_ids: list[int]) -> None:
-    """Drop what the library caches about the deleted ROMs, as the delete endpoint does."""
+    """Drop the deleted ROMs from smart collections, as the delete endpoint does."""
     if not rom_ids:
         return
+    # The rows are already gone, so a refresh failure must not mask how the run ended.
     try:
         db_collection_handler.refresh_smart_collections_for_roms(rom_ids)
     except Exception as e:

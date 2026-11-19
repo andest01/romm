@@ -53,6 +53,7 @@ from sqlalchemy.sql.selectable import Select
 
 from adapters.services.sigil import SIGIL_FILE_COLUMNS
 from config.config_manager import config_manager as cm
+from redis.exceptions import WatchError
 from decorators.database import INJECTED_SESSION, begin_session
 from exceptions.database_exceptions import RomFileOwnerChangedError
 from handler.auth.rom_visibility import UNRESTRICTED, RomVisibilityFilter
@@ -101,6 +102,7 @@ from models.rom import (
     compute_search_titles,
     fold_search_title,
 )
+from utils import get_version
 from utils.age_ratings import MIN_AGE_SOURCE_COLUMNS, compute_min_age
 from utils.arcade_platforms import PLAYABLE_ARCADE_SET_PLATFORMS
 from utils.database import (
@@ -355,6 +357,12 @@ _ROM_USER_WRITE_BATCH_SIZE = 1000
 _USER_OWNED_ROM_USER_STATUSES = (RomUserStatus.RETIRED, RomUserStatus.NEVER_PLAYING)
 
 
+# Cached gallery sidecars (filter values, char and id lists), versioned so a
+# write bumps every entry at once.
+ROM_FILTERS_CACHE_VERSION_KEY = "filter_values:ver"
+ROM_FILTERS_CACHE_TTL = 60 * 60 * 24 * 7  # 7 days
+ROM_FILTERS_CACHE_SCHEMA_VERSION = get_version().replace(".", "_")
+
 # Columns copied from a scanned (transient) RomFile onto its database row.
 ROM_FILE_SCANNED_COLUMNS = (
     "file_name",
@@ -446,6 +454,134 @@ def _same_content(row: RomFile, scanned: RomFile) -> bool:
         size=scanned.file_size_bytes,
         mtime=scanned.last_modified,
         hashable=False,
+    )
+
+
+def _cache_value_to_str(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bytes):
+        return value.decode()
+    return str(value)
+
+
+def _cache_version(key: str) -> str:
+    return _cache_value_to_str(sync_cache.get(key)) or "0"
+
+
+def _filter_values_cache_version() -> str:
+    return _cache_version(ROM_FILTERS_CACHE_VERSION_KEY)
+
+
+def _filter_values_cache_keys_key(version: str) -> str:
+    return f"filter_values:keys:v{version}"
+
+
+def _user_sort_version_key(user_id: int) -> str:
+    return f"sidecar:user_ver:{user_id}"
+
+
+def _user_sibling_version_key(user_id: int) -> str:
+    return f"sidecar:user_sib_ver:{user_id}"
+
+
+def user_sort_cache_version(user_id: int) -> str:
+    """Version component for one user's RomUser-sorted sidecar cache keys."""
+    return _cache_version(_user_sort_version_key(user_id))
+
+
+def user_sibling_cache_version(user_id: int) -> str:
+    """Version component for one user's grouped sidecar cache keys, moved
+    only by main-sibling picks."""
+    return _cache_version(_user_sibling_version_key(user_id))
+
+
+def _sidecar_redis_key(prefix: str, cache_key: str, version: str) -> str:
+    """Every gallery sidecar key shares this shape, so none can omit the schema version."""
+    return f"{prefix}:{ROM_FILTERS_CACHE_SCHEMA_VERSION}:{cache_key}:v{version}"
+
+
+def _filter_values_redis_key(cache_key: str, version: str) -> str:
+    return _sidecar_redis_key("filter_values", cache_key, version)
+
+
+def _char_index_redis_key(cache_key: str, version: str) -> str:
+    return _sidecar_redis_key("char_index", cache_key, version)
+
+
+def _rom_id_index_redis_key(cache_key: str, version: str) -> str:
+    return _sidecar_redis_key("rom_id_list", cache_key, version)
+
+
+# Bounds the arguments of each RPUSH that writes a cached id list.
+ROM_ID_LIST_PUSH_CHUNK = 10_000
+
+
+def _store_versioned_id_list(redis_key: str, version: str, ids: list[int]) -> None:
+    """Like `_store_versioned_cache`, as a Redis list a page can range over.
+
+    An empty list is not stored, since Redis has no empty list to tell it from a miss.
+    """
+    if not ids:
+        return
+    version_keys_set = _filter_values_cache_keys_key(version)
+    with sync_cache.pipeline() as pipe:
+        try:
+            pipe.watch(ROM_FILTERS_CACHE_VERSION_KEY)
+            current_version = (
+                _cache_value_to_str(pipe.get(ROM_FILTERS_CACHE_VERSION_KEY)) or "0"
+            )
+            if current_version != version:
+                pipe.unwatch()
+            else:
+                pipe.multi()
+                pipe.delete(redis_key)
+                for start in range(0, len(ids), ROM_ID_LIST_PUSH_CHUNK):
+                    pipe.rpush(redis_key, *ids[start : start + ROM_ID_LIST_PUSH_CHUNK])
+                pipe.expire(redis_key, ROM_FILTERS_CACHE_TTL)
+                pipe.sadd(version_keys_set, redis_key)
+                pipe.expire(version_keys_set, ROM_FILTERS_CACHE_TTL)
+                pipe.execute()
+        except WatchError:
+            pass
+
+
+def _store_versioned_cache(redis_key: str, version: str, result: Any) -> None:
+    version_keys_set = _filter_values_cache_keys_key(version)
+    with sync_cache.pipeline() as pipe:
+        try:
+            pipe.watch(ROM_FILTERS_CACHE_VERSION_KEY)
+            current_version = (
+                _cache_value_to_str(pipe.get(ROM_FILTERS_CACHE_VERSION_KEY)) or "0"
+            )
+            if current_version != version:
+                pipe.unwatch()
+            else:
+                pipe.multi()
+                pipe.set(redis_key, json.dumps(result), ex=ROM_FILTERS_CACHE_TTL)
+                pipe.sadd(version_keys_set, redis_key)
+                pipe.expire(version_keys_set, ROM_FILTERS_CACHE_TTL)
+                pipe.execute()
+        except WatchError:
+            pass
+
+
+def _create_metadata_id_case(
+    prefix: str,
+    id_column: ColumnElement[Any],
+    platform_id_column: ColumnElement[Any],
+) -> ColumnElement[Any]:
+    return case(
+        (
+            id_column.isnot(None),
+            func.concat(
+                f"{prefix}-",
+                platform_id_column,
+                "-",
+                id_column,
+            ),
+        ),
+        else_=None,
     )
 
 
@@ -622,6 +758,11 @@ def _zero_unset_folded(column: Any) -> Any:
     return column
 
 
+def sorts_by_rom_user_column(order_by: str, user_id: int) -> bool:
+    """True when this sort key resolves to a per-user RomUser column."""
+    return _resolve_gallery_sort_key(order_by, user_id).source == "rom_user"
+
+
 def _resolve_gallery_sort_key(order_by: str, user_id: int | None) -> _GallerySortKey:
     """Map a gallery `order_by` name to its sort column and source table."""
     rom_column = _mapped_sort_column(Rom, order_by)
@@ -748,6 +889,31 @@ RECOMMENDATION_SEED_FIELDS = frozenset(
     {"rating", "status", "last_played", "now_playing", "hidden"}
 )
 
+# A write that changes a gallery sort key sets this in `session.info`; the cached
+# id lists are then dropped once, after the transaction commits.
+FILTER_VALUES_BUMP_KEY = "filter_values_bump"
+
+
+@event.listens_for(Session, "after_commit")
+def _bump_filter_values_after_commit(session: Session) -> None:
+    if not session.info.pop(FILTER_VALUES_BUMP_KEY, False):
+        return
+    # The write is already durable; a stale entry falls to the TTL.
+    try:
+        DBRomsHandler.invalidate_filter_values_cache()
+    except Exception:
+        log.exception("Failed to invalidate cached gallery lists")
+
+
+@event.listens_for(Session, "after_rollback")
+def _drop_filter_values_bump(session: Session) -> None:
+    # A rolled-back savepoint fires this too, and the bumps queued before it
+    # must survive; the outer rollback still drops them.
+    if session.in_nested_transaction():
+        return
+    session.info.pop(FILTER_VALUES_BUMP_KEY, None)
+
+
 # Per-user cache invalidations queued by `_queue_user_cache_bumps`, keyed by
 # user id; they run once the transaction commits.
 USER_CACHE_BUMPS_KEY = "user_cache_bumps"
@@ -762,6 +928,10 @@ def _bump_user_caches_after_commit(session: Session) -> None:
         # The write is already durable, so a cache failure only logs; the
         # stale entry falls to the TTL.
         try:
+            if "sort" in uid_flags:
+                sync_cache.incr(_user_sort_version_key(uid))
+            if "sib" in uid_flags:
+                sync_cache.incr(_user_sibling_version_key(uid))
             if "feed" in uid_flags:
                 # Imported here because the recommendation package reads
                 # this module.
@@ -779,12 +949,23 @@ def _drop_user_cache_bumps(session: Session) -> None:
     session.info.pop(USER_CACHE_BUMPS_KEY, None)
 
 
-def _queue_user_cache_bumps(session: Session, user_id: int) -> None:
-    """Queues the recommendation feed's invalidation for after this transaction
+def _queue_user_cache_bumps(
+    session: Session,
+    user_id: int,
+    *,
+    sort_keys: bool = False,
+    siblings: bool = False,
+    feed: bool = False,
+) -> None:
+    """Queues per-user cache invalidations for after this transaction
     commits, so a rollback bumps nothing and a concurrent reader cannot
     cache pre-commit rows under the new version."""
     bumps: dict[int, set[str]] = session.info.setdefault(USER_CACHE_BUMPS_KEY, {})
-    bumps.setdefault(user_id, set()).add("feed")
+    bumps.setdefault(user_id, set()).update(
+        flag
+        for flag, queued in (("sort", sort_keys), ("sib", siblings), ("feed", feed))
+        if queued
+    )
 
 
 def _track_text_match(search: str) -> ColumnElement[bool]:
@@ -2018,6 +2199,98 @@ class DBRomsHandler(DBBaseHandler):
             and group_defaults_current()
         )
 
+    @staticmethod
+    def invalidate_filter_values_cache() -> None:
+        """Move every cached gallery list to a new version and drop the old one."""
+        old_version = str(int(sync_cache.incr(ROM_FILTERS_CACHE_VERSION_KEY)) - 1)
+        old_keys_set = _filter_values_cache_keys_key(old_version)
+        old_cache_keys = [
+            key
+            for raw_key in sync_cache.smembers(old_keys_set)
+            if (key := _cache_value_to_str(raw_key)) is not None
+        ]
+        sync_cache.delete(*old_cache_keys, old_keys_set)
+
+    # The cache wraps the uncached readers below; it never changes what they return.
+    @begin_session
+    def with_char_index(
+        self,
+        query: RomSelect,
+        order_by_attr: Any,
+        *,
+        cache_key: str | None = None,
+        order_dir: str = "asc",
+        session: Session = INJECTED_SESSION,
+    ) -> list[tuple[str, int]]:
+        if not self.sorts_by_letter(order_by_attr):
+            return []
+        redis_key: str | None = None
+        version: str | None = None
+        if cache_key:
+            version = _filter_values_cache_version()
+            redis_key = _char_index_redis_key(cache_key, version)
+            cached = sync_cache.get(redis_key)
+            if cached is not None:
+                char_index: list[tuple[str, int]] = json.loads(cached)
+                return char_index
+
+        _, letters = self.get_gallery_index(
+            self.index_rows(query, letter_of=order_by_attr),
+            session=session,
+        )
+        if redis_key is not None and version is not None:
+            _store_versioned_cache(redis_key, version, letters)
+        return letters
+
+    @begin_session
+    def get_rom_id_index(
+        self,
+        query: RomSelect,
+        *,
+        cache_key: str | None = None,
+        session: Session = INJECTED_SESSION,
+    ) -> list[int]:
+        """Return every matching rom id in query order.
+
+        The list backs the gallery's virtual scroll, so it spans the whole
+        result set (not a page). A keyed list is memoised as a Redis list a
+        page can range over.
+        """
+        redis_key: str | None = None
+        version: str | None = None
+        if cache_key:
+            version = _filter_values_cache_version()
+            redis_key = _rom_id_index_redis_key(cache_key, version)
+            cached = sync_cache.lrange(redis_key, 0, -1)
+            if cached:
+                return [int(rom_id) for rom_id in cached]
+
+        ids, _ = self.get_gallery_index(
+            self.index_rows(query, letter_of=None),
+            session=session,
+        )
+        if redis_key is not None and version is not None:
+            _store_versioned_id_list(redis_key, version, ids)
+        return ids
+
+    @staticmethod
+    def get_cached_rom_id_page(
+        cache_key: str, offset: int, limit: int
+    ) -> tuple[list[int], int] | None:
+        """One window of a cached id list and the list's length, without building it.
+
+        Returns:
+            None on a miss; only `get_rom_id_index` writes the list.
+        """
+        redis_key = _rom_id_index_redis_key(cache_key, _filter_values_cache_version())
+        with sync_cache.pipeline(transaction=False) as pipe:
+            pipe.lrange(redis_key, offset, offset + limit - 1)
+            pipe.llen(redis_key)
+            window, length = pipe.execute()
+        if not length:
+            return None
+        return [int(rom_id) for rom_id in window], int(length)
+
     def group_defaults_index_rows(
         self, query: RomSelect, *, user_id: int | None, order_dir: str
     ) -> Select[int, str | None]:
@@ -2134,6 +2407,53 @@ class DBRomsHandler(DBBaseHandler):
             if letter is not None:
                 starts.setdefault(letter, position)
         return ids, sorted(starts.items())
+
+    @begin_session
+    def get_cached_gallery_index(
+        self,
+        rows: Select[int, str | None],
+        *,
+        cache_key: str | None,
+        with_ids: bool,
+        with_letters: bool,
+        session: Session = INJECTED_SESSION,
+    ) -> tuple[list[int], list[tuple[str, int]]]:
+        """`get_gallery_index` behind the versioned sidecar caches.
+
+        A hit returns what the uncached statement would; ids or letters the
+        caller didn't ask for come back empty.
+        """
+        if cache_key is None:
+            return self.get_gallery_index(rows, session=session)
+
+        version = _filter_values_cache_version()
+        ids_key = _rom_id_index_redis_key(cache_key, version)
+        letters_key = _char_index_redis_key(cache_key, version)
+        cached_ids = (
+            [int(rom_id) for rom_id in sync_cache.lrange(ids_key, 0, -1)]
+            if with_ids
+            else []
+        )
+        cached_letters = sync_cache.get(letters_key) if with_letters else None
+        ids_hit = bool(cached_ids) or not with_ids
+        letters_hit = cached_letters is not None or not with_letters
+        cached_pairs = (
+            [(letter, start) for letter, start in json.loads(cached_letters)]
+            if cached_letters is not None
+            else []
+        )
+        if ids_hit and letters_hit:
+            return cached_ids, cached_pairs
+
+        # Each list is cached on its own, so a miss fills only what was missing.
+        ids, letters = self.get_gallery_index(rows, session=session)
+        if with_ids and not ids_hit:
+            _store_versioned_id_list(ids_key, version, ids)
+        if with_letters and not letters_hit:
+            _store_versioned_cache(letters_key, version, letters)
+        return (cached_ids if ids_hit else ids), (
+            cached_pairs if letters_hit else letters
+        )
 
     @begin_session
     def get_rom_count(
@@ -2422,6 +2742,7 @@ class DBRomsHandler(DBBaseHandler):
             .execution_options(synchronize_session="evaluate")
         )
         refresh_group_defaults(session, {old_key})
+        session.info[FILTER_VALUES_BUMP_KEY] = True
 
     @begin_session
     def get_missing_rom_ids(
@@ -2518,6 +2839,8 @@ class DBRomsHandler(DBBaseHandler):
                     .execution_options(synchronize_session=False)
                 )
             )
+        if replaced:
+            session.info[FILTER_VALUES_BUMP_KEY] = True
         return replaced
 
     @begin_session
@@ -2601,6 +2924,7 @@ class DBRomsHandler(DBBaseHandler):
             return existing
         # A fresh row's zero defaults replace NULL sort keys, which moves
         # this user's RomUser-sorted order.
+        _queue_user_cache_bumps(session, user_id, sort_keys=True)
         return rom_user
 
     @begin_session
@@ -2672,7 +2996,7 @@ class DBRomsHandler(DBBaseHandler):
 
         # A freshly inserted row has no status, so the UPDATE counts it too.
         if updated:
-            _queue_user_cache_bumps(session, user_id)
+            _queue_user_cache_bumps(session, user_id, sort_keys=True, feed=True)
         return updated
 
     @begin_session
@@ -2693,8 +3017,15 @@ class DBRomsHandler(DBBaseHandler):
         if not rom_user:
             return None
 
-        if RECOMMENDATION_SEED_FIELDS & data.keys():
-            _queue_user_cache_bumps(session, rom_user.user_id)
+        # Other RomUser columns can back a sort (hidden bumps the global version,
+        # pinned_media sorts nothing); main-sibling picks move grouped sets.
+        _queue_user_cache_bumps(
+            session,
+            rom_user.user_id,
+            sort_keys=bool(data.keys() - {"hidden", "pinned_media"}),
+            siblings="is_main_sibling" in data,
+            feed=bool(RECOMMENDATION_SEED_FIELDS & data.keys()),
+        )
 
         if not data.get("is_main_sibling", False):
             return rom_user
@@ -2767,6 +3098,7 @@ class DBRomsHandler(DBBaseHandler):
             .values(fs_size_bytes=total)
             .execution_options(synchronize_session="fetch")
         )
+        session.info[FILTER_VALUES_BUMP_KEY] = True
 
     @begin_session
     def add_rom_file(

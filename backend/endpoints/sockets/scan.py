@@ -1413,6 +1413,9 @@ async def scan_platforms(
 
         log.info(f"{emoji.EMOJI_CHECK_MARK} Scan completed")
 
+        # The library changed; drop the cached gallery lists.
+        db_rom_handler.invalidate_filter_values_cache()
+
         # Smart collection membership is derived from the library, and is no
         # longer recomputed while serving a gallery page. A scan scoped to a
         # handful of ROMs only has to recount the collections those ROMs touch.

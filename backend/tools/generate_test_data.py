@@ -1680,6 +1680,7 @@ def _seed(args: argparse.Namespace, image_pool: ProcessPoolExecutor | None) -> i
     if not args.dry_run:
         try:
             db_rom_handler.refresh_all_group_defaults()
+            db_rom_handler.invalidate_filter_values_cache()
             invalidate_all_cached_feeds()
         except RedisError as exc:
             print(

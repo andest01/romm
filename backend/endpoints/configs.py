@@ -369,6 +369,7 @@ async def update_scan_settings(request: Request, payload: ScanSettingsPayload) -
     # are stale the moment it changes.
     if region_priority_changed:
         await run_in_threadpool(db_rom_handler.refresh_all_group_defaults)
+        await run_in_threadpool(db_rom_handler.invalidate_filter_values_cache)
 
 
 @protected_route(router.put, "/converto_settings", [Scope.PLATFORMS_WRITE])
