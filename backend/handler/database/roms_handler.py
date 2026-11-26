@@ -1894,11 +1894,15 @@ class DBRomsHandler(DBBaseHandler):
                     )
                 )
             else:
-                # Add a filter to the original query to only include the primary ROM from each group
-                query = query.filter(
-                    Rom.id.in_(
-                        select(group_subquery.c.id).where(group_subquery.c.row_num == 1)
-                    )
+                # Joined outer with a null-safe match: an IN or an inner join lets
+                # MariaDB drive from the winners and probe a wide roms row per group.
+                winners = (
+                    select(group_subquery.c.id)
+                    .where(group_subquery.c.row_num == 1)
+                    .subquery()
+                )
+                query = query.outerjoin(winners, Rom.id == winners.c.id).filter(
+                    winners.c.id.is_not_distinct_from(Rom.id)
                 )
 
         if user_id:

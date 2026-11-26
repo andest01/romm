@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from tests.factories import make_rom
-from tests.sql_dialects import MARIADB_DIALECT, compile_sql
+from tests.sql_dialects import MARIADB_DIALECT, POSTGRESQL_DIALECT, compile_sql
 
 from handler.auth.rom_visibility import RomVisibilityFilter
 from handler.database import db_rom_handler
@@ -417,8 +417,24 @@ class TestGroupedRomUserSortQueryShape:
         # MIN/MAX diverge from ORDER BY semantics for enums, and a lexical
         # group key would disagree with the representative's displayed label.
         assert "group_sort_value" not in sql
-        assert "IN (SELECT" in sql
+        assert "LEFT OUTER JOIN (SELECT" in sql
         assert order_clause in sql
+
+    @pytest.mark.parametrize(
+        ("dialect", "null_safe"),
+        [
+            (MARIADB_DIALECT, "<=> roms.id"),
+            (POSTGRESQL_DIALECT, "IS NOT DISTINCT FROM roms.id"),
+        ],
+    )
+    def test_name_sort_joins_the_winners_outer(self, dialect: Any, null_safe: str):
+        # An IN over the winners lets MariaDB drive from them and probe a wide
+        # roms row per group; the null-safe outer join keeps `roms` first.
+        sql = compile_sql(self._grouped_query("name", "asc"), dialect)
+
+        assert "LEFT OUTER JOIN (SELECT" in sql
+        assert null_safe in sql
+        assert "roms.id IN (SELECT" not in sql
 
 
 class TestGroupedRepresentativeVisibility:
